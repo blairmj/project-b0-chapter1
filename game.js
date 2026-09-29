@@ -237,9 +237,9 @@ function batteryCluesReady() {
 }
 
 function clueTrailMarkup(phase) {
-  const group = ["first", "firstResult"].includes(phase) ? clueGroups.first
-    : ["terminal", "terminalError", "procedure"].includes(phase) ? clueGroups.terminal
-      : ["batteryAmbiguity", "batteryError", "batteryBuild"].includes(phase) ? clueGroups.battery : null;
+  const group = phase === "first" ? clueGroups.first
+    : phase === "terminal" ? clueGroups.terminal
+      : phase === "batteryAmbiguity" ? clueGroups.battery : null;
   if (!group) return "";
   const count = group.filter((key) => state.clues[key]).length;
   return `<div class="clue-trail" aria-label="발견한 단서 ${count}개"><b>단서 ${count}/${group.length}</b>${group.filter((key) => state.clues[key]).map((key) => `<span>${inspectionDetails[key].title}</span>`).join("")}</div>`;
