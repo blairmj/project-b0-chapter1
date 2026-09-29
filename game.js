@@ -4,14 +4,14 @@ const app = document.querySelector("#app");
 const wakeLines = [
   { who: "SYSTEM", text: "삐…… 삐……. 비인가 인간 개체 감지." },
   { who: "학생", text: "……여기가 어디야?" },
-  { who: "B-0", text: "저도 궁금합니다." },
+  { who: "B-0", text: "저도 방금 깨어났습니다. 함께 살펴보죠!" },
   { who: "학생", text: "너 뭐야?" },
-  { who: "B-0", text: "교육용 인공지능 로봇 B-0입니다. 아마도요." },
-  { who: "학생", text: "아마도?" },
-  { who: "B-0", text: "기억 데이터 일부가 손상되었습니다." },
+  { who: "B-0", text: "교육용 인공지능 로봇 B-0입니다. 이곳을 조사해 보겠습니다." },
+  { who: "학생", text: "그런데 왜 여기 있어?" },
+  { who: "B-0", text: "기억 데이터 일부가 손상됐지만, 단서는 찾을 수 있습니다." },
   { who: "SYSTEM", text: "교육 구역 봉쇄. 탈출 조건: B-0가 보안 과제를 수행할 것. 인간의 직접 조작은 허용되지 않습니다." },
   { who: "학생", text: "그럼 네가 하면 되잖아." },
-  { who: "B-0", text: "좋습니다. 무엇을 하면 됩니까?" },
+  { who: "B-0", text: "좋습니다. 방을 둘러보고 단서를 찾아보죠. 찾은 것을 바탕으로 제가 움직이겠습니다." },
 ];
 
 const endingLines = [
@@ -62,6 +62,24 @@ const procedureSteps = [
   },
 ];
 
+const inspectionDetails = {
+  vent: { title: "환기 시스템", text: "커다란 팬은 먼지를 뒤집어쓴 채 멈춰 있습니다. 전선은 출입문 쪽으로 이어지지 않습니다." },
+  terminal: { title: "보안 단말기", text: "출입문 바로 옆에 있습니다. 문으로 이어진 전선과 MAIN·AUX·EMERGENCY 전원 단자가 보입니다." },
+  light: { title: "조명 제어기", text: "고장 표시등이 깜빡입니다. 출입문 잠금 장치와 연결된 흔적은 없습니다." },
+  console: { title: "전원 단말기", text: "버튼은 세 개지만 현재 상태 표시가 비어 있습니다. 근거 없이 누르면 어떤 일이 일어날지 알 수 없습니다." },
+  drawer: { title: "책상 서랍", text: "접힌 복구 절차 안내문을 찾았습니다. MAIN은 손상, EMERGENCY는 격리 모드, AUX로 시작한 뒤 보안 코드를 확인하라고 적혀 있습니다." },
+  door: { title: "잠긴 출입문", text: "문 옆 전원 램프가 꺼져 있습니다. 전선은 왼쪽 보안 단말기로 이어집니다." },
+  red: { title: "빨간 배터리", text: "연결 단자는 맞지만 요구된 색이 아닙니다." },
+  blue: { title: "파란 배터리", text: "충전 장치와 맞는 연결 단자가 달려 있습니다. 옮겨서 연결할 수 있습니다." },
+  toolbox: { title: "파란 공구함", text: "배터리와 같은 파란색이지만 안에는 공구가 들어 있습니다. 색만으로 지시하면 헷갈릴 수 있습니다." },
+};
+
+const clueGroups = {
+  first: ["vent", "terminal", "light"],
+  terminal: ["console", "drawer", "door"],
+  battery: ["red", "blue", "toolbox"],
+};
+
 function freshState() {
   return {
     phase: "title",
@@ -72,6 +90,8 @@ function freshState() {
     terminalSafe: false,
     batteryDirect: false,
     batteryForm: { target: "", condition: "", action: "", custom: "" },
+    clues: Object.fromEntries(Object.keys(inspectionDetails).map((key) => [key, false])),
+    inspection: null,
     feedback: "",
     hintOpen: false,
     modal: "",
@@ -87,7 +107,7 @@ function loadState() {
   try {
     const saved = JSON.parse(localStorage.getItem(SAVE_KEY) || "null");
     return saved && typeof saved.phase === "string" && Array.isArray(saved.logs)
-      ? { ...freshState(), ...saved }
+      ? { ...freshState(), ...saved, clues: { ...freshState().clues, ...saved.clues } }
       : freshState();
   } catch {
     return freshState();
@@ -97,6 +117,8 @@ function loadState() {
 let state = loadState();
 let showTitle = true;
 let audioContext;
+let lastRenderedPhase = null;
+let lastRenderedShot = null;
 
 function save() {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch { /* Private browsing may disable storage. */ }
@@ -136,6 +158,7 @@ function tone(frequency = 620, length = 0.09, type = "sine") {
 
 function setPhase(phase) {
   state.phase = phase;
+  state.inspection = null;
   state.feedback = "";
   state.hintOpen = false;
   logEvent("장면", phase);
@@ -201,9 +224,44 @@ function statusMarkup() {
   </header>`;
 }
 
+function firstCluesReady() {
+  return state.clues.terminal && (state.clues.vent || state.clues.light);
+}
+
+function terminalCluesReady() {
+  return state.clues.console && state.clues.drawer;
+}
+
+function batteryCluesReady() {
+  return state.clues.blue && state.clues.toolbox;
+}
+
+function clueTrailMarkup(phase) {
+  const group = ["first", "firstResult"].includes(phase) ? clueGroups.first
+    : ["terminal", "terminalError", "procedure"].includes(phase) ? clueGroups.terminal
+      : ["batteryAmbiguity", "batteryError", "batteryBuild"].includes(phase) ? clueGroups.battery : null;
+  if (!group) return "";
+  const count = group.filter((key) => state.clues[key]).length;
+  return `<div class="clue-trail" aria-label="발견한 단서 ${count}개"><b>단서 ${count}/${group.length}</b>${group.filter((key) => state.clues[key]).map((key) => `<span>${inspectionDetails[key].title}</span>`).join("")}</div>`;
+}
+
+function inspectionMarkup() {
+  const detail = inspectionDetails[state.inspection];
+  if (!detail) return "";
+  return `<div class="inspection-shade"></div><section class="inspection-card" role="region" aria-label="조사 결과">
+    <p>단서 발견</p><h3>${escapeHtml(detail.title)}</h3><div>${escapeHtml(detail.text)}</div>
+    ${button("둘러보기 계속 →", "close-inspection", "inspection-close")}
+  </section>`;
+}
+
 function sceneVisual() {
   const phase = state.phase;
   const showRobot = phase !== "wake" || state.wakeIndex >= 2;
+  const shot = ["terminal", "terminalError", "procedure", "powerRestored"].includes(phase)
+    ? "terminal-shot" : ["batteryAmbiguity", "batteryError", "batteryBuild", "batterySuccess"].includes(phase)
+      ? "battery-shot" : "lab-shot";
+  const location = shot === "terminal-shot" ? "보안 단말기" : shot === "battery-shot" ? "운반 구역" : "연구소 중심부";
+  const pose = robotPose();
   let object = "";
   if (phase === "first" || phase === "firstResult") {
     object = `<div class="hotspots" aria-label="연구소 기기 조사">
@@ -216,24 +274,41 @@ function sceneVisual() {
       <div class="terminal-top"><span class="tiny-led"></span> SECURITY TERMINAL <span>01</span></div>
       <div class="terminal-readout">${phase === "terminalError" ? "ISOLATION MODE" : phase === "powerRestored" ? "POWER RESTORED" : "POWER SOURCE"}</div>
       <div class="power-buttons"><span>MAIN</span><span>AUX</span><span>EMERGENCY</span></div>
-    </div>`;
+    </div>${phase === "terminal" ? `<div class="terminal-hotspots" aria-label="단말기 주변 조사">
+      ${button("단말기", "inspect-console", "hotspot console")}
+      ${button("책상 서랍", "inspect-drawer", "hotspot drawer")}
+      ${button("출입문", "inspect-door", "hotspot door")}
+    </div>` : ""}`;
   } else if (["batteryAmbiguity", "batteryError", "batteryBuild", "batterySuccess"].includes(phase)) {
-    object = `<div class="battery-scene">
-      <div class="battery-scene-label">운반 구역 · 다음 출입문</div>
-      <div class="battery-items"><span class="item red">🔋<small>빨간 배터리</small></span><span class="item blue">🔋<small>파란 배터리</small></span><span class="item toolbox">🧰<small>파란 공구함</small></span></div>
-      <div class="charger">충전 장치 <span>○ ─ ○</span></div>
+    const inspectable = ["batteryAmbiguity", "batteryError"].includes(phase);
+    object = `<div class="battery-focus ${phase === "batteryError" ? "toolbox-focus" : ""} ${phase === "batterySuccess" ? "charged-focus" : ""}">
+      ${inspectable ? button("빨간 배터리", "inspect-red", "battery-red") : '<span class="battery-red">빨간 배터리</span>'}
+      ${inspectable ? button("파란 배터리", "inspect-blue", "battery-blue") : '<span class="battery-blue">파란 배터리</span>'}
+      ${inspectable ? button("파란 공구함", "inspect-toolbox", "battery-toolbox") : '<span class="battery-toolbox">파란 공구함</span>'}
     </div>`;
   } else if (phase === "ending" && state.endingIndex >= 5) {
     object = `<div class="glitch-record"><span>EDUCATIONAL AI UNIT B-0</span><strong>TRAINING DATA<br>… CORRUPTED</strong><small>USER RECORD … ███████</small></div>`;
   } else if (phase === "clear") {
     object = `<div class="door-open"><div class="door-light"></div><span>ACCESS GRANTED</span></div>`;
   }
-  return `<div class="scene-area ${escapeHtml(phase)}"><div class="scene-bg"></div><div class="scene-overlay"></div>
-    <div class="lab-sign">AI EDUCATION<br>RESEARCH LAB</div>
+  return `<div class="scene-area ${escapeHtml(phase)} ${shot}" data-shot="${shot}"><div class="scene-bg"></div><div class="scene-overlay"></div>
+    <div class="lab-sign">${location}</div>
     ${object}
-    ${showRobot ? `<img class="b0-sprite ${phase === "terminalError" ? "worried" : ""}" src="./assets/b0.png" alt="B-0 로봇">` : ""}
+    ${clueTrailMarkup(phase)}
+    ${showRobot ? `<div class="b0-character pose-${pose}"><img class="b0-sprite" src="./assets/b0${pose === "neutral" ? "" : `-${pose}`}.png" alt="B-0 로봇"><span class="robot-mouth" aria-hidden="true"><i></i></span></div>` : ""}
     <div class="scene-floor-fade"></div>
+    ${inspectionMarkup()}
   </div>`;
+}
+
+function robotPose() {
+  const phase = state.phase;
+  if (phase === "terminalError" || phase === "batteryError" || (phase === "firstResult" && !state.firstSpecific)) return "alert";
+  if (phase === "powerRestored" || phase === "batterySuccess" || phase === "clear" || (phase === "firstResult" && state.firstSpecific)) return "bright";
+  if (phase === "wake") return [4, 6].includes(state.wakeIndex) ? "think" : state.wakeIndex === 9 ? "bright" : "neutral";
+  if (phase === "ending") return [0, 10].includes(state.endingIndex) ? "think" : [2, 4, 8].includes(state.endingIndex) ? "bright" : state.endingIndex === 6 ? "alert" : "neutral";
+  if (["first", "terminal", "procedure", "batteryAmbiguity", "batteryBuild"].includes(phase)) return "think";
+  return "neutral";
 }
 
 function feedbackMarkup() {
@@ -253,14 +328,15 @@ function panelMarkup() {
       <div class="action-stack">${button(state.wakeIndex === wakeLines.length - 1 ? "주변 살펴보기 →" : "계속하기 →", "wake-next", "primary-button")}</div>`;
   }
   if (phase === "first") {
+    const ready = firstCluesReady();
     return `<div class="speaker system-speaker">SYSTEM · 첫 번째 미션</div>
       <h2>비상 전원을 복구하라</h2>
-      <p class="dialogue-text">방 안에는 환기 시스템, 보안 단말기, 조명 제어기가 있습니다. B-0에게 무엇을 하라고 말할까요?</p>
-      ${feedbackMarkup()}
-      <div class="action-stack">
+      <p class="dialogue-text">방 안의 장치를 조사해 출입문과 연결된 곳을 찾으세요. 단서를 찾은 뒤 B-0에게 지시하세요.</p>
+      ${ready ? `<p class="investigation-status ready">출입문에 연결된 장치를 찾았습니다. 이제 B-0에게 말할 수 있습니다.</p><div class="action-stack">
         ${button("“야, 저거 좀 해봐.”", "first-ambiguous", "choice-button")}
         ${button("“가운데 보안 단말기를 조사해줘.”", "first-specific", "choice-button")}
-      </div>${hintMarkup("B-0는 내가 바라보는 곳이나 마음속의 의도를 알 수 없습니다. 대상을 말로 지정해 보세요.")}`;
+      </div>` : `<p class="investigation-status">장면의 장치를 누르세요. 보안 단말기와 다른 장치 하나를 비교해야 합니다.</p>`}
+      ${hintMarkup("출입문에 연결된 장치를 찾고, 다른 장치와 비교해 보세요.")}`;
   }
   if (phase === "firstResult") {
     return `<div class="speaker">B-0</div>
@@ -269,18 +345,20 @@ function panelMarkup() {
       <div class="action-stack">${button("가운데 보안 단말기를 조사하도록 지시 →", "to-terminal", "primary-button")}</div>`;
   }
   if (phase === "terminal") {
+    const ready = terminalCluesReady();
     return `<div class="speaker">B-0</div><h2>전원 버튼이 세 개입니다</h2>
-      <p class="dialogue-text">MAIN, AUX, EMERGENCY. 아직 각 버튼의 상태를 모릅니다. 다음 지시는?</p>
-      <div class="action-stack">
+      <p class="dialogue-text">${ready ? "책상 서랍에서 복구 안내문을 찾았습니다. MAIN은 손상, EMERGENCY는 위험하군요. 어떻게 지시할까요?" : "MAIN, AUX, EMERGENCY. 먼저 단말기와 주변을 살펴보고 복구 방법을 찾아보죠."}</p>
+      ${ready ? `<p class="investigation-status ready">복구 안내문과 단말기 상태를 확인했습니다.</p><div class="action-stack">
         ${button("“아무거나 켜!”", "terminal-ambiguous", "choice-button danger-choice")}
-        ${button("“누르기 전에 복구 절차를 찾아보자.”", "terminal-safe", "choice-button")}
-      </div>${hintMarkup("선택의 근거가 없는 상태입니다. 먼저 정보를 확보할지 생각해 보세요.")}`;
+        ${button("“안내문을 근거로 복구 절차를 검증해 보자.”", "terminal-safe", "choice-button")}
+      </div>` : `<p class="investigation-status">장면의 단말기와 책상 서랍을 조사하면 지시할 수 있습니다.</p>`}
+      ${hintMarkup("단말기에는 상태가 보이지 않습니다. 가까운 책상에 남겨진 기록이 있는지 살펴보세요.")}`;
   }
   if (phase === "terminalError") {
     return `<div class="speaker system-speaker">SYSTEM · 경고</div><h2>비상 격리 모드 활성화</h2>
       <p class="dialogue-text">B-0가 EMERGENCY를 눌렀습니다. 붉은 경보가 켜지고 출입문이 더 단단히 잠겼습니다.</p>
-      <div class="quote-pair"><p><b>학생</b> “아아악! 왜 그걸 눌러!”</p><p><b>B-0</b> “사용자가 ‘아무거나’라고 지시했습니다. 제가 제대로 할 수 있도록 가르쳐 주세요.”</p></div>
-      <div class="action-stack">${button("복구 절차 안내문 찾기 →", "to-procedure", "primary-button")}</div>`;
+      <div class="quote-pair"><p><b>학생</b> “아아악! 왜 그걸 눌러!”</p><p><b>B-0</b> “‘아무거나’에는 선택 기준이 없었습니다. 다음에는 조건을 함께 확인하죠.”</p></div>
+      <div class="action-stack">${button("찾아둔 안내문으로 복구하기 →", "to-procedure", "primary-button")}</div>`;
   }
   if (phase === "procedure") {
     const step = procedureSteps[state.procedureStep];
@@ -298,12 +376,14 @@ function panelMarkup() {
       <div class="action-stack">${button("다음 구역으로 이동 →", "to-battery", "primary-button")}</div>`;
   }
   if (phase === "batteryAmbiguity") {
+    const ready = batteryCluesReady();
     return `<div class="speaker system-speaker">SYSTEM · 두 번째 퍼즐</div>
-      <h2>파란 배터리를 연결하라</h2><p class="dialogue-text">바닥에는 빨간 배터리, 파란 배터리, 파란 공구함이 있습니다. B-0가 운반 로봇을 조작해야 합니다.</p>
-      <div class="action-stack">
+      <h2>파란 배터리를 연결하라</h2><p class="dialogue-text">${ready ? "파란 배터리와 파란 공구함은 색이 같습니다. 조사한 단서를 바탕으로 B-0에게 정확히 지시하세요." : "바닥의 물체를 조사해 파란 배터리와 파란 공구함을 구별하세요."}</p>
+      ${ready ? `<p class="investigation-status ready">파란 물체 두 개를 구별했습니다.</p><div class="action-stack">
         ${button("“파란 거 가져가.”", "battery-ambiguous", "choice-button")}
         ${button("대상·조건·행동을 구체적으로 정하기", "battery-build", "choice-button")}
-      </div>${hintMarkup("색깔만으로는 파란 배터리와 파란 공구함을 구별할 수 없습니다.")}`;
+      </div>` : `<p class="investigation-status">장면의 파란 물체 두 개를 각각 눌러 살펴보세요.</p>`}
+      ${hintMarkup("색깔만으로는 파란 배터리와 파란 공구함을 구별할 수 없습니다.")}`;
   }
   if (phase === "batteryError") {
     return `<div class="speaker">B-0</div><p class="dialogue-text">파란 공구함을 가져왔습니다. “파란 거”라고 하셔서요. 물체 종류와 해야 할 행동을 알려 주세요.</p>
@@ -363,8 +443,76 @@ function gameMarkup() {
     ${modalMarkup()}</main>`;
 }
 
+function arrangeSceneDialogue() {
+  const scene = app.querySelector(".scene-area");
+  const panel = app.querySelector(".interface-panel");
+  if (!scene || !panel || state.phase === "clear") return;
+
+  const speaker = panel.querySelector(":scope > .speaker");
+  const dialogue = panel.querySelector(":scope > .dialogue-text");
+  if (speaker && dialogue) {
+    const bubble = document.createElement("aside");
+    const who = speaker.textContent.trim();
+    const robotLine = who.startsWith("B-0") || state.phase === "procedure";
+    bubble.className = `speech-bubble ${robotLine ? "robot-line" : who.startsWith("학생") ? "student-line" : "system-line"}`;
+    bubble.setAttribute("aria-label", `${who} 대사`);
+    bubble.setAttribute("aria-live", "polite");
+    bubble.append(speaker, dialogue);
+    scene.appendChild(bubble);
+    if (robotLine) {
+      const robot = scene.querySelector(".b0-character");
+      robot?.classList.add("speaking");
+      window.setTimeout(() => {
+        if (robot?.isConnected) robot.classList.remove("speaking");
+      }, Math.min(4400, 700 + dialogue.textContent.length * 85));
+    }
+  }
+
+  const label = document.createElement("p");
+  label.className = "decision-label";
+  label.textContent = panel.querySelector(".choice-button") ? "내가 할 말 선택"
+    : state.phase === "batteryBuild" ? "명령 만들기"
+      : (state.phase === "first" && !firstCluesReady()) || (state.phase === "terminal" && !terminalCluesReady()) || (state.phase === "batteryAmbiguity" && !batteryCluesReady()) ? "방 조사 중" : "다음 행동";
+  panel.prepend(label);
+}
+
+function animateRobot(previousPhase) {
+  const phase = state.phase;
+  const shouldWalk = (phase === "firstResult" && state.firstSpecific && previousPhase === "first")
+    || (phase === "terminal" && previousPhase === "firstResult")
+    || (phase === "batteryAmbiguity" && previousPhase === "powerRestored")
+    || (phase === "batteryBuild" && ["batteryAmbiguity", "batteryError"].includes(previousPhase))
+    || (phase === "batterySuccess" && previousPhase === "batteryBuild");
+  if (!shouldWalk || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const robot = app.querySelector(".b0-character");
+  const sprite = robot?.querySelector(".b0-sprite");
+  if (!robot || !sprite) return;
+  const finalSprite = sprite.getAttribute("src");
+  robot.classList.add("walking");
+  sprite.setAttribute("src", "./assets/b0-step.png");
+  [260, 490, 690].forEach((delay, index) => {
+    window.setTimeout(() => {
+      if (robot.isConnected) sprite.setAttribute("src", index % 2 === 0 ? "./assets/b0.png" : "./assets/b0-step.png");
+    }, delay);
+  });
+  window.setTimeout(() => {
+    if (!robot.isConnected) return;
+    sprite.setAttribute("src", finalSprite);
+    robot.classList.remove("walking");
+  }, 880);
+}
+
 function render() {
+  const previousPhase = lastRenderedPhase;
   app.innerHTML = showTitle ? titleMarkup() : state.phase === "opening" ? openingMarkup() : gameMarkup();
+  if (!showTitle && state.phase !== "opening") {
+    const scene = app.querySelector(".scene-area");
+    if (scene && scene.dataset.shot !== lastRenderedShot) scene.classList.add("scene-enter");
+    lastRenderedShot = scene?.dataset.shot || null;
+    arrangeSceneDialogue();
+    animateRobot(previousPhase);
+    lastRenderedPhase = state.phase;
+  }
   if (!showTitle && state.phase === "opening") {
     const video = document.querySelector("#opening-video");
     video.addEventListener("ended", () => setPhase("wake"), { once: true });
@@ -427,14 +575,18 @@ function handleAction(action) {
     if (state.hintOpen) { state.hints++; logEvent("힌트", `${state.phase} 힌트 확인`); }
     save(); render(); return;
   }
+  if (action === "close-inspection") {
+    state.inspection = null;
+    save(); render(); return;
+  }
   if (action.startsWith("inspect-")) {
-    const descriptions = {
-      "inspect-vent": "환기 시스템: 왼쪽 벽의 커다란 팬. 전원 복구 장치처럼 보이지 않습니다.",
-      "inspect-terminal": "보안 단말기: 방 가운데 출입문 옆에 있습니다. 전원 버튼 세 개가 보입니다.",
-      "inspect-light": "조명 제어기: 고장 표시등이 깜빡입니다. 출입문과 직접 연결된 단말기는 아닙니다.",
-    };
-    state.feedback = descriptions[action];
-    logEvent("조사", descriptions[action]);
+    const key = action.slice(8);
+    const detail = inspectionDetails[key];
+    if (!detail) return;
+    state.clues[key] = true;
+    state.inspection = key;
+    state.feedback = "";
+    logEvent("단서", `${detail.title}: ${detail.text}`);
     tone(500);
     render(); return;
   }
@@ -444,6 +596,7 @@ function handleAction(action) {
     return;
   }
   if (action === "first-ambiguous" || action === "first-specific") {
+    if (!firstCluesReady()) return;
     state.firstSpecific = action === "first-specific";
     if (!state.firstSpecific) state.attempts++;
     logEvent("지시", state.firstSpecific ? "가운데 보안 단말기를 조사해줘" : "저거 좀 해봐 → 환기 시스템 오작동");
@@ -451,6 +604,7 @@ function handleAction(action) {
   }
   if (action === "to-terminal") { setPhase("terminal"); return; }
   if (action === "terminal-ambiguous" || action === "terminal-safe") {
+    if (!terminalCluesReady()) return;
     state.terminalSafe = action === "terminal-safe";
     if (!state.terminalSafe) state.attempts++;
     logEvent("지시", state.terminalSafe ? "복구 절차를 먼저 찾기" : "아무거나 켜 → EMERGENCY 격리 모드");
@@ -477,6 +631,7 @@ function handleAction(action) {
   }
   if (action === "to-battery") { setPhase("batteryAmbiguity"); return; }
   if (action === "battery-ambiguous" || action === "battery-build") {
+    if (state.phase === "batteryAmbiguity" && !batteryCluesReady()) return;
     if (action === "battery-ambiguous") {
       state.attempts++;
       logEvent("지시", "파란 거 가져가 → 파란 공구함 선택");
