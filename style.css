@@ -182,11 +182,12 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .speech-bubble .speaker { margin-bottom: 4px; color: #17728c; font-size: .72rem; }
 .speech-bubble .speaker::before { background: #20a8d2; box-shadow: none; }
 .speech-bubble .dialogue-text { color: #143344; font-size: clamp(.87rem, 3vw, 1rem); line-height: 1.48; font-weight: 650; }
-.speech-bubble.student-line { background: #fff6e7; border-color: #f4dcb3; }
+.speech-bubble.robot-line { left: auto; right: 4%; top: 4%; width: min(58%, 360px); }
+.speech-bubble.student-line { left: 4%; right: auto; width: min(66%, 380px); background: #fff6e7; border-color: #f4dcb3; border-radius: 18px 18px 18px 5px; }
 .speech-bubble.student-line::after { right: auto; left: 14%; border-top-color: #fff6e7; }
 .speech-bubble.student-line .speaker { color: #885a26; }
 .speech-bubble.student-line .speaker::before { background: #c48c46; }
-.speech-bubble.system-line { width: min(63%, 440px); max-height: 60%; top: 13%; background: #0c2538f2; border-color: #7cc4d9; border-radius: 13px; }
+.speech-bubble.system-line { left: 0; right: 0; top: 50%; translate: 0 -50%; margin-inline: auto; width: min(76%, 440px); max-height: 60%; background: #0c2538f2; border-color: #7cc4d9; border-radius: 13px; }
 .speech-bubble.system-line::after { display: none; }
 .speech-bubble.system-line .speaker { color: #8fe3f0; }
 .speech-bubble.system-line .dialogue-text { color: #effbff; }
@@ -200,6 +201,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .quote-pair { background: #1b2e40; border-radius: 9px; padding: 9px 12px; }
 
 .b0-character { position: absolute; z-index: 6; width: clamp(128px, 29%, 210px); right: 1%; bottom: -2%; aspect-ratio: 1145 / 1374; filter: drop-shadow(0 13px 17px #000b) drop-shadow(0 0 12px #32d7ff55); animation: robot-breathe 3s ease-in-out infinite; }
+.scene-area:has(.speech-bubble.robot-line) .b0-character { width: clamp(120px, 26%, 185px); }
 .b0-character .b0-sprite, .wake .b0-character .b0-sprite { display: block; position: static; width: 100%; max-height: none; height: auto; object-fit: contain; filter: none; animation: none; }
 .wake .b0-character { right: 6%; width: clamp(134px, 31%, 220px); }
 .firstResult .b0-character { right: 15%; }
