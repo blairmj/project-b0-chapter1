@@ -504,12 +504,14 @@ function animateRobot(previousPhase) {
 
 function render() {
   const previousPhase = lastRenderedPhase;
+  const previousPanelScroll = app.querySelector(".interface-panel")?.scrollTop || 0;
   app.innerHTML = showTitle ? titleMarkup() : state.phase === "opening" ? openingMarkup() : gameMarkup();
   if (!showTitle && state.phase !== "opening") {
     const scene = app.querySelector(".scene-area");
     if (scene && scene.dataset.shot !== lastRenderedShot) scene.classList.add("scene-enter");
     lastRenderedShot = scene?.dataset.shot || null;
     arrangeSceneDialogue();
+    if (previousPhase === state.phase) app.querySelector(".interface-panel").scrollTop = previousPanelScroll;
     animateRobot(previousPhase);
     lastRenderedPhase = state.phase;
   }
