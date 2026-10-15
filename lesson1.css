@@ -11,6 +11,7 @@
 @media(max-width:420px){.game-header{padding:12px 14px 0}.game-header h1{font-size:19px}.room{aspect-ratio:1.05}.dialogues{padding:11px 12px 13px;gap:9px;min-height:126px}.speech p{padding:10px;font-size:12px}.controls{padding:12px 12px 3px}.object-button{gap:9px;padding:10px;min-height:59px}.object-button span{font-size:13px}.object-button small{font-size:9px}.object-button svg{width:25px}.game-footer{padding:8px 12px 13px;font-size:9px}.objective{font-size:12px}.system-notice{font-size:11px}.title-b0{width:240px;height:240px}.hotspot span{font-size:10px}.command-fields select{font-size:12px;padding:8px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 /* Keep the room visible while choosing actions on portrait tablets and phones. */
+body{display:flow-root}
 .game-shell{height:100dvh;min-height:0;display:flex;flex-direction:column;overflow:hidden}
 .game-header,.dialogues,.game-footer{flex:none}
 .room{flex:1;min-height:180px;aspect-ratio:auto;container-type:size}
@@ -24,3 +25,4 @@
 .pose-success.talking .digital-mouth{display:none}
 @media(min-width:760px){.game-shell{height:calc(100dvh - 32px)}}
 @media(max-height:760px){.game-header{padding-top:8px}.game-header h1{font-size:18px}.progress{margin-top:0}.dialogues{min-height:100px}.speech p{font-size:12px}.controls{height:230px}.game-footer{display:none}.room{min-height:160px}}
+@media(max-height:760px) and (min-width:421px){.game-shell{max-width:420px}}
