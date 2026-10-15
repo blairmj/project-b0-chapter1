@@ -10,3 +10,17 @@
 @media(min-width:760px){.game-shell{margin:16px auto;border:1px solid #2b4359;border-radius:14px;overflow:hidden;min-height:0}.title-screen{min-height:min(100dvh,1000px);border-left:1px solid #2b4359;border-right:1px solid #2b4359}.title-copy{min-height:min(100dvh,1000px)}}
 @media(max-width:420px){.game-header{padding:12px 14px 0}.game-header h1{font-size:19px}.room{aspect-ratio:1.05}.dialogues{padding:11px 12px 13px;gap:9px;min-height:126px}.speech p{padding:10px;font-size:12px}.controls{padding:12px 12px 3px}.object-button{gap:9px;padding:10px;min-height:59px}.object-button span{font-size:13px}.object-button small{font-size:9px}.object-button svg{width:25px}.game-footer{padding:8px 12px 13px;font-size:9px}.objective{font-size:12px}.system-notice{font-size:11px}.title-b0{width:240px;height:240px}.hotspot span{font-size:10px}.command-fields select{font-size:12px;padding:8px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+/* Keep the room visible while choosing actions on portrait tablets and phones. */
+.game-shell{height:100dvh;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.game-header,.dialogues,.game-footer{flex:none}
+.room{flex:1;min-height:180px;aspect-ratio:auto;container-type:size}
+.robot-character{width:32cqh}
+.dialogues{min-height:112px;padding-top:10px;padding-bottom:12px}
+.speech p{padding:10px;line-height:1.55}
+.controls{flex:none;height:clamp(230px,27dvh,280px);min-height:0;overflow:auto;overscroll-behavior:contain}
+.game-footer{padding-top:5px;padding-bottom:8px}
+.map-art,.light-art{clip-path:inset(12% 0 0)}
+.terminal-screen{left:35%;top:20%;width:25%;height:20%}
+.pose-success.talking .digital-mouth{display:none}
+@media(min-width:760px){.game-shell{height:calc(100dvh - 32px)}}
+@media(max-height:760px){.game-header{padding-top:8px}.game-header h1{font-size:18px}.progress{margin-top:0}.dialogues{min-height:100px}.speech p{font-size:12px}.controls{height:230px}.game-footer{display:none}.room{min-height:160px}}

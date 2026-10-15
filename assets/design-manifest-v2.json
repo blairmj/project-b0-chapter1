@@ -1,0 +1,63 @@
+{
+  "mode": "built-in image_gen",
+  "date": "2026-10-15",
+  "atlas": {
+    "robot": {
+      "columns": 3,
+      "rows": 2,
+      "order": [
+        "neutral",
+        "thinking",
+        "pointing",
+        "walking",
+        "operating",
+        "success"
+      ]
+    },
+    "devices": {
+      "columns": 2,
+      "rows": 2,
+      "order": [
+        "door",
+        "terminal",
+        "map",
+        "light"
+      ]
+    }
+  },
+  "prompts": [
+    {
+      "file": "practice-room-v2.png",
+      "transparent": false,
+      "refs": [
+        "교육실습실_대표화면_v1.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Create a CLEAN BACKGROUND PLATE for the game room in the supplied approved screenshot. Square 1024x1024 composition. Recompose ONLY the environment portion of the screenshot to fill the square. Same hand-painted cel shaded blue-grey abandoned educational practice laboratory, readable friendly mystery for ages 11-12, soft cool ambient light, restrained wear. Camera eye-level straight with slight depth. Back wall ends at 68% canvas height. Clear open foreground floor bottom 32%. Leave a clean dark rectangular DOOR RECESS at x28%-53%, y24%-69% for separately overlaid door asset. Leave plain wall at x10%-24%, y27%-47% for separate evacuation map; leave space at x57%-73%, y46%-70% for separate freestanding terminal; leave wall at x79%-90%, y14%-29% for separate emergency lamp. Include overhead cables, noninteractive science poster with diagrams only on far right, cropped science workbenches at extreme left and right edges, no object obscuring those clear insertion spaces. REMOVE ALL characters, B0, student, door leaves, interactive terminal, emergency lamp, map, text, lettering, UI, interface header, bubbles, buttons, hotspot rings. Background plate ONLY, no montage. Maintain approved art atmosphere but brighten enough for visible exploration."
+    },
+    {
+      "file": "b0-poses-v2.png",
+      "transparent": true,
+      "refs": [
+        "B0_캐릭터시트_v1.png"
+      ],
+      "prompt": "Use case: identity-preserve. Production game sprite atlas, EXACTLY 3 columns by 2 rows of equal square cells, overall landscape 3:2, transparent alpha background. Use supplied approved B0 character sheet as strict identity reference. Same ivory lightly worn shell, black joints, cyan oval digital eyes, small mouth, ear discs, chest circle and asymmetric fin antennae. Six full-body isolated sprites, each centered in its own cell, consistent scale, whole figure from antenna tips to feet within middle 84% of each cell, soles at 92% cell height. No overlap, no labels, no grid, no text, no base platforms, no floor shadows. Top-left calm neutral facing viewer slightly left; top-middle thoughtful with hand near chin and curious oval eyes (not distressed); top-right pointing LEFT with one arm toward an imagined terminal. Bottom-left walking LEFT mid-step both arms and legs visibly engaged; bottom-middle operating a panel on LEFT with extended hand and attentive face, no panel drawn; bottom-right success relaxed smiling with curved happy cyan eyes and small friendly wave. Grounded approachable companion, not arrogant or timid, same 2.7-head proportions across ALL six. Refined cel shaded hand-painted 2.5D style matching reference. Genuine transparent empty pixels between and around all sprites."
+    },
+    {
+      "file": "student-v2.png",
+      "transparent": true,
+      "refs": [
+        "교육실습실_대표화면_v1.png"
+      ],
+      "prompt": "Use case: background-extraction. Create a single isolated full-body game sprite of the BOY from approved screenshot reference. Only boy, genuine transparent alpha background. Korean upper-elementary grade5-6 boy, youthful rounded face, tousled short dark hair, grey hoodie, dark cargo trousers and white grey sneakers. Match reference 2.5D hand-painted cel shaded art exactly. Three-quarter profile facing RIGHT toward companion and room. Calm curious, arms relaxed with one hand lightly near chest, no fearful or angry look. Entire silhouette feet through hair visible with generous 8% margin. No room, no other character, no text, no UI, no ground shadow. Portrait canvas. Natural preteen proportions, not teenager, not toddler."
+    },
+    {
+      "file": "devices-v2.png",
+      "transparent": true,
+      "refs": [
+        "교육실습실_대표화면_v1.png"
+      ],
+      "prompt": "Use case: stylized-concept. Production GAME DEVICE ATLAS derived from supplied approved classroom screenshot. EXACTLY four isolated objects in a strict 2 columns by 2 rows equal-cell grid on genuinely TRANSPARENT alpha background. Square overall image. Top LEFT: closed grey-blue double sliding laboratory door with thin metal outer frame, front view, cyan slim side lamps; full door and frame contained within cell, rectangular vertical shape. Top RIGHT: same worn freestanding access terminal from screenshot, 3/4 front view facing camera slightly left, dark blank rectangular screen, small keyboard, pedestal cabinet base. Bottom LEFT: evacuation map on slightly worn pale paper in narrow metal frame, red route linking cyan terminal icon and door icon, diagram ONLY with no writing, square-ish panel. Bottom RIGHT: wall-mounted amber cage emergency lamp, warm amber bulb, metal cage, small base bracket, self-contained glow within sprite. All fully separated, all centered in middle 82% of respective equal-size cells, large empty transparent gutters. Match approved hand-painted cel shaded blue grey worn science lab art, readable on tablet, no horror, no extra objects, no captions, no letters, no UI or rings. Door must be dead straight front elevation for sliding overlay. Actual alpha, no checkerboard painted into image."
+    }
+  ],
+  "backgroundRefinement": "Use case: precise-object-edit. Edit this clean game BACKGROUND PLATE. Remove the amber caged emergency lamp at upper-right and its warm halo, replace with matching uninterrupted blue-grey wall. Remove the empty pale rectangular noticeboard on far left wall, replacing with uninterrupted matching blue-grey wall. Preserve absolutely everything else, especially the open dark doorway, perspective, floor, furniture, cables and science diagram poster. No characters, no writing, no UI. We will overlay separate interactive lamp and map sprites in code. Same square canvas."
+}
