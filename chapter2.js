@@ -29,7 +29,7 @@
         ${cube('wide',118,62,92,'c2-wide')}${cube('small',76,56,68,'c2-small')}
         <div class="c2-cabinet" data-object="cabinet" role="button" tabindex="0" aria-label="보관장">${cube('',85,148,60)}<span class="c2-cabinet-door"></span></div>
         <div class="c2-robot" data-object="robot" role="button" tabindex="0" aria-label="B-0"><div class="robot-sprite live-body">${portrait()}</div><div class="c2-support-arm" hidden></div></div>
-      </div><div class="c2-sill" hidden></div><div class="c2-player-upper-arm" aria-hidden="true" hidden></div><div class="c2-player-elbow" aria-hidden="true" hidden></div><div class="c2-player-grip" aria-hidden="true" hidden><div class="c2-player-arm"></div></div><p class="c2-basic-help">상자를 끌어 옮기기 · 빈 공간을 끌어 둘러보기</p><div class="c2-speech" aria-live="polite" hidden></div>
+      </div><div class="c2-sill" hidden></div><div class="c2-player-grip" aria-hidden="true" hidden><div class="c2-player-arm"></div></div><p class="c2-basic-help">상자를 끌어 옮기기 · 빈 공간을 끌어 둘러보기</p><div class="c2-speech" aria-live="polite" hidden></div>
       </section><section class="c2-actions" aria-label="선택한 물체의 행동"><p>주변을 살펴보세요.</p></section>
       <footer><div class="zoom-controls">${button('−','zoom-out') }<output class="c2-zoom">100%</output>${button('+','zoom-in')}</div><button type="button" data-c2="down" class="c2-descend" hidden>내려가기</button>${button('B-0에게 부탁','robot','secondary')}</footer></main>`;
       room=app.querySelector('.c2-game');stage=app.querySelector('.c2-stage');world=app.querySelector('.c2-world');actionbar=app.querySelector('.c2-actions');speech=app.querySelector('.c2-speech');helpText=app.querySelector('.c2-basic-help');
@@ -235,7 +235,6 @@
       if(!animate){const p=M.position(s,'small');robot=M.robotSpot(s,{x:p.x-135,z:p.z+20});}
       const actor=app.querySelector('.c2-robot');actor.classList.remove('boosting','walking','hand-held');actor.classList.add('reaching');actor.querySelector('.c2-support-arm').hidden=true;
       app.querySelector('.c2-player-grip').hidden=true;
-      app.querySelector('.c2-player-upper-arm').hidden=true;app.querySelector('.c2-player-elbow').hidden=true;
       actor.style.setProperty('--rescue-climb','0');stage.style.setProperty('--rescue-fade','0');stage.dataset.rescueStage='reach';
       room.classList.add('c2-ledge-game');app.querySelector('header h1').textContent='내 위치: 창틀 위';
       app.querySelector('[data-c2="home"]').hidden=true;app.querySelector('footer').innerHTML='<small>창틀에 앉아 방 안을 내려다보고 있다.</small>';
@@ -264,30 +263,18 @@
       const scale=-focal/Math.min(-10,depth),u=.29+(.225-.29)*blend,v=.13+(.12-.13)*blend;
       return {x:stage.clientWidth/2+(x+(u-.5)*96)*scale,y:stage.clientHeight/2+(y+6+v*144-78)*scale,scale};
     }
-    function armBend(origin,hand,fold){
-      const dx=hand.x-origin.x,dy=hand.y-origin.y,d=Math.max(1,Math.hypot(dx,dy)),total=d*(1+.28*fold);
-      const upper=.45*total,fore=.55*total,a=(upper*upper-fore*fore+d*d)/(2*d),h=Math.sqrt(Math.max(0,upper*upper-a*a));
-      return {x:origin.x+dx/d*a+dy/d*h,y:origin.y+dy/d*a-dx/d*h};
-    }
     function updatePlayerGrip(pose){
       const anchor=handAnchor(pose.blend),overlay=app.querySelector('.c2-player-grip'),arm=overlay.querySelector('.c2-player-arm');
-      const upper=app.querySelector('.c2-player-upper-arm'),joint=app.querySelector('.c2-player-elbow');
-      const origin={x:stage.clientWidth*(.08+.08*pose.approach),y:stage.clientHeight+35};
+      const origin={x:stage.clientWidth*(.08+.1*pose.approach),y:stage.clientHeight+35};
       const x=origin.x+(anchor.x-origin.x)*pose.handReach,y=origin.y+(anchor.y-origin.y)*pose.handReach;
-      // Limit close-up growth so the clasp stays smaller than B-0's face.
-      const width=Math.max(64,Math.min(stage.clientWidth*.30,92*Math.sqrt(anchor.scale)));
-      const fold=pose.contact?Math.min(1,pose.approach*1.35):0,elbow=armBend(origin,{x,y},fold);
-      const length=Math.max(25,Math.hypot(elbow.x-x,elbow.y-y));
-      const angle=Math.atan2(-(elbow.x-x),elbow.y-y)*180/Math.PI;
+      const width=Math.max(76.5,Math.min(stage.clientWidth*.425,106.25*anchor.scale));
+      const length=Math.max(25,Math.hypot(origin.x-x,origin.y-y));
+      const angle=Math.atan2(-(origin.x-x),origin.y-y)*180/Math.PI;
       overlay.hidden=false;overlay.classList.toggle('clasped',pose.contact);overlay.style.left=x+'px';overlay.style.top=y+'px';overlay.style.transform=`rotate(${angle}deg)`;
       overlay.style.opacity=String(Math.min(1,pose.handReach*2));
       arm.style.width=width+'px';arm.style.height=(length+width*.5)+'px';arm.style.left=(-width/2)+'px';arm.style.top=(-width*.5)+'px';
-      arm.style.borderTopWidth=(width*800/888)+'px';arm.style.borderBottomWidth='0px';
-      upper.hidden=false;upper.style.left=elbow.x+'px';upper.style.top=elbow.y+'px';upper.style.width=width+'px';upper.style.height=(Math.hypot(origin.x-elbow.x,origin.y-elbow.y)+width*.15)+'px';
-      upper.style.marginLeft=(-width/2)+'px';upper.style.marginTop=(-width*.15)+'px';upper.style.transformOrigin=`50% ${width*.15}px`;upper.style.borderBottomWidth=(width*200/888)+'px';upper.style.transform=`rotate(${Math.atan2(-(origin.x-elbow.x),origin.y-elbow.y)*180/Math.PI}deg)`;upper.style.opacity=overlay.style.opacity;
-      const jointSize=width*.43;joint.hidden=false;joint.style.width=jointSize+'px';joint.style.height=jointSize+'px';joint.style.left=(elbow.x-jointSize/2)+'px';joint.style.top=(elbow.y-jointSize/2)+'px';joint.style.opacity=overlay.style.opacity;
+      arm.style.borderTopWidth=(width*800/888)+'px';arm.style.borderBottomWidth=(width*200/888)+'px';
       stage.dataset.handContact=pose.contact?'held':'reaching';
-      stage.dataset.elbowFold=fold;stage.dataset.gripWidth=width;
     }
     function pullCompanion(){
       if(s.phase!=='ledge'||busy||travelling)return;
