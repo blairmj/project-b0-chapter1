@@ -27,9 +27,9 @@
         ${cube('wide',118,62,92,'c2-wide')}${cube('small',76,56,68,'c2-small')}
         <div class="c2-cabinet" data-object="cabinet" role="button" tabindex="0" aria-label="보관장">${cube('',85,148,60)}<span class="c2-cabinet-door"></span></div>
         <div class="c2-robot" data-object="robot" role="button" tabindex="0" aria-label="B-0"><div class="robot-sprite live-body">${portrait()}</div><div class="c2-support-arm" hidden></div></div>
-      </div><p class="c2-basic-help">빈 공간을 끌어 둘러보기 · 물건을 눌러 살펴보기</p><div class="c2-speech" aria-live="polite" hidden></div>
+      </div><p class="c2-basic-help">상자를 끌어 옮기기 · 빈 공간을 끌어 둘러보기</p><div class="c2-speech" aria-live="polite" hidden></div>
       </section><section class="c2-actions" aria-label="선택한 물체의 행동"><p>주변을 살펴보세요.</p></section>
-      <footer><div class="zoom-controls">${button('−','zoom-out') }<output class="c2-zoom">100%</output>${button('+','zoom-in')}</div>${button('B-0에게 부탁','robot','secondary')}</footer></main>`;
+      <footer><div class="zoom-controls">${button('−','zoom-out') }<output class="c2-zoom">100%</output>${button('+','zoom-in')}</div><button type="button" data-c2="down" class="c2-descend" hidden>내려가기</button>${button('B-0에게 부탁','robot','secondary')}</footer></main>`;
       room=app.querySelector('.c2-game');stage=app.querySelector('.c2-stage');world=app.querySelector('.c2-world');actionbar=app.querySelector('.c2-actions');speech=app.querySelector('.c2-speech');helpText=app.querySelector('.c2-basic-help');
       stage.addEventListener('pointerdown',pointerDown);stage.addEventListener('pointermove',pointerMove);stage.addEventListener('pointerup',pointerUp);stage.addEventListener('pointercancel',cancelPointer);
       stage.addEventListener('click',e=>{if(suppress){suppress=false;return;}if(busy||mode?.looking)return;const el=e.target.closest('[data-object]');if(el)select(el.dataset.object);else if(mode?.type==='move'){const p=floorPoint(e.clientX,e.clientY);if(p)place(p.x,p.z);}});
@@ -48,6 +48,7 @@
       stage.dataset.yaw=camera.yaw;stage.dataset.pitch=camera.pitch;
       const r=app.querySelector('.c2-robot');r.style.transform=`translate3d(${robot.x-48}px,24px,${robot.z}px) rotateY(${-camera.yaw}deg)`;
       app.querySelector('.c2-zoom').textContent=Math.round(camera.zoom*100)+'%';
+      app.querySelector('.c2-descend').hidden=!standing;
     }
     function update(){
       if(s.phase!=='room')return;
@@ -72,9 +73,9 @@
         if(M.sizes[id]&&id!==mode.id){const p=M.position(s,id);place(p.x,p.z,id);}return;
       }
       selection=id;update();
-      if(M.sizes[id])actions(M.sizes[id].name,[['살펴보기','inspect-'+id],['옮기기','move-'+id],[standing===id?'내려가기':'올라서기',standing===id?'down':'climb-'+id],['선택 닫기','clear']]);
+      if(M.sizes[id])actions(M.sizes[id].name,[['살펴보기','inspect-'+id],['옮기기','move-'+id],...(!standing?[['올라서기','climb-'+id]]:[]),['선택 닫기','clear']]);
       else if(id==='robot')robotMenu();
-      else if(id==='window')actions('높은 창문',[['살펴보기','inspect-window'],[s.windowOpen?'창문 넘기':'걸쇠 열기',s.windowOpen?'exit':'open-window'],...(standing?[['내려가기','down']]:[]),['선택 닫기','clear']]);
+      else if(id==='window')actions('높은 창문',[['살펴보기','inspect-window'],[s.windowOpen?'창문 넘기':'걸쇠 열기',s.windowOpen?'exit':'open-window'],['선택 닫기','clear']]);
       else if(id==='vent')actions('벽면 환기 덮개',[['살펴보기','inspect-vent'],[s.ventOpen?'덮개 닫기':'덮개 열기','vent'],['선택 닫기','clear']]);
       else if(id==='cabinet')actions('보관장',[['살펴보기','inspect-cabinet'],[s.cabinetOpen?'닫기':'열기','cabinet'],['선택 닫기','clear']]);
       else actions('닫힌 입구',[['살펴보기','inspect-entry'],['밀어 보기','push-entry'],['선택 닫기','clear']]);
@@ -94,7 +95,7 @@
       if(s.holding&&(s.holding===id||s.holding===s.boxes[id].on)){say('robot','제가 잡고 있습니다. 먼저 손을 놓을까요?');robotMenu();return;}
       mode={type:'move',id,byRobot,candidate:null};selection=id;speech.hidden=true;
       moveActions();
-      helpText.textContent='상자를 끌거나 빈 바닥을 누르세요 · 다른 상자를 누르면 윗면에 놓기';helpText.hidden=false;update();
+      helpText.textContent='상자를 끌어 옮기기 · 빈 공간을 끌어 둘러보기 · 다른 상자 위에 놓기';helpText.hidden=false;update();return true;
     }
     function moveActions(){actions(`${M.sizes[mode.id].name} · ${mode.looking?'빈 공간을 끌어 시점 돌리기':mode.byRobot?'B-0가 옮길 위치 선택':'옮길 위치 선택'}`,mode.looking?[['위치 지정으로','move-view'],['취소','cancel']]:[['앞','nudge-front'],['뒤','nudge-back'],['왼쪽','nudge-left'],['오른쪽','nudge-right'],['놓기','drop'],['시점 돌리기','move-view'],['취소','cancel']]);}
     // Inverse CSS camera ray intersected with the floor; changing yaw never changes world coordinates.
@@ -121,9 +122,9 @@
     }
     function cancelMove(){mode=null;pointer=null;app.querySelector('.c2-floor-target').hidden=true;helpText.hidden=true;selection=null;actions('주변을 살펴보세요.',[]);update();}
     function pointerDown(e){
-      if(busy||e.button!==0||e.isPrimary===false)return;
-      pointer={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:camera.yaw,pitch:camera.pitch,moved:false};suppress=false;
-      if(mode?.type==='move')e.preventDefault();
+      if(busy||e.button!==0||e.isPrimary===false||e.target.closest('[data-c2]'))return;
+      const object=e.target.closest('[data-object]')?.dataset.object;
+      pointer={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:camera.yaw,pitch:camera.pitch,moved:false,object,kind:null};suppress=false;
     }
     function supportAt(x,y){
       const selected=app.querySelector(`[data-object="${mode.id}"]`);selected.style.pointerEvents='none';
@@ -133,17 +134,35 @@
     function pointerMove(e){
       if(!pointer||pointer.id!==e.pointerId)return;const dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;
       if(Math.hypot(dx,dy)<7&&!pointer.moved)return;
+      // Lock the gesture to its starting object. Empty-space drags always orbit,
+      // even when the optional position controls are open.
+      if(!pointer.moved){
+        pointer.kind='look';
+        if(M.sizes[pointer.object]&&!mode?.looking&&mode?.type!=='target'){
+          const id=pointer.object,start=floorPoint(pointer.x,pointer.y),p=M.position(s,id);
+          const ready=mode?.type==='move'&&mode.id===id||beginMove(id);
+          pointer.kind=ready?'object':'blocked';
+          pointer.offset=start?{x:p.x-start.x,z:p.z-start.z}:{x:0,z:0};
+        }
+      }
       pointer.moved=true;stage.setPointerCapture(e.pointerId);helpText.hidden=true;
-      if(mode?.type==='move'&&!mode.looking){const support=supportAt(e.clientX,e.clientY),p=support?M.position(s,support):floorPoint(e.clientX,e.clientY);if(p)previewDrop(p.x,p.z,support);}
-      else if(!mode||mode.looking||mode.type==='target'){camera.yaw=pointer.yaw-dx*.19/camera.zoom;camera.pitch=pointer.pitch+dy*.16/camera.zoom;updateCamera();}
+      if(pointer.kind==='object'&&mode?.type==='move'){
+        const support=supportAt(e.clientX,e.clientY),p=support?M.position(s,support):floorPoint(e.clientX,e.clientY);
+        if(p)previewDrop(p.x+(support?0:pointer.offset.x),p.z+(support?0:pointer.offset.z),support);
+      }
+      else if(pointer.kind==='look'){camera.yaw=pointer.yaw-dx*.19/camera.zoom;camera.pitch=pointer.pitch+dy*.16/camera.zoom;updateCamera();}
       e.preventDefault();
     }
     function pointerUp(e){
       if(!pointer||pointer.id!==e.pointerId)return;suppress=pointer.moved;
-      if(pointer.moved&&mode?.type==='move'&&!mode.looking&&mode.candidate){const {x,z,support}=mode.candidate;place(x,z,support);}
+      if(pointer.kind==='object'&&mode?.type==='move'&&mode.candidate){
+        const {x,z,support}=mode.candidate;place(x,z,support);
+        // A rejected drop returns the crate to its last saved location.
+        if(mode){mode.candidate=null;app.querySelector('.c2-floor-target').hidden=true;update();}
+      }
       if(stage.hasPointerCapture(e.pointerId))stage.releasePointerCapture(e.pointerId);pointer=null;
     }
-    function cancelPointer(){pointer=null;suppress=true;if(mode)cancelMove();}
+    function cancelPointer(){const dragging=pointer?.kind==='object';pointer=null;suppress=true;if(dragging)cancelMove();}
     function keyDown(e){
       if((e.key==='Enter'||e.key===' ')&&e.target.dataset.object){e.preventDefault();select(e.target.dataset.object);return;}
       if(e.key==='Escape'){cancelMove();return;}
@@ -174,12 +193,16 @@
       if(a==='back'){dispose();onBack();return;}
       if(a==='reset-confirm'){showModal('2차시를 다시 시작할까요?',`<p>이 방의 상자 배치와 진행만 초기화합니다. 1차시 진행은 유지됩니다.</p>${button('초기화하고 시작','reset','primary')}`);return;}
       if(a==='reset'){s=M.fresh();standing=null;mode=null;selection=null;camera={yaw:-48,pitch:-12,zoom:1};robot={x:-120,z:-145};save();render();return;}
-      if(a==='controls'){showModal('조작 방법','<p>빈 공간을 끌거나 방향키로 시점을 돌립니다. 물건을 누르면 행동이 나타납니다.</p><p>옮기기를 선택한 뒤 물건을 끌어 놓거나 빈 바닥을 누르세요. 다른 물건 위에 놓을 수도 있습니다. 앞·뒤·왼쪽·오른쪽 버튼으로 위치를 조절하고 놓기를 눌러도 됩니다.</p><p>B-0에게 부탁할 때는 행동을 고르고 대상 물건을 직접 누릅니다. 원위치로는 시점과 배율만 되돌립니다.</p>');return;}
+      if(a==='controls'){showModal('조작 방법','<p>상자를 누른 채 끌면 바로 옮길 수 있습니다. 빈 공간을 끌면 방을 둘러봅니다. 짧게 누르면 물건의 행동이 나타납니다.</p><p>상자는 다른 상자 위에도 놓을 수 있습니다. 옮기기를 누르면 앞·뒤·왼쪽·오른쪽 버튼과 시점 돌리기 버튼을 사용할 수 있습니다. 위치를 조절한 뒤 놓기를 누르세요.</p><p>상자 위에서는 화면 아래의 내려가기를 누르세요. B-0에게 부탁할 때는 행동을 고르고 대상 물건을 누릅니다. 원위치로는 시점과 배율을 되돌립니다.</p>');return;}
       if(a==='hint'){s.hint=Math.min(4,s.hint+1);save();const hints=['','시선을 위아래로도 움직여 보세요.','발견한 통로에 닿으려면 무엇이 달라져야 할까요?','방 안의 물건으로 올라설 곳을 만들 수 있습니다.','넓은 상자를 창문 가까이 옮기고 작은 상자를 위에 놓으세요. B-0에게 아래 상자를 잡아 달라고 부탁한 뒤 올라서 보세요.'];showModal('생각거리',`<p>${hints[s.hint]}</p>${s.hint<4?button('조금 더 도움받기','hint'):''}`);return;}
       if(a==='help-b0'){if(M.finish(s)){save();ending();}return;}
       if(a==='summary'){showModal('2차시 끝','<p>소년과 B-0가 함께 창문을 넘어 통로에 도착했습니다.</p><p>다음 차시는 아직 준비 중입니다.</p>'+button('탐색 기록 보기','record'));return;}
       if(a==='record'){const moves=s.logs.filter(l=>l.action==='move').length;showModal('이번 방의 기록',`<p>물건 이동 ${moves}회 · 생각거리 ${s.hint}단계 이용</p><p>${s.ventOpen?'환기 덮개 뒤가 막혀 있는 것을 확인했습니다.':'환기 덮개를 열지 않고 탈출했습니다.'}</p><p>어떤 것을 직접 확인했고, B-0에게는 무엇을 부탁했나요?</p>`);return;}
-      if(s.phase!=='room'||busy)return;
+      if(s.phase!=='room')return;
+      if(a==='down'){
+        const id=selection;standing=null;cancelMove();camera.pitch=-12;updateCamera();if(id)select(id);return;
+      }
+      if(busy)return;
       if(a==='dismiss'){speech.hidden=true;return;}
       if(a==='home'){standing=null;cancelMove();camera={yaw:-48,pitch:-12,zoom:1};updateCamera();return;}
       if(a.startsWith('zoom-')){camera.zoom=Math.max(.65,Math.min(1.5,camera.zoom+(a==='zoom-in'?.15:-.15)));updateCamera();return;}
@@ -197,7 +220,6 @@
       if(a.startsWith('move-')){beginMove(a.slice(5));return;}
       if(a.startsWith('nudge-')){nudge(a.slice(6));return;}
       if(a==='drop'){if(mode?.candidate){const p=mode.candidate;place(p.x,p.z,p.support);}else say('student','놓을 위치를 먼저 지정해야겠어.');return;}
-      if(a==='down'){standing=null;camera.pitch=-12;updateCamera();select(selection||'wide');return;}
       if(a.startsWith('climb-')){const id=a.slice(6);if(s.boxes.small.on===id){say('student','위에 작은 상자가 놓여 있어. 올라설 상자를 다시 골라야겠어.');return;}standing=id;const p=M.position(s,id);camera.yaw=Math.atan2(105-p.x,400+p.z)*180/Math.PI;camera.pitch=8;updateCamera();select(id);say('student','올라서니 보이는 높이가 달라졌어.');return;}
       if(a==='open-window'){if(M.openWindow(s,standing)){update();say('student','열렸어. 너머로 넘어갈 수 있겠어.');select('window');}else reachMessage();return;}
       if(a==='exit'){if(M.exit(s,standing)){save();ending();}else reachMessage();}
