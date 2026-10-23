@@ -1,0 +1,16 @@
+{
+  "tool": "Built-in image_gen",
+  "reference": "assets/practice-room-v2.png",
+  "output": "assets/room-sides-v1.webp",
+  "size": [
+    1254,
+    1254
+  ],
+  "layout": {
+    "topLeft": "left wall",
+    "topRight": "right wall",
+    "bottomLeft": "back wall",
+    "bottomRight": "floor"
+  },
+  "prompt": "Use case: illustration-story. Asset: cubemap continuation atlas for an existing illustrated first-person escape-room game. Reference image is the EXISTING FRONT VIEW and style authority; do not redesign its art style. Create ONE large square texture atlas with EXACTLY 2 columns and 2 rows, four perfectly square equal panels, edge to edge without gutters, borders or labels. Each panel is a 90-degree field-of-view rectilinear cubemap view from the EXACT SAME eye position in the center of this small closed abandoned AI education laboratory, camera level, horizon at panel center, floor occupies bottom ~36%, ceiling top ~10%. Top-left panel: LEFT WALL view, looking 90 degrees left from reference front; battered blue-gray riveted wall panels, metal storage cabinets, stacked equipment boxes and quiet empty corner, matching overhead hanging cables, subtly reflective blue-gray square floor tiles. Top-right panel: RIGHT WALL view, looking 90 degrees right from reference; continuation of the reference right workbench around corner with stools, turned-off old monitors, one tall interior observation window, modest science diagram poster without words. Bottom-left panel: BACK WALL view, looking 180 degrees back; closed observation window with dark empty classroom beyond, low filing cabinets, a broad inactive wall screen, corners visibly connect to the storage wall and workbench wall. Bottom-right panel: FLOOR cubemap face, looking straight down from same position, ONLY the blue-gray scratched square floor grid and soft reflected ceiling light, no room horizon. Continuity: exactly same material, line weight, painterly detailed anime/game-background rendering, cool dusk colors, gentle light, panel scale, floor grid and aging as reference. Keep large uncluttered readable shapes. At panel left/right boundaries architecture meets neighboring walls without black gaps. No extra doors; the only exit remains in supplied front image. No robots, no people, no game UI, no text or numerals, no strong red alarm light, no horror gore. This adds unseen sides of the exact same room. High detail 2048x2048 or larger square."
+}

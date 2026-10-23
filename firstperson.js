@@ -65,10 +65,12 @@ function tone(ok=true) {
   try { audio ||= new (window.AudioContext||window.webkitAudioContext)();void audio.resume();const o=audio.createOscillator(),g=audio.createGain();o.frequency.value=ok?720:220;g.gain.setValueAtTime(.035,audio.currentTime);g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+.18);o.connect(g).connect(audio.destination);o.start();o.stop(audio.currentTime+.18); }catch{}
 }
 function dialogue(who,text) { return `<div class="speech ${who}"><b>${who==="robot"?"B-0":who==="thought"?"속마음":"나"}</b><p>${esc(text)}</p></div>`; }
+function openingHeader(){return `<header class="opening-header"><span>내 위치: 알 수 없는 곳</span>${btn("처음으로","restart","quiet")}</header>`;}
 function boot() {
   if(state.phase==="intro") opening();
   else {
     app.innerHTML=`<main class="awakening resume"><div class="face" role="img" aria-label="눈앞을 가득 채운 B-0의 얼굴">${portrait()}</div><div class="wake-controls"><p class="chapter-label">PROJECT B-0 · 깨어난 실습실</p>${dialogue("robot","다시 만났네요.")}<div class="resume-actions">${btn(state.phase==="escaped"?"탈출 기록 보기":"이어서 탐색","continue","primary")}${btn("처음부터","restart","secondary")}</div></div></main>`;
+    app.querySelector(".awakening").insertAdjacentHTML("afterbegin",openingHeader());
     performSpeech("robot","다시 만났네요.","friendly");
   }
 }
@@ -76,6 +78,7 @@ function opening() {
   token++;clearTimeout(timer);clearTimeout(speechTimer);target="";moving=false;
   app.innerHTML=`<main class="awakening${state.line===0?" waking":""}"><div class="face" role="img" aria-label="잠에서 깨어나 처음 마주한 B-0의 얼굴">${portrait()}</div><div class="eyelids" aria-hidden="true"></div><div class="wake-controls"><div class="intro-speech"></div>${btn("다음","next","next")}</div></main>`;
   renderIntro();
+  app.querySelector(".awakening").insertAdjacentHTML("afterbegin",openingHeader());
 }
 function renderIntro() {
   const line=intro[state.line];app.querySelector(".intro-speech").innerHTML=dialogue(...line);
@@ -83,19 +86,22 @@ function renderIntro() {
   performSpeech(...line,["attentive","friendly","attentive","thinking","attentive","thinking","concerned","concerned","thinking","friendly"][state.line]);
   save();
 }
-const places={door:{name:"출입문",origin:"38% 40%",scale:1.55},lock:{name:"도어락",origin:"55% 44%",scale:2},map:{name:"벽면 안내도",origin:"13% 34%",scale:1.7},robot:{name:"B-0",origin:"79% 75%",scale:1.35},terminal:{name:"단말기",origin:"65% 52%",scale:1.6}};
+const places={door:{name:"출입문",wall:0},lock:{name:"도어락",wall:0},map:{name:"벽면 안내도",wall:0},robot:{name:"B-0",wall:0},terminal:{name:"단말기",wall:0},cabinet:{name:"보관장",wall:-90},bench:{name:"실습대",wall:90},window:{name:"관찰창",wall:180}};
+const wallTarget=id=>btn("",`approach-${id}`,`target target-${id}`,`aria-label="${places[id].name} 살펴보기"`);
+function otherWalls(){return `<div class="room-wall side-wall wall-left" data-yaw="-90"><div class="wall-paint" role="img" aria-label="왼쪽 벽의 보관장과 장비 상자"></div>${wallTarget("cabinet")}</div><div class="room-wall side-wall wall-right" data-yaw="90"><div class="wall-paint" role="img" aria-label="오른쪽 벽을 따라 이어지는 실습대"></div>${wallTarget("bench")}</div><div class="room-wall side-wall wall-back" data-yaw="180"><div class="wall-paint" role="img" aria-label="뒤쪽 벽의 관찰창과 꺼진 화면"></div>${wallTarget("window")}</div><div class="room-wall wall-floor" aria-hidden="true"></div><div class="room-wall wall-ceiling" aria-hidden="true"></div>`;}
 function enterRoom(reveal=false) {
   token++;clearTimeout(timer);clearTimeout(speechTimer);target="";moving=false;
-  camera={x:0,y:0};drag=null;suppressClick=false;
-  app.innerHTML=`<main class="game${reveal?" revealing":""}"><header><h1>교육 실습실</h1>${btn("메뉴","menu","quiet")}</header><section class="scene" tabindex="0" aria-label="교육 실습실. 화면을 드래그하거나 방향키로 둘러보고 물건을 눌러 조사하세요."><div class="world${state.unlocked?" unlocked":""}"><div class="background" role="img" aria-label="기존 교육 실습실 배경"></div>
+  camera={x:0,y:-5};drag=null;suppressClick=false;
+  app.innerHTML=`<main class="game${reveal?" revealing":""}"><header><div class="location"><h1>내 위치: 교육 실습실</h1><span class="view-direction">출입문 쪽</span></div><nav aria-label="게임 메뉴">${btn("처음으로","restart","quiet")}${btn("메뉴","menu","quiet")}</nav></header><section class="scene" tabindex="0" aria-label="교육 실습실. 드래그하거나 방향키로 시선을 돌려 네 벽과 구석을 살펴보세요."><div class="room-rig"><div class="room-wall world${state.unlocked?" unlocked":""}" data-yaw="0"><div class="background" role="img" aria-label="기존 교육 실습실 배경"></div>
     <div class="door-art" aria-hidden="true"><div class="device door-left"></div><div class="device door-right"></div></div><span class="lock-led" aria-hidden="true"></span>
     <div class="device terminal-art" aria-hidden="true"></div><div class="device map-art" aria-hidden="true"></div><div class="device light-art" aria-hidden="true"></div>
     <div class="robot-sprite" role="img" aria-label="함께 있는 AI 로봇 B-0">${spriteFace()}</div>
-    <div class="targets">${Object.entries(places).map(([id,p])=>btn("",`approach-${id}`,`target target-${id}`,`aria-label="${p.name} 살펴보기"`)).join("")}</div></div>
-    <p class="look-hint">화면을 끌어 둘러보기 · 물건을 눌러 조사</p><div class="room-speech" aria-live="polite" hidden></div><div class="arrival sr-only" role="status"></div>
+    <div class="targets">${Object.keys(places).filter(id=>places[id].wall===0).map(wallTarget).join("")}</div></div>${otherWalls()}</div>
+    <p class="look-hint">끌어서 시선 돌리기 · 물건을 눌러 조사</p><div class="room-speech" aria-live="polite" hidden></div><div class="arrival sr-only" role="status"></div>
     </section><footer>${btn("소지품 <span class=\"item-count\">"+(state.noteTaken?"1":"0")+"</span>","inventory","secondary")}<span class="room-goal">${state.unlocked?"잠금 해제":state.guide?"비상 출입번호 찾기":""}</span></footer></main>`;
   if(state.phase==="escaped")ending();
   bindCamera();
+  panTo(camera.x,camera.y);
 }
 function revealRoom() {
   if(moving)return;
@@ -112,10 +118,14 @@ function approach(id) {
   target=id;inspect();
 }
 function panTo(x,y) {
-  const scene=app.querySelector(".scene"),world=app.querySelector(".world");if(!scene||!world)return;
-  const mx=Math.max(0,(world.offsetWidth-scene.clientWidth)/2),my=Math.max(0,(world.offsetHeight-scene.clientHeight)/2);
-  camera={x:Math.max(-mx,Math.min(mx,x)),y:Math.max(-my,Math.min(my,y))};
-  world.style.transform=`translate3d(${camera.x}px,${camera.y}px,0)`;
+  const scene=app.querySelector(".scene"),rig=app.querySelector(".room-rig");if(!scene||!rig)return;
+  // Rotate a camera at the center of six 3D faces. No image translation.
+  camera={x:((x+180)%360+360)%360-180,y:Math.max(-18,Math.min(18,y))};
+  const focal=Math.max(240,scene.clientHeight*.67);
+  scene.style.perspective=focal+"px";
+  rig.style.transform=`translateZ(${focal}px) rotateX(${camera.y}deg) rotateY(${camera.x}deg)`;
+  const sector=((Math.round(camera.x/90)%4)+4)%4;
+  app.querySelector(".view-direction").textContent=["출입문 쪽","실습대 쪽","관찰창 쪽","보관장 쪽"][sector];
 }
 function hideLookHint(){app.querySelector(".look-hint")?.classList.add("dismissed");}
 function bindCamera() {
@@ -129,19 +139,19 @@ function bindCamera() {
     const dx=e.clientX-drag.startX,dy=e.clientY-drag.startY;
     if(!drag.moved&&Math.hypot(dx,dy)<8)return;
     if(!drag.moved){drag.moved=true;scene.setPointerCapture(e.pointerId);scene.classList.add("dragging");hideLookHint();}
-    panTo(drag.x+dx,drag.y+dy);e.preventDefault();
+    panTo(drag.x-dx*.16,drag.y+dy*.10);e.preventDefault();
   });
   const finish=e=>{if(!drag||drag.id!==e.pointerId)return;suppressClick=drag.moved;drag=null;scene.classList.remove("dragging");if(scene.hasPointerCapture(e.pointerId))scene.releasePointerCapture(e.pointerId);};
   scene.addEventListener("pointerup",finish);scene.addEventListener("pointercancel",finish);scene.addEventListener("lostpointercapture",finish);
   scene.addEventListener("pointerleave",e=>{if(drag&&!drag.moved)finish(e);});
   scene.addEventListener("keydown",e=>{
-    const delta={ArrowLeft:[65,0],ArrowRight:[-65,0],ArrowUp:[0,55],ArrowDown:[0,-55]}[e.key];
+    const delta={ArrowLeft:[-15,0],ArrowRight:[15,0],ArrowUp:[0,6],ArrowDown:[0,-6]}[e.key];
     if(!delta||moving)return;e.preventDefault();hideLookHint();panTo(camera.x+delta[0],camera.y+delta[1]);
   });
   scene.addEventListener("focusin",e=>{
     if(!e.target.matches(".target:focus-visible"))return;
-    const r=e.target.getBoundingClientRect(),s=scene.getBoundingClientRect();
-    panTo(camera.x+s.left+s.width/2-r.left-r.width/2,camera.y+s.top+s.height/2-r.top-r.height/2);
+    const id=e.target.dataset.action?.replace("approach-","");
+    if(places[id])panTo(places[id].wall,-5);
   });
 }
 function modal(title,content,kind="") {
@@ -157,6 +167,9 @@ function inspect() {
   if(target==="map")guide();
   if(target==="robot")robot();
   if(target==="terminal")modal("꺼진 단말기",`<p>화면에 전원이 들어오지 않는다.</p>${dialogue("robot","이 단말기는 작동하지 않습니다.")}${btn("돌아가기","close","secondary wide")}`);
+  if(target==="cabinet")modal("보관장",`<p>낡은 장비 상자와 비어 있는 수납칸이다. 문을 여는 데 쓸 만한 물건은 보이지 않는다.</p>${btn("그만 살펴보기","close","secondary wide")}`);
+  if(target==="bench")modal("실습대",`<p>실습 도구가 남아 있다. 모니터와 장비의 전원은 모두 꺼져 있다.</p>${btn("그만 살펴보기","close","secondary wide")}`);
+  if(target==="window")modal("관찰창",`<p>두꺼운 유리 너머로 빈 교실이 보인다. 이쪽에는 나갈 수 있는 문이 없다.</p>${btn("그만 살펴보기","close","secondary wide")}`);
 }
 function door(tried=false) {
   if(state.unlocked){modal("잠금이 풀린 출입문",`<p>잠금 표시가 초록색이다. 손잡이를 돌릴 수 있다.</p>${btn("문을 열고 나가기","escape","primary wide")}`);return;}
@@ -197,7 +210,7 @@ function handle(a) {
   if(a==="close"){app.querySelector("dialog")?.close();return;}
   if(a==="next"){if(state.line<intro.length-1){state.line++;renderIntro();}else{state.phase="room";save("도입","B-0와 만나 탐색 시작");revealRoom();}return;}
   if(a==="continue"){if(state.phase==="escaped")enterRoom();else revealRoom();return;}
-  if(a==="restart"){modal("처음부터 다시 볼까요?",`<p>이번 버전의 진행만 새로 시작합니다.</p>${btn("처음부터 시작","new","primary wide")}`);return;}
+  if(a==="restart"){modal("처음으로 돌아갈까요?",`<p>이번 탐색의 쪽지와 도어락 진행을 초기화하고 B-0와 처음 만나는 장면으로 돌아갑니다.</p><div class="action-row">${btn("계속하기","close","secondary")}${btn("처음부터 시작","new","primary")}</div>`);return;}
   if(a==="new"){state=fresh();save();opening();return;}
   if(a.startsWith("approach-")){approach(a.slice(9));return;}
   if(a==="inspect"){inspect();return;}

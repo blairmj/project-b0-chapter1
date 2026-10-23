@@ -1,6 +1,6 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
 const elements=new Map();
-function el(k){if(!elements.has(k))elements.set(k,{innerHTML:'',textContent:'',value:'',hidden:false,style:{},dataset:{},offsetWidth:600,offsetHeight:700,clientWidth:400,clientHeight:600,handlers:{},addEventListener(k,f){this.handlers[k]=f},setPointerCapture(){},hasPointerCapture(){return false},querySelector(){return null},cloneNode(){return null},classList:{add(){},remove(){},contains(){return false}},select(){}});return elements.get(k);}
+function el(k){if(!elements.has(k))elements.set(k,{innerHTML:'',textContent:'',value:'',hidden:false,style:{},dataset:{},offsetWidth:600,offsetHeight:700,clientWidth:400,clientHeight:600,handlers:{},addEventListener(k,f){this.handlers[k]=f},setPointerCapture(){},hasPointerCapture(){return false},querySelector(){return null},cloneNode(){return null},classList:{add(){},remove(){},contains(){return false}},insertAdjacentHTML(){},select(){}});return elements.get(k);}
 const app={innerHTML:'',querySelector:k=>k==='dialog'?null:el(k),addEventListener(){},querySelectorAll:()=>[]};
 let storage=null;
 const ctx=vm.createContext({document:{querySelector:()=>app},localStorage:{getItem:()=>storage,setItem:(k,v)=>storage=v},setTimeout:f=>{f();return 1},clearTimeout(){},window:{addEventListener(){},matchMedia:()=>({matches:true})}});
@@ -37,8 +37,12 @@ run('state=fresh();state.phase="room";robot();handle("ask-storage");handle("open
 assert.equal(run('state.guide'),false);assert.equal(run('state.noteTaken'),true);
 console.log('PASS: face-first intro, no student avatar, guide mission, B-0 compartment, recoverable note pickup, keypad retry, exit, save, free exploration order');
 
-// Camera limits never reveal empty space, even after extreme pointer travel.
-run('panTo(9999,-9999)');assert.equal(run('camera.x'),100);assert.equal(run('camera.y'),-50);
+// Full-turn yaw wraps continuously; vertical look stays comfortable.
+run('panTo(380,-9999)');assert.equal(run('camera.x'),20);assert.equal(run('camera.y'),-18);
+run('panTo(-380,9999)');assert.equal(run('camera.x'),-20);assert.equal(run('camera.y'),18);
+assert.match(el('.room-rig').style.transform,/rotateY\(-20deg\)/);
+assert.match(app.innerHTML,/내 위치: 교육 실습실/);assert.match(app.innerHTML,/처음으로/);
+for(const wall of ['wall-left','wall-right','wall-back','wall-floor','wall-ceiling'])assert.ok(app.innerHTML.includes(wall));
 assert.doesNotMatch(app.innerHTML,/방 전체 보기/);
 console.log('PASS: bounded camera and removal of full-room navigation button');
 
@@ -48,6 +52,12 @@ function pointer(x,y){return {pointerId:1,isPrimary:true,button:0,clientX:x,clie
 scene.handlers.pointerdown(pointer(100,100));scene.handlers.pointermove(pointer(104,100));
 assert.equal(run('camera.x'),0);scene.handlers.pointerup(pointer(104,100));assert.equal(run('suppressClick'),false);
 scene.handlers.pointerdown(pointer(100,100));scene.handlers.pointermove(pointer(180,130));
-assert.equal(run('camera.x'),80);assert.equal(run('camera.y'),30);scene.handlers.pointerup(pointer(180,130));assert.equal(run('suppressClick'),true);
+assert.ok(Math.abs(run('camera.x')+12.8)<.00001);assert.equal(run('camera.y'),3);scene.handlers.pointerup(pointer(180,130));assert.equal(run('suppressClick'),true);
 scene.handlers.pointerdown(pointer(100,100));scene.handlers.pointercancel(pointer(100,100));assert.equal(run('drag'),null);
 console.log('PASS: click slop, mouse/touch pointer drag, click suppression, pointer cancellation');
+
+run('panTo(0,0)');for(let i=0;i<24;i++)scene.handlers.keydown({key:'ArrowRight',preventDefault(){}});assert.equal(run('camera.x'),0);
+for(const [id,title] of [['cabinet','보관장'],['bench','실습대'],['window','관찰창']]){run('approach('+JSON.stringify(id)+')');assert.equal(run('panel.title'),title)}
+run('handle("restart")');assert.equal(run('state.noteTaken'),true);assert.match(run('panel.content'),/계속하기/);
+run('handle("new")');assert.equal(run('state.phase'),'intro');assert.equal(run('state.noteTaken'),false);
+console.log('PASS: 360-degree keyboard turn, side-wall inspections, restart confirmation and reset');

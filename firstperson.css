@@ -60,3 +60,30 @@ body{display:flow-root}
 @keyframes room-focus{from{filter:blur(6px);opacity:.4}to{filter:none;opacity:1}}
 @keyframes show-room-ui{0%,70%{opacity:0}100%{opacity:1}}
 @media(prefers-reduced-motion:reduce){.eye,.speaking .live-mouth{animation:none}.world{will-change:auto}}
+
+/* Six illustrated faces form a room around the viewer. Rotation reveals new walls. */
+.game>header{position:relative;z-index:20;gap:6px}
+.location{min-width:0}.location h1{font-size:13px;white-space:nowrap}
+.view-direction{display:block;font-size:10px;color:#8da7bb;margin-top:3px}
+.game>header nav{display:flex;flex:none;gap:2px}.game>header .quiet{padding:9px 10px;font-size:12px}
+.opening-header{position:absolute;z-index:5;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:10px 18px;background:linear-gradient(#081624c9,transparent);font-size:11px;color:#d9e7f0}
+.scene{perspective:540px;perspective-origin:50% 50%}
+.room-rig{position:absolute;left:50%;top:50%;width:0;height:0;transform-style:preserve-3d;will-change:transform}
+.room-wall{position:absolute;left:-512px;top:-512px;width:1024px;height:1024px;backface-visibility:hidden;-webkit-backface-visibility:hidden;transform-origin:center;background:#293847}
+.world{inset:auto;left:-512px;top:-512px;width:1024px;height:1024px;transform:translateZ(-511.5px);will-change:auto}
+.wall-left{transform:rotateY(90deg) translateZ(-511.5px)}
+.wall-right{transform:rotateY(-90deg) translateZ(-511.5px)}
+.wall-back{transform:rotateY(180deg) translateZ(-511.5px)}
+.wall-paint{position:absolute;inset:0;background-image:url('./assets/room-sides-v1.webp');background-size:200% 200%;pointer-events:none}
+.wall-left .wall-paint{background-position:0 0}
+.wall-right .wall-paint{background-position:100% 0}
+.wall-back .wall-paint{background-position:0 100%}
+.wall-floor{transform:rotateX(90deg) translateZ(-511.5px);background:url('./assets/room-sides-v1.webp') 100% 100%/200% 200%}
+.wall-ceiling{transform:rotateX(-90deg) translateZ(-511.5px);background:repeating-linear-gradient(0deg,transparent 0 248px,#142433 249px 254px),repeating-linear-gradient(90deg,#283a49 0 248px,#142433 249px 254px)}
+.side-wall .target{z-index:5}
+.target-cabinet{left:13%;top:25%;width:70%;height:48%}
+.target-bench{left:9%;top:38%;width:82%;height:40%}
+.target-window{left:23%;top:19%;width:55%;height:42%}
+.revealing .wall-paint{animation:room-focus 2.2s ease-out both}
+.revealing .side-wall .target{visibility:hidden}
+@media(max-width:380px){.game>header{padding:8px 10px}.location h1{font-size:11px}.game>header .quiet{padding:8px;font-size:11px}}
