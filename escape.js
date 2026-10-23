@@ -46,7 +46,7 @@ const evidence = {
 };
 function cardArt(back = state.flipped) {
   if (back) return '<div class="paper card-back"><small>보관용 원본 · 삼각형</small><div class="symbol-pairs">△ <b>3</b></div><small>앞면 전사 기록과 대조할 것</small></div>';
-  return '<div class="paper"><small>전사 기록</small><div class="blurred-record"><span>△</span><span class="damaged-digit" aria-label="잉크가 번져 3과 8을 구별하기 어려운 숫자">3<i></i></span></div><small>잉크가 번져 숫자가 분명하지 않다.</small></div>';
+  return '<div class="paper"><small>전사 기록</small><div class="blurred-record"><span>△</span><span class="damaged-digit" role="img" aria-label="잉크가 번져 3과 8을 구별하기 어려운 숫자"><span aria-hidden="true">3<i></i></span></span></div><small>잉크가 번져 숫자가 분명하지 않다.</small></div>';
 }
 function title() {
   roomActive = false; moveToken++; clearTimeout(moveTimer); clearTimeout(talkTimer);
@@ -56,7 +56,7 @@ function enterRoom() {
   roomActive = true; moving = false; near = ""; moveToken++;
   app.innerHTML = `<main class="game"><header><div><small>PROJECT B-0 · 01</small><h1>기록 실습실</h1></div>${button("메뉴", "menu", "quiet")}</header>
     <section class="scene${state.unlocked ? " unlocked" : ""}" aria-label="실습실. 물건이나 바닥을 눌러 이동" tabindex="0"><div class="wall-plane"></div><div class="floor-plane"></div><div class="baseboard"></div>
-      ${Object.entries(locations).map(([key,v]) => `<button class="furniture ${key}" data-action="go-${key}" aria-label="${v.name}으로 이동">${v.art}</button>`).join("")}
+      ${Object.entries(locations).map(([key,v]) => `<button class="furniture ${key}" data-action="go-${key}" aria-label="${v.name} 쪽으로 이동">${v.art}</button>`).join("")}
       <div class="walk-marker" aria-hidden="true"></div><div class="student actor" role="img" aria-label="학생"></div><div class="robot actor" role="img" aria-label="B-0"><div class="robot-sprite"></div></div>
       <div class="near-action"></div><div class="arrival" role="status" aria-live="polite"></div>
       <div class="room-bubble" aria-live="polite" hidden></div>
@@ -128,7 +128,7 @@ function showCabinet() {
 function showCard() {
   collect("card");
   modal("책상 위 기록 카드", `${cardArt()}<p>${state.flipped ? "뒷면에는 번지지 않은 보관용 인쇄가 남아 있다." : "앞면에 잉크가 번졌다. 모서리가 살짝 들려 있다."}</p>
-    ${state.readByB0 ? `<aside class="b0-reading"><b>B-0의 해석</b><p>${state.corrected ? "원본에는 3이라고 적혀 있네. 앞면을 8로 잘못 읽었어." : "나는 8처럼 보여. 하지만 번진 부분 때문에 확실하지 않아."}</p></aside>` : ""}
+    ${state.readByB0 ? `<aside class="b0-reading"><b>B-0의 해석</b><p>${state.corrected ? "원본에는 3이라고 적혀 있네. 앞면을 8로 잘못 읽었어." : "앞면 숫자는 8처럼 보여. 하지만 번진 부분 때문에 확실하지 않아."}</p></aside>` : ""}
     <div class="detail-actions">${button(state.flipped ? "앞면 보기" : "카드 뒤집기", "flip", "secondary")}${button(state.readByB0 ? "B-0와 다시 읽기" : "B-0와 읽기", "read", "secondary")}</div>
     ${state.readByB0 && state.flipped && !state.corrected ? button("뒷면 원본을 B-0에게 보여 주기", "correct", "primary wide") : ""}`);
 }
