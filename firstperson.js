@@ -28,7 +28,7 @@ function load() {
 let state = load() || fresh(), target = "", moving = false, token = 0, timer, speechTimer, audio, lastFocus;
 let faceId=0, talkTimer, camera={x:0,y:0}, drag=null, suppressClick=false, roomView, walkFrame, zoom=1, pinch=null;
 let chapterTwo,chapterThree;
-function chapterUrl(number){const url=new URL(location.href);if(number===1)url.searchParams.delete('chapter');else url.searchParams.set('chapter',String(number));history.replaceState(null,'',url);}
+function chapterUrl(number){const url=new URL(location.href);if(number!==3)url.searchParams.delete('room');if(number===1)url.searchParams.delete('chapter');else url.searchParams.set('chapter',String(number));history.replaceState(null,'',url);}
 function enterChapterTwo(){
   roomView?.dispose();roomView=null;chapterTwo?.dispose();chapterThree?.dispose();chapterThree=null;
   token++;clearTimeout(timer);clearTimeout(speechTimer);clearTimeout(talkTimer);cancelAnimationFrame(walkFrame);moving=false;suppressClick=false;

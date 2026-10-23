@@ -1,5 +1,5 @@
 const assert=require('node:assert/strict');
-const M=require('../chapter3-model.js');
+const M=require('../chapter3-model.js'),Mirror=require('../mirror-model.js');
 for(const direction of [-1,1]){
   const s=M.fresh();s.phase='room';
   assert.equal(M.openExit(s),false);assert.equal(M.leave(s),false);
@@ -11,7 +11,7 @@ for(const direction of [-1,1]){
   assert.equal(M.leave(s),false,'must actually open the revealed door');
   assert.equal(M.openExit(s),true);assert.equal(M.leave(s),true);
   assert.equal(M.finish(s),false,'external gate needs its approval response');
-  assert.equal(M.request(s),true);assert.equal(M.finish(s),true);
+  assert.equal(M.request(s),true);assert.equal(M.finish(s),false);assert.equal(M.beginMirror(s),true);assert.equal(M.finish(s),false);s.mirror=Mirror.fresh();s.mirror.phase='split';Mirror.command(s.mirror,'triangle','hold');Mirror.setOwn(s.mirror,1);Mirror.join(s.mirror);Mirror.finish(s.mirror);assert.equal(M.finish(s),true);
   assert.equal(s.phase,'complete');assert.equal(M.restore(JSON.parse(JSON.stringify(s))).phase,'complete');
 }
 const s=M.fresh();s.phase='room';M.toggleOldDoor(s);
@@ -24,3 +24,5 @@ M.moveShelf(s,0);assert.equal(s.realDoorOpen,false,'cannot bury an open doorway 
 const damaged=M.restore({version:1,phase:'bad',shelfZ:Infinity,realDoorOpen:true,seen:{exit:true,bad:true},logs:new Array(110).fill({action:'inspect'})});
 assert.equal(damaged.phase,'intro');assert.equal(damaged.shelfZ,0);assert.equal(damaged.realDoorOpen,false);assert.equal(damaged.seen.bad,undefined);assert.equal(damaged.logs.length,100);
 console.log('PASS: independent exploration, both cabinet directions, solo/helper movement, no early exit disclosure, evidence comparison, gate and saved progress');
+
+const legacy=M.restore({version:1,phase:'complete',shelfZ:175,realDoorOpen:true,approval:'rejected'});assert.equal(M.beginMirror(legacy),true);assert.equal(legacy.shelfZ,175,'adding the mirror room preserves old office progress');

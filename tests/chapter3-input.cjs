@@ -1,10 +1,11 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const M=require('../chapter3-model.js');
-const nodes=new Map();function node(key){if(!nodes.has(key))nodes.set(key,{style:{},dataset:{},hidden:false,isConnected:true,clientWidth:616,clientHeight:500,innerHTML:'',textContent:'',classList:{toggle(){},add(){},remove(){}},setAttribute(k,v){this[k]=v;},listeners:{},addEventListener(k,f){this.listeners[k]=f;},removeEventListener(){},setPointerCapture(){},hasPointerCapture(){return true;},releasePointerCapture(){},getBoundingClientRect(){return {left:0,top:0,width:616,height:500};}});return nodes.get(key);}
+const nodes=new Map();function node(key){if(!nodes.has(key))nodes.set(key,{style:{},dataset:{},hidden:false,isConnected:true,clientWidth:616,clientHeight:500,innerHTML:'',textContent:'',classList:{toggle(){},add(){},remove(){}},querySelector:s=>node(key+s),querySelectorAll:()=>[],setAttribute(k,v){this[k]=v;},listeners:{},addEventListener(k,f){this.listeners[k]=f;},removeEventListener(){},setPointerCapture(){},hasPointerCapture(){return true;},releasePointerCapture(){},getBoundingClientRect(){return {left:0,top:0,width:616,height:500};}});return nodes.get(key);}
 let saved,back=0;const storage={getItem(){return null;},setItem(k,v){saved=v;}};
-const app={querySelector:s=>s==='.c3-modal'?null:node(s),addEventListener(){},removeEventListener(){}};
-let serial=0;const frames=new Map();const context={window:{B0RoomThree:M,addEventListener(){},removeEventListener(){}},sessionStorage:storage,localStorage:storage,matchMedia:()=>({matches:true}),performance:{now:()=>0},requestAnimationFrame(fn){frames.set(++serial,fn);return serial;},cancelAnimationFrame(n){frames.delete(n);},setTimeout:()=>0,clearTimeout(){}};
-const source=fs.readFileSync(require.resolve('../chapter3.js'),'utf8').replace('return {dispose};','return {act,select,down,move,up,state:()=>({s,camera,busy,mode})};');
+const app={querySelector:s=>['.c3-modal','.mr-modal'].includes(s)?null:node(s),addEventListener(){},removeEventListener(){}};
+let serial=0;const frames=new Map();const context={window:{B0RoomThree:M,B0Mirror:require('../mirror-model.js'),addEventListener(){},removeEventListener(){}},sessionStorage:storage,localStorage:storage,matchMedia:()=>({matches:true}),performance:{now:()=>0},requestAnimationFrame(fn){frames.set(++serial,fn);return serial;},cancelAnimationFrame(n){frames.delete(n);},setTimeout:()=>0,clearTimeout(){}};
+const source=fs.readFileSync(require.resolve('../chapter3.js'),'utf8').replace('return {dispose};','return {act,select,down,move,up,mirror:()=>mirrorView,state:()=>({s,camera,busy,mode})};');
+vm.runInNewContext(fs.readFileSync(require.resolve('../mirror-room.js'),'utf8').replace('return {dispose};','return {act,dispose};'),context);
 vm.runInNewContext(source,context);const game=context.window.startChapterThree({app,portrait:()=>'',onBack(){back++;},preview:true});
 const flush=()=>{while(frames.size){const [id,f]=frames.entries().next().value;frames.delete(id);f(1000);}};
 for(let i=0;i<6;i++)game.act('intro-next');game.act('talk-next');game.act('talk-next');
@@ -27,6 +28,6 @@ assert.equal(node('.c3-real-exit')['aria-hidden'],'false');
 game.select('exit');flush();game.act('open-exit');game.act('leave');
 assert.equal(game.state().s.phase,'gate');assert.equal(game.state().busy,true);
 game.act('talk-next');game.act('talk-next');game.act('talk-next');assert.equal(game.state().busy,false);assert.match(app.innerHTML,/외부 출입구/);
-game.act('request-approval');assert.equal(game.state().s.approval,'rejected');game.act('go-central');assert.match(app.innerHTML,/3차시 끝/);assert.doesNotMatch(app.innerHTML,/AXIOM|액시엄|엑시엄/);
+game.act('request-approval');assert.equal(game.state().s.approval,'rejected');game.act('go-central');assert.equal(game.state().s.phase,'mirror');assert.match(app.innerHTML,/mr-game/);const mirror=game.mirror();mirror.act('intro-next');mirror.act('intro-next');flush();for(let i=0;i<4;i++)mirror.act('intro-next');mirror.act('command-triangle-hold');flush();mirror.act('pull');flush();mirror.act('reunite');flush();mirror.act('leave');assert.match(app.innerHTML,/3차시 끝/);assert.doesNotMatch(app.innerHTML,/AXIOM|액시엄|엑시엄/);
 assert.equal(JSON.parse(saved).phase,'complete');game.act('back');assert.equal(back,1);
 console.log('PASS: corridor intro, factual B-0, direct drag vs orbit, home preserves placement, requested cooperation, revealed door, final approval and chapter return');

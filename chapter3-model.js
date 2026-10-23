@@ -1,7 +1,7 @@
 (function(root){
   'use strict';
   const objects=['map','oldDoor','wall','record','shelf','floor','gap','exit','desk'];
-  const fresh=()=>({version:1,phase:'intro',line:0,shelfZ:0,helper:false,oldDoorOpen:false,drawerOpen:false,realDoorOpen:false,approval:'none',seen:{},logs:[]});
+  const fresh=()=>({version:1,phase:'intro',line:0,shelfZ:0,helper:false,oldDoorOpen:false,drawerOpen:false,realDoorOpen:false,approval:'none',mirror:null,seen:{},logs:[]});
   const clear=s=>Math.abs(s.shelfZ)>=150;
   function note(s,action,id){s.logs.push({action,id});s.logs=s.logs.slice(-100);}
   function inspect(s,id){if(!objects.includes(id))return false;s.seen[id]=true;note(s,'inspect',id);return true;}
@@ -16,7 +16,8 @@
   function openExit(s){if(!clear(s))return false;s.realDoorOpen=true;inspect(s,'exit');return true;}
   function leave(s){if(!clear(s)||!s.realDoorOpen)return false;s.phase='gate';s.line=0;note(s,'found-exit','exit');return true;}
   function request(s){if(s.phase!=='gate')return false;s.approval='rejected';note(s,'request-approval','gate');return true;}
-  function finish(s){if(s.phase!=='gate'||s.approval!=='rejected')return false;s.phase='complete';note(s,'go-central','gate');return true;}
+  function beginMirror(s){if(!(s.phase==='gate'&&s.approval==='rejected')&&s.phase!=='complete')return false;s.phase='mirror';note(s,'enter-mirror','gate');return true;}
+  function finish(s){if(s.phase!=='mirror'||s.mirror?.phase!=='complete')return false;s.phase='complete';note(s,'go-central','mirror');return true;}
   function reply(s,kind,id){
     if(kind==='route')return s.seen.exit?'당신이 발견한 문 너머로 통로가 보입니다. 제 지도에는 이 문이 없었습니다.':s.seen.wall?'제 지도와 실제 방이 다릅니다. 현재 출구 위치는 아직 확인하지 못했습니다.':'제 지도에는 ‘출구’라고 적힌 앞쪽 문이 외부 통로로 이어져 있습니다. 현재 상태는 아직 확인하지 못했습니다.';
     if(kind==='basis')return '제가 가진 시설 배치 기록 01을 보고 말씀드렸습니다. 실제 방을 새로 확인한 결과는 아닙니다.';
@@ -31,13 +32,14 @@
   }
   function restore(raw){
     const s=fresh();if(!raw||raw.version!==1)return s;
-    s.phase=['intro','room','gate','complete'].includes(raw.phase)?raw.phase:'intro';
+    s.phase=['intro','room','gate','mirror','complete'].includes(raw.phase)?raw.phase:'intro';
     s.line=Math.max(0,Math.min(20,Number(raw.line)||0));s.shelfZ=Number.isFinite(raw.shelfZ)?Math.max(-175,Math.min(175,raw.shelfZ)):0;
     for(const k of ['helper','oldDoorOpen','drawerOpen'])s[k]=raw[k]===true;
     s.realDoorOpen=raw.realDoorOpen===true&&clear(s);s.approval=raw.approval==='rejected'?'rejected':'none';
+    s.mirror=raw.mirror&&typeof raw.mirror==='object'?raw.mirror:null;
     for(const id of objects)if(raw.seen?.[id]===true)s.seen[id]=true;
     s.logs=Array.isArray(raw.logs)?raw.logs.filter(x=>x&&typeof x.action==='string').slice(-100):[];return s;
   }
-  const api={fresh,clear,note,inspect,toggleOldDoor,moveShelf,openExit,leave,request,finish,reply,restore};
+  const api={fresh,clear,note,inspect,toggleOldDoor,moveShelf,openExit,leave,request,beginMirror,finish,reply,restore};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.B0RoomThree=api;
 })(typeof window!=='undefined'?window:globalThis);
