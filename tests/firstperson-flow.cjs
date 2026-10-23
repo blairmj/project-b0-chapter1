@@ -65,9 +65,9 @@ console.log('PASS: 360-degree keyboard turn, side-wall inspections, restart conf
 assert.match(run('portrait()'),/b0-body-v3.webp/);assert.doesNotMatch(run('portrait()'),/portrait-photo|portrait-character|b0-awakening/);
 console.log('PASS: shared transparent body source; no rectangular portrait layer');
 
-run('enterRoom();setZoom(999)');assert.equal(run('zoom'),1.8);
+run('state.phase="room";enterRoom();setZoom(999)');assert.equal(run('zoom'),1.8);
 run('setZoom(-999)');assert.equal(run('zoom'),.55);
-run('panTo(60,10);handle("view-home")');assert.equal(run('zoom'),1);assert.equal(run('camera.x'),0);assert.equal(run('camera.y'),-5);assert.equal(run('state.phase'),'intro');
+run('panTo(60,10);handle("view-home")');assert.equal(run('zoom'),1);assert.equal(run('camera.x'),0);assert.equal(run('camera.y'),-5);assert.equal(run('state.phase'),'room');
 assert.equal(el('.scene').style.perspective,'348px');
 run('setZoom(1.5)');assert.equal(el('.scene').style.perspective,'522px');
 const touch=(id,x)=>({...pointer(x,100),pointerId:id,pointerType:'touch',isPrimary:id===1});
@@ -85,3 +85,12 @@ run('handle("talk-password")');assert.doesNotMatch(run('panel.content'),/4732/);
 run('handle("talk-belongings");handle("ask-storage");handle("open-storage")');assert.equal(run('state.noteFound'),true);assert.match(run('panel.content'),/쪽지 받기/);
 run('handle("take-note");handle("talk-limits")');assert.match(run('panel.content'),/안을 확인하기 전/);assert.equal(run('state.noteTaken'),true);
 console.log('PASS: selectable questions, context-sensitive topics, no early password reveal, conversation-to-compartment flow');
+
+assert.doesNotMatch(run('JSON.stringify(intro)'),/실망하셨나요|먼저 출입구/);
+assert.match(run('JSON.stringify(intro)'),/궁금한 것이 있으면/);
+assert.doesNotMatch(run('openingHeader()'),/restart|처음으로/);
+run('state.phase="escaped";state.noteTaken=true;state.unlocked=true;ending(1)');assert.match(app.innerHTML,/corridor-b0 walking/);
+run('handle("epilogue-2")');assert.match(app.innerHTML,/corridor-b0 halted/);assert.match(app.innerHTML,/AXIOM/);
+run('handle("epilogue-3")');assert.match(app.innerHTML,/B-0\? 왜 그래\?/);assert.doesNotMatch(app.innerHTML,/data-action="epilogue-|data-action="restart"/);
+run('enterRoom(false,true);panTo(70,12);setZoom(1.6);handle("view-home")');assert.equal(run('state.phase'),'escaped');assert.equal(run('state.noteTaken'),true);assert.equal(run('state.unlocked'),true);assert.equal(run('camera.x'),0);assert.equal(run('zoom'),1);
+console.log('PASS: revised opening, visible B-0 halt, final unanswered question, home preserves completed progress');

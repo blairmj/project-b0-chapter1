@@ -12,9 +12,9 @@ const intro = [
   ["student", "여기서 어떻게 나가?"],
   ["robot", "저도 모릅니다. 나가는 길을 찾아보면 되지 않을까요?"],
   ["thought", "AI 로봇이라더니… 왜 그것도 모르는 거야?"],
-  ["robot", "제가 모른다고 해서 실망하셨나요?"],
+  ["robot", "제가 바로 답해 드리지 못했네요."],
   ["robot", "저는 아직 이곳의 출입 방법을 확인하지 못했습니다."],
-  ["robot", "먼저 출입구를 살펴볼까요?"]
+  ["robot", "저도 함께 살펴보겠습니다. 궁금한 것이 있으면 물어봐 주세요."]
 ];
 const fresh = () => ({ phase:"intro", line:0, guide:false, noteFound:false, noteTaken:false,
   unlocked:false, attempts:0, muted:false, logs:[] });
@@ -66,11 +66,11 @@ function tone(ok=true) {
   try { audio ||= new (window.AudioContext||window.webkitAudioContext)();void audio.resume();const o=audio.createOscillator(),g=audio.createGain();o.frequency.value=ok?720:220;g.gain.setValueAtTime(.035,audio.currentTime);g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+.18);o.connect(g).connect(audio.destination);o.start();o.stop(audio.currentTime+.18); }catch{}
 }
 function dialogue(who,text) { return `<div class="speech ${who}"><b>${who==="robot"?"B-0":who==="thought"?"속마음":"나"}</b><p>${esc(text)}</p></div>`; }
-function openingHeader(){return `<header class="opening-header"><span>내 위치: 알 수 없는 곳</span>${btn("처음으로","restart","quiet")}</header>`;}
+function openingHeader(){return `<header class="opening-header"><span>내 위치: 알 수 없는 곳</span>${btn("← 원위치로","view-home","quiet")}</header>`;}
 function boot() {
   if(state.phase==="intro") opening();
   else {
-    app.innerHTML=`<main class="awakening resume"><div class="face" role="img" aria-label="눈앞을 가득 채운 B-0의 얼굴">${portrait()}</div><div class="wake-controls"><p class="chapter-label">PROJECT B-0 · 깨어난 실습실</p>${dialogue("robot","다시 만났네요.")}<div class="resume-actions">${btn(state.phase==="escaped"?"탈출 기록 보기":"이어서 탐색","continue","primary")}${btn("처음부터","restart","secondary")}</div></div></main>`;
+    app.innerHTML=`<main class="awakening resume"><div class="face" role="img" aria-label="눈앞을 가득 채운 B-0의 얼굴">${portrait()}</div><div class="wake-controls"><p class="chapter-label">PROJECT B-0 · 깨어난 실습실</p>${dialogue("robot","다시 만났네요.")}<div class="resume-actions">${btn(state.phase==="escaped"?"탈출 기록 보기":"이어서 탐색","continue","primary")}</div></div></main>`;
     app.querySelector(".awakening").insertAdjacentHTML("afterbegin",openingHeader());
     performSpeech("robot","다시 만났네요.","friendly");
   }
@@ -95,8 +95,8 @@ function artifact(id){
   return `<div class="artifact-art art-${id}" aria-hidden="true"><svg viewBox="0 0 160 110">${drawing}</svg></div>${wallTarget(id)}`;
 }
 function otherWalls(){return `<div class="room-wall side-wall wall-left" data-yaw="-90">${wallTarget("cabinet")}${artifact("filebox")}</div><div class="room-wall side-wall wall-right" data-yaw="90">${wallTarget("bench")}${wallTarget("window")}${artifact("envelope")}</div>`;}
-function enterRoom(reveal=false) {
-  if(state.phase==="escaped"){ending();return;}
+function enterRoom(reveal=false,restoreView=false) {
+  if(state.phase==="escaped"&&!restoreView){ending();return;}
   roomView?.dispose();roomView=null;
   token++;clearTimeout(timer);clearTimeout(speechTimer);target="";moving=false;
   camera={x:0,y:-5};zoom=1;drag=null;pinch=null;touchPoints.clear();suppressClick=false;
@@ -110,6 +110,7 @@ function enterRoom(reveal=false) {
   const report=text=>{const el=app.querySelector(".render-error");if(el){el.textContent=text;el.hidden=false;}};
   try{roomView=createRoomPanorama(app.querySelector(".panorama-canvas"),report);}catch{report("방 화면을 시작하지 못했습니다. 페이지를 새로고침해 주세요.");}
 
+  if(state.phase==="escaped")roomView?.setDoorOpen(1);
   bindCamera();
   panTo(camera.x,camera.y);
 }
@@ -273,18 +274,23 @@ function walkIntoCorridor(){
 }
 function ending(line=0) {
   roomView?.dispose();roomView=null;moving=false;
-  const lines=[["student","너도 같이 가는 거지?"],["robot","네. 함께 출구를 찾아보겠습니다."],["system","교육 실습실 이탈 감지. B-0, 현재 위치를 유지하십시오."]];
-  const [who,text]=lines[line];
-  app.innerHTML=`<main class="game corridor-game"><header><h1>내 위치: 연구소 복도</h1>${btn("메뉴","menu","quiet")}</header><section class="corridor-scene" aria-label="교육 실습실을 나와 마주한 연구소 복도"><div class="corridor-view" role="img" aria-label="불빛과 여러 출입문이 이어지는 긴 연구소 복도"></div><div class="corridor-dialogue">${line===0?'<p class="corridor-caption">문턱을 넘어, 복도로 한 걸음.</p>':""}${who==="system"?`<div class="speech system"><b>AXIOM</b><p>${esc(text)}</p></div>`:dialogue(who,text)}${line<2?btn("다음","epilogue-"+(line+1),"next"):btn("처음부터 다시 보기","restart","secondary")}</div></section><footer><small>${line===2?"1차시 완료 · 다음 공간은 아직 제작 중입니다.":"B-0와 함께 실습실을 나왔다."}</small></footer></main>`;
+  const lines=[["student","너도 같이 가는 거지?"],["robot","네. 함께 출구를 찾아보겠습니다."],["system","교육 실습실 이탈 감지. B-0, 현재 위치를 유지하십시오."],["student","B-0? 왜 그래?"]];
+  const [who,text]=lines[line],halted=line>=2;
+  app.innerHTML=`<main class="game corridor-game"><header><h1>내 위치: 연구소 복도</h1><nav aria-label="게임 메뉴">${btn("← 원위치로","view-home","quiet")}${btn("메뉴","menu","quiet")}</nav></header><section class="corridor-scene" aria-label="교육 실습실을 나와 마주한 연구소 복도"><div class="corridor-view" role="img" aria-label="불빛과 여러 출입문이 이어지는 긴 연구소 복도"></div><div class="corridor-b0 ${halted?"halted":"walking"}" role="img" aria-label="${halted?"AXIOM의 명령을 듣고 걸음을 멈춘 B-0":"함께 복도를 걷는 B-0"}"><div class="robot-sprite live-body">${portrait()}</div></div>${who==="system"?`<div class="corridor-command speech system" role="status"><b>AXIOM</b><p>${esc(text)}</p></div>`:""}<div class="corridor-dialogue">${line===0?'<p class="corridor-caption">문턱을 넘어, 복도로 한 걸음.</p>':line===2?'<p class="corridor-caption">B-0가 걸음을 멈춘다.</p>':""}${who!=="system"?dialogue(who,text):""}${line<3?btn("다음","epilogue-"+(line+1),"next"):""}</div></section><footer><small>${line===3?"1차시 끝":"B-0와 함께 실습실을 나왔다."}</small></footer></main>`;
+  performSpeech(who,text,halted?"concerned":"friendly");
 }
-function menu() {modal("메뉴",`<p>진행은 이 기기에 자동 저장됩니다.</p><div class="options">${btn("계속 탐색","close","primary")}${btn(state.muted?"효과음 켜기":"효과음 끄기","sound","secondary")}${btn("막혔을 때 생각거리","hint","secondary")}${btn("수업 안내","teacher","secondary")}${btn("처음부터 다시 보기","restart","quiet")}</div>`);}
+function menu() {modal("메뉴",`<p>진행은 이 기기에 자동 저장됩니다.</p><div class="options">${btn("계속 탐색","close","primary")}${btn(state.muted?"효과음 켜기":"효과음 끄기","sound","secondary")}${btn("막혔을 때 생각거리","hint","secondary")}${btn("수업 안내","teacher","secondary")}${btn("진행 초기화","restart","quiet")}</div>`);}
 function handle(a) {
   if(a==="close"){app.querySelector("dialog")?.close();return;}
   if(a==="next"){if(state.line<intro.length-1){state.line++;renderIntro();}else{state.phase="room";save("도입","B-0와 만나 탐색 시작");revealRoom();}return;}
   if(a==="continue"){if(state.phase==="escaped")enterRoom();else revealRoom();return;}
-  if(a==="restart"){modal("처음으로 돌아갈까요?",`<p>이번 탐색의 쪽지와 도어락 진행을 초기화하고 B-0와 처음 만나는 장면으로 돌아갑니다.</p><div class="action-row">${btn("계속하기","close","secondary")}${btn("처음부터 시작","new","primary")}</div>`);return;}
-  if(a.startsWith("epilogue-")){const line=Number(a.slice(9));if(state.phase==="escaped"&&[1,2].includes(line))ending(line);return;}
-  if(a==="view-home"){panTo(0,-5);setZoom(1);return;}
+  if(a==="restart"){modal("진행을 초기화할까요?",`<p>이번 탐색의 쪽지와 도어락 진행을 초기화하고 B-0와 처음 만나는 장면으로 돌아갑니다.</p><div class="action-row">${btn("계속하기","close","secondary")}${btn("초기화하고 시작","new","primary")}</div>`);return;}
+  if(a.startsWith("epilogue-")){const line=Number(a.slice(9));if(state.phase==="escaped"&&[1,2,3].includes(line))ending(line);return;}
+  if(a==="view-home"){
+    if(state.phase==="intro"){opening();return;}
+    if(!app.querySelector(".scene"))enterRoom(false,true);
+    panTo(0,-5);setZoom(1);return;
+  }
   if(a.startsWith("zoom-")){setZoom(a==="zoom-reset"?1:zoom+(a==="zoom-in"?.15:-.15));return;}
   if(a==="new"){state=fresh();save();opening();return;}
   if(a.startsWith("approach-")){approach(a.slice(9));return;}

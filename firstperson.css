@@ -141,3 +141,14 @@ body{display:flow-root}
 .corridor-transition{position:absolute;inset:0;background:url('./assets/lab-corridor-v1.webp') center/cover no-repeat;opacity:0;z-index:35;pointer-events:none;transform-origin:50% 48%}.leaving-room{position:relative}.leaving-room .robot-anchor{opacity:0;transition:opacity .6s}.leaving-room>header,.leaving-room>footer,.leaving-room .look-hint{opacity:0;transition:opacity .6s}
 .corridor-game{position:relative}.corridor-scene{position:relative;flex:1;min-height:380px;overflow:clip}.corridor-view{position:absolute;inset:0;background:url('./assets/lab-corridor-v1.webp') center/cover no-repeat;transform:scale(1.1)}.corridor-dialogue{position:absolute;bottom:0;left:0;right:0;padding:24px 20px;display:flex;flex-direction:column;gap:14px;background:linear-gradient(transparent,#0b1b2ef0)}.corridor-dialogue .next{align-self:flex-end}.corridor-dialogue .speech{width:90%}.corridor-caption{font-size:12px;color:#d0dce2}.speech.system{margin:auto}.speech.system b{text-align:center;color:#e7c3a0}.speech.system p{background:#192634ee;border:1px solid #a68265;color:#f0ddc9;text-align:center}.corridor-game>footer{justify-content:center}.corridor-game>footer small{font-size:11px;color:#b5c8d6}
 @media(prefers-reduced-motion:reduce){.corridor-view{transform:none}}
+
+/* B-0 walks alongside the student, then stops completely at AXIOM's command. */
+.corridor-b0{position:absolute;right:8%;bottom:24%;width:32%;height:42%;pointer-events:none;filter:drop-shadow(0 9px 5px #0007)}
+.corridor-b0>.robot-sprite{inset:0;width:100%;height:100%;transform:none;background:none;filter:none}
+.corridor-b0.walking{animation:corridor-step .85s ease-in-out infinite alternate}
+.corridor-b0.halted,.corridor-b0.halted *{animation:none!important}.corridor-b0.halted .live-portrait{filter:saturate(.55) brightness(.85)}
+.corridor-command{position:absolute;top:23%;left:6%;right:6%;max-width:none;width:auto;z-index:3}
+.corridor-command p{background:#142330f5}.corridor-game .corridor-dialogue{z-index:4}
+.resume-actions:has(>button:only-child){grid-template-columns:1fr}
+@keyframes corridor-step{from{transform:translateY(-3px) rotate(-.6deg)}to{transform:translateY(3px) rotate(.6deg)}}
+@media(prefers-reduced-motion:reduce){.corridor-b0.walking{animation:none}}
