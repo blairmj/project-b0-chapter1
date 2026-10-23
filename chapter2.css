@@ -24,13 +24,17 @@
 .c2-window.open{background:#526c79 url('./assets/lab-corridor-v1.webp') center/cover}
 .c2-window.open .c2-window-glass{transform:rotateX(105deg);opacity:.35}
 .c2-window.open .c2-latch{transform:rotate(90deg)}
+.c2-fake-window{left:-72px;top:-110px;transform:rotateY(-90deg) translateZ(-296px);background:#69747a url('./assets/chapter2-metal-v1.webp') center/160px;box-shadow:0 0 0 3px #a3acb0,inset 0 0 0 7px #26333d}
+.c2-fake-window .c2-window-glass{background:linear-gradient(135deg,#abc6cdcc,#405c70ee);transform-origin:left}
+.c2-fake-window.open{background:#4a5661 url('./assets/chapter2-metal-v1.webp') center/160px;box-shadow:0 0 0 3px #a3acb0,inset 0 0 24px 8px #142431}
+.c2-fake-window.open .c2-window-glass{transform:rotateY(-100deg);opacity:1}
 .c2-vent{width:130px;height:116px;left:-65px;top:-43px;transform:rotateY(90deg) translateZ(-296px);background:#18232c;border:6px solid #364653;box-shadow:0 0 0 2px #8a969c}
 .c2-vent-inside{position:absolute;inset:5px;background:#46505a url('./assets/chapter2-metal-v1.webp') center/180px;box-shadow:inset 0 0 30px 12px #0009}
 .c2-vent-inside:after{content:'';position:absolute;inset:15px;background:repeating-linear-gradient(35deg,#687179 0 13px,#38434c 14px 17px);border:5px solid #29353f;box-shadow:inset 0 0 10px #000}
 .c2-vent-lid{position:absolute;inset:0;background:#687681 url('./assets/chapter2-metal-v1.webp') center/210px;padding:14px 8px;transform-origin:left;transition:transform .6s;backface-visibility:visible}
 .c2-vent-lid i{display:block;height:6px;background:#162631;box-shadow:0 1px 0 #bdc4c4;margin-bottom:8px}
 .c2-vent.open .c2-vent-lid{transform:rotateY(-110deg)}
-.c2-cube{position:absolute;transform-style:preserve-3d;touch-action:none;cursor:grab}
+.c2-cube{position:absolute;left:0;top:0;transform-style:preserve-3d;touch-action:none;cursor:grab}
 .c2-cube:active{cursor:grabbing}
 .c2-face{position:absolute;border:3px solid #202d36;background:#716e61 url('./assets/chapter2-metal-v1.webp') center/165px;box-sizing:border-box;backface-visibility:hidden;box-shadow:inset 0 0 0 2px #a5aa9b,inset 0 0 15px #26313b88}
 .c2-front,.c2-back{width:var(--w);height:var(--h)}
@@ -53,11 +57,13 @@
 .c2-cabinet-door{position:absolute;inset:0;transform:translateZ(32px);transform-origin:left;background:#596873 url('./assets/chapter2-metal-v1.webp') center/180px;border:4px solid #2e3c49;transition:transform .6s}
 .c2-cabinet-door:after{content:'';position:absolute;right:9px;top:55px;width:5px;height:25px;background:#1f2c37;border:1px solid #9da8ad}
 .c2-cabinet.open .c2-cabinet-door{transform:translateZ(32px) rotateY(-105deg)}
-.c2-robot{position:absolute;width:96px;height:156px;transform-style:preserve-3d;cursor:pointer;touch-action:none}
+.c2-robot{position:absolute;left:0;top:0;width:96px;height:156px;transform-style:preserve-3d;cursor:pointer;touch-action:none}
 .c2-robot>.robot-sprite{inset:0;width:100%;height:100%;aspect-ratio:auto;background:none!important;transform:none;filter:drop-shadow(0 5px 4px #08111e88)}
 .c2-robot.holding>.robot-sprite{background:url('./assets/b0-bracing-v1.webp') center/contain no-repeat!important;rotate:0deg}
 .c2-robot.holding .live-portrait{visibility:hidden}
 .c2-robot.holding .c2-support-arm{display:none}
+.c2-robot.boosting>.robot-sprite{background:url('./assets/b0-bracing-v1.webp') center/contain no-repeat!important;rotate:-8deg;transform-origin:50% 100%;transition:rotate .6s}
+.c2-robot.boosting .live-portrait{visibility:hidden}
 .c2-support-arm{position:absolute;width:46px;height:11px;right:-23px;top:94px;background:linear-gradient(#e5e0cf,#90978e);border:2px solid #263a47;border-radius:9px;transform:rotate(-12deg);box-shadow:18px 0 0 -2px #475e66}
 .c2-robot.walking .robot-sprite{animation:c2-step .32s alternate infinite}
 @keyframes c2-step{to{translate:0 -3px;rotate:2deg}}
@@ -85,6 +91,7 @@
 .c2-outside:after{content:'';position:absolute;inset:55% 0 0;pointer-events:none;background:linear-gradient(transparent,#0d1c29)}
 .c2-ending-b0{position:absolute;left:52%;bottom:-12%;width:42%;height:62%;transform:scale(.7);transition:transform 1s,bottom 1s}
 .c2-outside.together .c2-ending-b0{bottom:15%;transform:scale(1)}
+.c2-outside.pulling .c2-ending-b0{bottom:15%;transform:scale(1)}
 .c2-end-dialogue{position:absolute;bottom:22px;left:20px;right:20px;z-index:2;display:grid;gap:18px}
 .c2-ending{max-width:760px}.c2-ending>header h1{font-size:13px}
 @media(max-width:420px){.c2-game>header{padding:7px 9px}.c2-game>header h1{font-size:12px}.c2-actions{padding:8px 10px}.c2-actions button{font-size:11px;padding:7px 9px}.c2-game>footer{padding:6px 10px}.c2-game .quiet{padding:8px;font-size:11px}}

@@ -8,16 +8,18 @@ function node(key){
   if(!nodes.has(key))nodes.set(key,{style:{},dataset:{},hidden:false,isConnected:true,
     clientWidth:616,clientHeight:500,innerHTML:'',textContent:'',
     classList:{toggle(){},add(){},remove(){}},querySelector:s=>node(key+s),
-    addEventListener(){},removeEventListener(){},setPointerCapture(){},
+    listeners:{},addEventListener(type,fn){this.listeners[type]=fn;},removeEventListener(){},setPointerCapture(){},
     hasPointerCapture(){return true;},releasePointerCapture(){},
     getBoundingClientRect(){return {left:0,top:0,width:616,height:500};}});
   return nodes.get(key);
 }
 const app={querySelector:node,addEventListener(){},removeEventListener(){}};
 const storage={getItem(){return null;},setItem(){}};
+let frame=0;const frames=new Map();
 const context={window:{B0RoomTwo:M,addEventListener(){},removeEventListener(){}},
   sessionStorage:storage,localStorage:storage,document:{elementFromPoint(){return null;}},
-  matchMedia:()=>({matches:true}),setTimeout:()=>0,clearTimeout(){},cancelAnimationFrame(){}};
+  performance:{now:()=>0},requestAnimationFrame(fn){frames.set(++frame,fn);return frame;},
+  matchMedia:()=>({matches:true}),setTimeout:()=>0,clearTimeout(){},cancelAnimationFrame(id){frames.delete(id);}};
 const source=fs.readFileSync(require.resolve('../chapter2.js'),'utf8').replace('return {dispose};',
   'return {act,pointerDown,pointerMove,pointerUp,cancelPointer,select,state:()=>({s,camera,standing,mode,selection})};');
 vm.runInNewContext(source,context);
@@ -51,4 +53,16 @@ game.act('down');game.act('move-wide');game.act('move-view');
 drag('wide',180,390,225,395);
 assert.notEqual(game.state().camera.yaw,yaw,'explicit viewpoint control remains available');
 assert.deepEqual(game.state().s.boxes.wide,before);
-console.log('PASS: direct crate drag, empty-space orbit during move, no accidental drops, persistent descent, standing guard, viewpoint button');
+game.act('cancel');game.act('vent');assert.equal(game.state().s.ventOpen,true);
+// Finish a harmless tap to clear the previous drag's click suppression.
+game.pointerDown(event(200,200,'vent'));game.pointerUp(event(200,200,'vent'));
+node('.c2-stage').listeners.click({target:{closest:sel=>sel==='[data-object]'?{dataset:{object:'vent'}}:sel==='.c2-vent-lid'?{}:null}});
+assert.equal(game.state().s.ventOpen,false,'clicking the open lid closes it directly');
+game.act('fake-window');assert.equal(game.state().s.fakeWindowOpen,true);assert.equal(game.state().s.windowOpen,false);
+const state=game.state().s;M.move(state,'wide',105,-220);M.move(state,'small',105,-220,'wide');
+game.act('climb-small');game.act('boost');
+while(frames.size){const [id,fn]=frames.entries().next().value;frames.delete(id);fn(1200);}
+assert.equal(state.assisted,'small','B-0 lifts the student instead of grabbing a crate');
+assert.equal(M.reach(state,'small'),'ready');
+game.act('down');assert.equal(state.assisted,null);
+console.log('PASS: direct drag/orbit, persistent descent, open-lid close, fake window, animated lift and descent');
