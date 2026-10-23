@@ -10,21 +10,21 @@ const objects = {
   light: { name: "비상등", icon: "light", clue: "방을 밝히는 장치다. 출입문 잠금과는 연결되어 있지 않다." }
 };
 const intro = [
-  ["여기는… 내 방이 아닌데?", "교육 실습실이야. 나는 교육용 AI 로봇 B-0. 너도 방금 깨어났구나."],
-  ["문이 잠겼어. 나갈 수 있을까?", "문을 조작할 수는 있어. 하지만 어디에 연결된 장치인지는 함께 찾아야 해."],
-  ["그럼 내가 살펴보고, 네가 움직이는 거네.", "맞아. 어떤 장치에 무엇을 할지 알려줘. 실행한 뒤에는 결과도 같이 확인하자."],
-  ["좋아. 우선 방부터 둘러보자.", "빛나는 표시나 아래 조사 버튼을 눌러 봐. 찾은 내용은 단서함에 남겨 둘게."]
+  ["여기는… 내 방이 아닌데?", "", "student"],
+  ["", "나는 B-0. 이 실습실에서 같이 나가자.", "robot"],
+  ["문이 잠겨 있어. 어디부터 살펴보지?", "", "student"],
+  ["", "먼저 출입문을 눌러 살펴봐.", "robot"]
 ];
 function fresh() {
   return { phase: "intro", intro: 0, clues: [], power: false, lamp: false, verified: false, open: false,
     target: "", verb: "", tab: "explore", muted: false, hints: 0, attempts: 0, logs: [],
-    student: intro[0][0], robot: intro[0][1], reflection: 0 };
+    student: intro[0][0], robot: intro[0][1], speaker: "student", reflection: 0 };
 }
 function load() {
   try {
     const data = JSON.parse(localStorage.getItem(SAVE_KEY));
     if (!data || !["intro", "room", "clear"].includes(data.phase) || !Array.isArray(data.clues)) return null;
-    return { ...fresh(), ...data, clues: data.clues.filter(k => objects[k]), tab: "explore" };
+    return { ...fresh(), ...data, speaker: data.speaker || "robot", clues: data.clues.filter(k => objects[k]), tab: "explore" };
   } catch { return null; }
 }
 let saved = load();
@@ -64,8 +64,8 @@ function tone(freq = 650, length = .12) {
     o.connect(g).connect(audio.destination); o.start(); o.stop(audio.currentTime + length);
   } catch { /* Sound is optional. */ }
 }
-function say(student, robot, nextPose = "neutral") {
-  state.student = student; state.robot = robot; pose = nextPose;
+function say(student, robot, nextPose = "neutral", speaker = "robot") {
+  state.student = student; state.robot = robot; state.speaker = speaker; pose = nextPose;
 }
 function notify(text) {
   const el = app.querySelector(".system-notice");
@@ -88,7 +88,7 @@ function opening() {
 }
 function enterRoom() {
   screen = "game"; view = ""; selected = ""; pending = null; position = "home"; pose = "neutral";
-  app.innerHTML = `<main class="game-shell"><header class="game-header"><div><p class="brand">PROJECT <span>B-0</span><small>01 / 04</small></p><h1>교육 실습실</h1></div><div class="header-tools">${btn("소리", "sound", "small-button", 'aria-label="효과음 끄기"')}${btn("메뉴", "menu", "small-button")}</div><p class="objective"></p><ol class="progress" aria-label="진행 단계"><li>조사</li><li>지시</li><li>확인</li><li>탈출</li></ol></header>
+  app.innerHTML = `<main class="game-shell"><header class="game-header"><h1>1차시 · 교육 실습실</h1>${btn("메뉴", "menu", "small-button")}<p class="objective"></p></header>
   <section class="room" aria-label="교육 실습실 탐색"><div class="room-background"></div><div class="room-light"></div>
     <div class="door-layer device" aria-hidden="true"><div class="door-crop"><i class="device-art door-art left-leaf"></i><i class="device-art door-art right-leaf"></i></div><span class="lock-led"></span></div>
     <div class="terminal-layer device" aria-hidden="true"><i class="device-art terminal-art"></i><span class="terminal-screen"></span></div>
@@ -97,10 +97,10 @@ function enterRoom() {
     <div class="student-character" role="img" aria-label="회색 후드티를 입은 초등학생"></div>
     <div class="robot-character at-home" role="img" aria-label="B-0 대기 중"><div class="robot-sprite pose-neutral"><i class="digital-mouth"></i></div></div>
     <div class="hotspots">${Object.entries(objects).map(([key, o]) => btn(`<i></i><span>${o.name}</span>`, `inspect-${key}`, `hotspot hotspot-${key}`, `aria-label="${o.name} 조사"`)).join("")}</div>
-    <div class="room-caption"></div><div class="system-notice" role="status" aria-live="polite"></div>
+    <div class="system-notice" role="status" aria-live="polite"></div>
   </section><section class="dialogues" aria-label="학생과 B-0 대화" aria-live="polite"></section>
   <section class="controls" aria-label="플레이어 행동"></section>
-  <footer class="game-footer"><span>1차시 · 명확하게 지시하고 확인하기</span><span>자동 저장</span></footer></main>`;
+  </main>`;
   render();
 }
 function ready() { return ["door", "terminal", "map"].every(k => state.clues.includes(k)); }
@@ -139,7 +139,7 @@ function render() {
   const markup = `<div class="speech student-speech"><b>학생</b><p>${esc(state.student)}</p></div><div class="speech robot-speech"><b>B-0</b><p>${esc(state.robot)}</p></div>`;
   if (dialogue.innerHTML !== markup) {
     dialogue.innerHTML = markup;
-    clearTimeout(talkTimer); sprite.classList.add("talking");
+    clearTimeout(talkTimer); if (!studentSpeaking) sprite.classList.add("talking");
     talkTimer = setTimeout(() => sprite.classList.remove("talking"), 2400);
   }
   app.querySelector(".controls").innerHTML = controls();
@@ -183,14 +183,14 @@ function inspect(key) {
   else {
     const lines = {
       door:["문은 잠겼고, 옆에 빨간 표시가 있어.","문에서 나온 전선이 단말기로 이어져 있어. 단말기도 살펴보자."],
-      terminal:["전원을 켜면 출입문 잠금이 해제된다고 적혀 있어.","내가 전원을 켤 수 있어. 안내도에서도 장치의 연결을 확인해 보자."],
+      terminal:["전원을 켜면 출입문 잠금이 해제된다고 적혀 있어.","안내에 ‘전원을 켜면 문 잠금이 풀립니다’라고 적혀 있어. 내가 켜 줄게."],
       map:["단말기에서 출입문으로 화살표가 이어져 있어.","단말기 작동 → 잠금 확인 → 문 열기. 방의 장치가 연결되어 있네."],
       light:[state.lamp ? "비상등이 더 밝아졌지만, 문은 따로 움직이지 않네." : "비상등이 약하게 켜져 있어.","이건 방을 밝히는 장치야. 문을 열려면 다른 장치를 찾아야겠어."]
     };
     say(...lines[key], key === "map" ? "thinking" : "pointing");
   }
   save("조사", `${objects[key].name}: ${objects[key].clue}`); render();
-  if (first) { tone(760,.08); notify(`${objects[key].name} 단서 저장`); }
+  if (first) tone(760,.08);
 }
 async function execute() {
   if (!pending || busy) return;
@@ -232,10 +232,12 @@ function clearPanel() {
 function showModal(type) {
   returnFocus = document.activeElement?.dataset.action || "";
   let content;
-  if (type === "teacher") content = `<h2>1차시 · B-0와 첫 협력</h2><p>학습 목표: 방의 단서를 근거로 대상을 정하고 행동을 구체적으로 지시하기. AI가 실행한 결과를 직접 확인하기.</p><ol><li>도입 5분: 사람과 AI가 맡을 일 예상하기</li><li>탐색 10분: 장치 네 곳을 관찰하고 연결 관계 찾기</li><li>실습 15분: 지시 작성·실행·비교·수정하기</li><li>정리 10분: 탈출 기록과 자신의 지시 설명하기</li></ol><p>게임은 시간 제한 없이 진행됩니다. 40분 수업에는 짝 토의와 교사의 질문이 포함됩니다.</p><p>선택지를 해석하는 정해진 게임 규칙이며 실제 생성형 AI와 연결되어 있지 않습니다. 기록은 이 기기에만 저장됩니다.</p>`;
+  if (type === "teacher") content = `<h2>1차시 · B-0와 첫 협력</h2><p>학습 목표: 방의 단서를 근거로 대상을 정하고 행동을 구체적으로 지시하기. AI가 실행한 결과를 직접 확인하기.</p><ol><li>도입 5분: 사람과 AI가 맡을 일 예상하기</li><li>탐색 10분: 출입문과 단말기의 연결 찾기, 안내도와 비상등 자유 탐색</li><li>실습 15분: 지시 작성·실행·비교·수정하기</li><li>정리 10분: 탈출 기록과 자신의 지시 설명하기</li></ol><p>게임은 시간 제한 없이 진행됩니다. 40분 수업에는 짝 토의와 교사의 질문이 포함됩니다.</p><p>선택지를 해석하는 정해진 게임 규칙이며 실제 생성형 AI와 연결되어 있지 않습니다. 기록은 이 기기에만 저장됩니다.</p>`;
   else if (type === "new") content = `<h2>처음부터 시작할까요?</h2><p>이 기기에 저장된 이번 실습실 진행 기록이 새로 시작됩니다.</p>${btn("새 게임 시작", "start-new", "primary wide")}`;
+  else if (type === "hint") { state.hints++; save("힌트", hint()); content = '<h2>다음에는 무엇을 할까?</h2><p>' + hint() + '</p>'; }
+  else if (type === "clues") content = '<h2>찾은 단서</h2>' + (state.clues.map(k => '<h3>' + objects[k].name + '</h3><p>' + objects[k].clue + '</p>').join("") || '<p>아직 조사한 물건이 없어요.</p>');
   else if (type === "record") content = `<h2>나와 B-0의 학습 기록</h2><p>발견한 단서 ${state.clues.length}/4 · 실행 ${state.attempts}회 · 힌트 ${state.hints}회</p><ul class="log-list">${state.logs.slice(-25).map(l=>`<li><b>${esc(l.kind)}</b> ${esc(l.text)}</li>`).join("") || '<li>조사한 내용과 실행 결과가 여기에 남아요.</li>'}</ul>${btn("기록 파일 저장", "download", "primary wide")}`;
-  else content = `<h2>잠시 쉬어 가기</h2><p>진행은 이 기기에 자동으로 저장돼요.</p><div class="option-stack">${btn("게임 계속", "close", "primary")}${btn("수업 안내", "teacher", "secondary")}${btn("시작 화면으로", "home", "secondary")}</div>`;
+  else content = `<h2>잠시 쉬어 가기</h2><p>진행은 이 기기에 자동으로 저장돼요.</p><div class="option-stack">${btn("게임 계속", "close", "primary")}${btn("다음 행동 힌트", "hint", "secondary")}${btn("찾은 단서", "clues", "secondary")}${btn("학습 기록", "record", "secondary")}${btn(state.muted ? "효과음 켜기" : "효과음 끄기", "sound", "secondary")}${btn("수업 안내", "teacher", "secondary")}${btn("시작 화면으로", "home", "secondary")}</div>`;
   app.querySelector("dialog")?.remove();
   const dialog = document.createElement("dialog"); dialog.className = "modal";
   dialog.innerHTML = `${content}${btn("닫기", "close", "text-button close-modal")}`;
@@ -248,10 +250,10 @@ function download() {
 }
 function handle(action) {
   if (action === "close") { app.querySelector("dialog")?.close(); return; }
-  if (["teacher","record","menu"].includes(action)) { showModal(action); return; }
+  if (["teacher","record","menu","hint","clues"].includes(action)) { showModal(action); return; }
   if (action === "home") { save(); title(); return; }
   if (action === "download") { download(); return; }
-  if (action === "sound") { state.muted = !state.muted; render(); return; }
+  if (action === "sound") { state.muted = !state.muted; save(); showModal("menu"); return; }
   if (action === "new") { if (saved) showModal("new"); else handle("start-new"); return; }
   if (action === "start-new") { state = fresh(); turn++; save("시작","1차시 시작"); opening(); return; }
   if (action === "continue") { state = load() || fresh(); enterRoom(); return; }
@@ -259,12 +261,12 @@ function handle(action) {
   if (busy) return;
   if (action === "next") {
     state.intro++;
-    if (state.intro < intro.length) say(...intro[state.intro], "neutral");
-    else { state.phase = "room"; say("문을 열 방법을 찾아보자.","어느 장치부터 살펴볼까?", "pointing"); }
+    if (state.intro < intro.length) say(intro[state.intro][0], intro[state.intro][1], "neutral", intro[state.intro][2]);
+    else { state.phase = "room"; say("","먼저 출입문을 눌러 살펴봐.", "pointing"); }
   } else if (action.startsWith("inspect-") && state.phase === "room") { inspect(action.slice(8)); return; }
   else if (["explore","command","clues"].includes(action)) { state.tab=action; view=""; pending=null; }
-  else if (action === "hint") { state.hints++; view = view === "hint" ? "" : "hint"; save("힌트", hint()); }
-  else if (action === "vague") { say("저거 켜 줘.","단말기와 비상등 중 어느 것을 말하는 거야? 대상의 이름과 할 일을 알려줘.","thinking"); save("지시 수정","모호한 대상에 대해 B-0가 재질문함"); }
+  else if (action.startsWith("request-") && ready()) { request(action.slice(8)); }
+  else if (action === "vague") { view = "clarify"; say("저거 켜 줘.","단말기와 비상등 중 어느 것을 말하는 거야? 대상의 이름과 할 일을 알려줘.","thinking"); save("지시 수정","모호한 대상에 대해 B-0가 재질문함"); }
   else if (action === "edit") { view=""; pending=null; state.tab="command"; }
   else if (action === "execute") { void execute(); return; }
   else if (action.startsWith("verify-")) {
@@ -279,19 +281,5 @@ function handle(action) {
 app.addEventListener("click", event => {
   const button = event.target.closest("button[data-action]");
   if (button && !button.disabled) handle(button.dataset.action);
-});
-app.addEventListener("change", event => {
-  if (event.target.closest("#command-form")) { state[event.target.name] = event.target.value; save(); }
-});
-app.addEventListener("submit", event => {
-  if (event.target.id !== "command-form") return;
-  event.preventDefault();
-  const data = new FormData(event.target), target = data.get("target"), verb = data.get("verb");
-  if (!objects[target] || !["on","open","inspect"].includes(verb) || !ready()) return;
-  state.target=target; state.verb=verb;
-  const label = `${objects[target].name}: ${ {on:"전원을 켜기",open:"열기",inspect:"상태를 확인하기"}[verb]}`;
-  pending = {target,verb,label}; view="confirm";
-  say(`${objects[target].name}, ${ {on:"전원을 켜 줘.",open:"열어 줘.",inspect:"상태를 확인해 줘."}[verb]}`, `내가 이해한 건 ‘${label}’야. 맞으면 실행할게.`, "thinking");
-  save("지시",label); render();
 });
 title();

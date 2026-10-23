@@ -26,3 +26,39 @@ body{display:flow-root}
 @media(min-width:760px){.game-shell{height:calc(100dvh - 32px)}}
 @media(max-height:760px){.game-header{padding-top:8px}.game-header h1{font-size:18px}.progress{margin-top:0}.dialogues{min-height:100px}.speech p{font-size:12px}.controls{height:230px}.game-footer{display:none}.room{min-height:160px}}
 @media(max-height:760px) and (min-width:421px){.game-shell{max-width:420px}}
+
+/* Guided first lesson: one task, one speaker, contextual actions. */
+.game-header{padding:16px 20px;gap:10px;background:#132334;align-items:center}
+.game-header h1{font-size:12px;color:#a8bccc;font-weight:500;margin:0;letter-spacing:0}
+.game-header>.small-button{justify-self:end}
+.objective{font-size:18px;font-weight:700;color:#f0f7fc;line-height:1.45}
+.objective b{display:none}
+.room{flex:1;min-height:230px}
+.hotspot[hidden]{display:none}
+.hotspot:not(.suggested){opacity:.6}
+.hotspot:not(.suggested) i{width:13px;height:13px;box-shadow:none;border-width:1px}
+.hotspot:not(.suggested) i:after{width:3px;height:3px;left:4px;top:4px}
+.hotspot:not(.suggested) span{border-color:transparent;background:#112233a8;font-size:10px}
+.hotspot.suggested i{width:34px;height:34px;background:#72e6fa33;border:3px solid #e9fdff;box-shadow:0 0 0 6px #72e6fa25}
+.hotspot.suggested i:after{left:10px;top:10px}
+.hotspot.suggested span{font-size:13px;padding:6px 12px;border-color:#8eecff}
+.hotspot:disabled{opacity:.25}
+.dialogues{display:flex;min-height:100px;padding:12px 20px;border:0;background:#112031;align-items:center}
+.speech{width:88%;max-width:450px}
+.student-speech{margin-right:auto}.robot-speech{margin-left:auto}
+.speech b{margin-bottom:5px}.speech p{font-size:14px;line-height:1.55;padding:12px 14px}
+.controls{height:auto;flex:none;min-height:90px;max-height:43dvh;padding:8px 20px 22px;background:#112031;overflow:auto}
+.controls .wide{margin-top:0;min-height:50px}
+.controls .panel-eyebrow{margin-bottom:6px;letter-spacing:0}
+.controls .action-pair{margin-top:0}
+.controls h2{font-size:14px}
+.scene-prompt{font-size:14px;line-height:1.6;text-align:center;color:#abc1d2;padding:12px 0}
+.scene-prompt strong{color:#f0f8ff}
+.system-notice{top:50%;font-size:12px}
+@media(max-width:420px){.game-header{padding:12px 16px}.objective{font-size:17px}.dialogues{padding:10px 14px;min-height:100px}.controls{padding:8px 14px 18px}.speech p{font-size:13px}}
+@media(max-height:650px){.game-shell{height:auto;min-height:100dvh;overflow:visible}.room{flex:none;height:280px}.controls{max-height:none;overflow:visible}}
+
+/* Reserve action space so the room does not resize after each click. */
+.dialogues{height:112px;min-height:112px}
+.controls{height:190px;max-height:43dvh}
+@media(max-height:650px){.dialogues{height:auto}.controls{height:auto;max-height:none}}
