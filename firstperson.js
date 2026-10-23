@@ -26,7 +26,8 @@ function load() {
   } catch { return null; }
 }
 let state = load() || fresh(), target = "", moving = false, token = 0, timer, speechTimer, audio, lastFocus;
-let faceId=0, talkTimer, camera={x:0,y:0}, drag=null, suppressClick=false, roomView;
+let faceId=0, talkTimer, camera={x:0,y:0}, drag=null, suppressClick=false, roomView, zoom=1, pinch=null;
+const touchPoints=new Map();
 const reduced=()=>window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 // The illustration stays intact. Screen features are separate SVG animation layers.
 function portrait() {
@@ -87,19 +88,23 @@ function renderIntro() {
   performSpeech(...line,["attentive","friendly","attentive","thinking","attentive","thinking","concerned","concerned","thinking","friendly"][state.line]);
   save();
 }
-const places={door:{name:"출입문",wall:0},lock:{name:"도어락",wall:0},map:{name:"벽면 안내도",wall:0},robot:{name:"B-0",wall:0},terminal:{name:"단말기",wall:0},cabinet:{name:"보관장",wall:-90},bench:{name:"실습대",wall:90},window:{name:"관찰창",wall:90}};
+const places={door:{name:"출입문",wall:0},lock:{name:"도어락",wall:0},map:{name:"벽면 안내도",wall:0},robot:{name:"B-0",wall:0},terminal:{name:"단말기",wall:0},cabinet:{name:"보관장",wall:-90},bench:{name:"실습대",wall:90},window:{name:"관찰창",wall:90},filebox:{name:"낡은 서류함",wall:-90},envelope:{name:"접힌 봉투",wall:90}};
 const wallTarget=id=>btn("",`approach-${id}`,`target target-${id}`,`aria-label="${places[id].name} 살펴보기"`);
-function otherWalls(){return `<div class="room-wall side-wall wall-left" data-yaw="-90">${wallTarget("cabinet")}</div><div class="room-wall side-wall wall-right" data-yaw="90">${wallTarget("bench")}${wallTarget("window")}</div>`;}
+function artifact(id){
+  const drawing=id==="filebox"?'<path d="M12 35 43 14h91l14 25v57H12Z" fill="#5b686b" stroke="#263943" stroke-width="5"/><path d="M27 29h96v40H27Z" fill="#b6b6a4"/><path d="M12 44h136v52H12Z" fill="#6a787c" stroke="#34444b" stroke-width="4"/><rect x="55" y="59" width="51" height="21" rx="3" fill="#bcbdb2"/><path d="M68 68h24" stroke="#717d7c" stroke-width="4"/>':'<path d="M15 28 142 16l7 65L22 94Z" fill="#c9c0a5" stroke="#6c756c" stroke-width="4"/><path d="m16 29 68 31 59-43M23 92l42-39m38-2 44 28" fill="none" stroke="#898d7c" stroke-width="3"/>';
+  return `<div class="artifact-art art-${id}" aria-hidden="true"><svg viewBox="0 0 160 110">${drawing}</svg></div>${wallTarget(id)}`;
+}
+function otherWalls(){return `<div class="room-wall side-wall wall-left" data-yaw="-90">${wallTarget("cabinet")}${artifact("filebox")}</div><div class="room-wall side-wall wall-right" data-yaw="90">${wallTarget("bench")}${wallTarget("window")}${artifact("envelope")}</div>`;}
 function enterRoom(reveal=false) {
   roomView?.dispose();roomView=null;
   token++;clearTimeout(timer);clearTimeout(speechTimer);target="";moving=false;
-  camera={x:0,y:-5};drag=null;suppressClick=false;
-  app.innerHTML=`<main class="game${reveal?" revealing":""}"><header><div class="location"><h1>내 위치: 교육 실습실</h1><span class="view-direction">출입문 쪽</span></div><nav aria-label="게임 메뉴">${btn("처음으로","restart","quiet")}${btn("메뉴","menu","quiet")}</nav></header><section class="scene" tabindex="0" aria-label="교육 실습실. 드래그하거나 방향키로 시선을 돌려 네 벽과 구석을 살펴보세요."><canvas class="panorama-canvas" role="img" aria-label="벽과 바닥이 하나로 이어진 교육 실습실"></canvas><p class="render-error" hidden role="alert"></p><div class="room-rig"><div class="room-wall world${state.unlocked?" unlocked":""}" data-yaw="0">
+  camera={x:0,y:-5};zoom=1;drag=null;pinch=null;touchPoints.clear();suppressClick=false;
+  app.innerHTML=`<main class="game${reveal?" revealing":""}"><header><div class="location"><h1>내 위치: 교육 실습실</h1></div><nav aria-label="게임 메뉴">${btn("← 원위치로","view-home","quiet")}${btn("메뉴","menu","quiet")}</nav></header><section class="scene" tabindex="0" aria-label="교육 실습실. 드래그하거나 방향키로 시선을 돌려 네 벽과 구석을 살펴보세요."><canvas class="panorama-canvas" role="img" aria-label="벽과 바닥이 하나로 이어진 교육 실습실"></canvas><p class="render-error" hidden role="alert"></p><div class="room-rig"><div class="room-wall world${state.unlocked?" unlocked":""}" data-yaw="0">
     <div class="door-art" aria-hidden="true"><div class="device door-left"></div><div class="device door-right"></div></div><span class="lock-led" aria-hidden="true"></span>
     <div class="device terminal-art" aria-hidden="true"></div><div class="map-board" aria-hidden="true"><small>연구소 안내</small><strong>연구소 전체 지도</strong><div class="map-placeholder"><span>지도 준비 중</span></div><small>비상 출입 안내</small></div><div class="device light-art" aria-hidden="true"></div>
     <div class="targets">${Object.keys(places).filter(id=>places[id].wall===0&&id!=="robot").map(wallTarget).join("")}</div></div>${otherWalls()}<div class="robot-anchor"><div class="robot-sprite live-body" role="img" aria-label="함께 있는 AI 로봇 B-0">${portrait()}</div>${wallTarget("robot")}</div></div>
-    <p class="look-hint">끌어서 시선 돌리기 · 물건을 눌러 조사</p><div class="room-speech" aria-live="polite" hidden></div><div class="arrival sr-only" role="status"></div>
-    </section><footer>${btn("소지품 <span class=\"item-count\">"+(state.noteTaken?"1":"0")+"</span>","inventory","secondary")}<span class="room-goal">${state.unlocked?"잠금 해제":state.guide?"비상 출입번호 찾기":""}</span></footer></main>`;
+    <p class="look-hint">끌어서 둘러보기 · 휠/두 손가락으로 확대·축소</p><div class="room-speech" aria-live="polite" hidden></div><div class="arrival sr-only" role="status"></div>
+    </section><footer><div class="zoom-controls" role="group" aria-label="시야 확대 및 축소">${btn("−","zoom-out","zoom-button",'aria-label="축소: 더 넓게 보기"')}<output class="zoom-value" aria-label="확대 비율">100%</output>${btn("+","zoom-in","zoom-button",'aria-label="확대: 가까이 보기"')}${btn("↺","zoom-reset","zoom-button",'aria-label="기본 시야"')}</div>${btn("소지품 <span class=\"item-count\">"+(state.noteTaken?"1":"0")+"</span>","inventory","secondary")}</footer></main>`;
   if(state.phase==="escaped")ending();
   const report=text=>{const el=app.querySelector(".render-error");if(el){el.textContent=text;el.hidden=false;}};
   try{roomView=createRoomPanorama(app.querySelector(".panorama-canvas"),report);}catch{report("방 화면을 시작하지 못했습니다. 페이지를 새로고침해 주세요.");}
@@ -131,42 +136,59 @@ function panTo(x,y) {
   const scene=app.querySelector(".scene"),rig=app.querySelector(".room-rig");if(!scene||!rig)return;
   // The spherical background and object planes share one camera.
   camera={x:((x+180)%360+360)%360-180,y:Math.max(-18,Math.min(18,y))};
-  const focal=Math.max(240,scene.clientHeight*.67);
+  const focal=Math.min(scene.clientHeight*.58,scene.clientWidth*.9)*zoom;
   scene.style.perspective=focal+"px";
   rig.style.transform=`translateZ(${focal}px) rotateX(${camera.y}deg) rotateY(${camera.x}deg)`;
   scene.dataset.yaw=String(camera.x);scene.dataset.pitch=String(camera.y);
-  roomView?.view(camera.x,camera.y);
+  scene.dataset.zoom=String(zoom);
+  roomView?.view(camera.x,camera.y,focal);
   // Keep the existing character art facing the viewer instead of flattening it onto a wall.
   const robot=app.querySelector(".robot-anchor");
   if(robot)robot.style.transform=`translate3d(125px,230px,-470px) rotateY(${-camera.x}deg) rotateX(${-camera.y}deg)`;
-  const sector=((Math.round(camera.x/90)%4)+4)%4;
-  app.querySelector(".view-direction").textContent=["출입문 쪽","실습대·관찰창 쪽","뒤쪽 벽","보관장 쪽"][sector];
+
+}
+function setZoom(value){
+  if(moving)return;
+  zoom=Math.max(.55,Math.min(1.8,value));
+  panTo(camera.x,camera.y);
+  const label=app.querySelector(".zoom-value");if(label)label.textContent=Math.round(zoom*100)+"%";
+  const out=app.querySelector('[data-action="zoom-out"]'),inside=app.querySelector('[data-action="zoom-in"]');
+  if(out)out.disabled=zoom<=.55;if(inside)inside.disabled=zoom>=1.8;
 }
 function hideLookHint(){app.querySelector(".look-hint")?.classList.add("dismissed");}
 function bindCamera() {
   const scene=app.querySelector(".scene");
   scene.addEventListener("pointerdown",e=>{
-    if(moving||app.querySelector("dialog")||e.isPrimary===false||e.button!==0)return;
+    if(moving||app.querySelector("dialog")||e.button!==0)return;
+    if(e.pointerType==="touch"){
+      touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});scene.setPointerCapture(e.pointerId);
+      if(touchPoints.size===2){const [a,b]=[...touchPoints.values()];pinch={distance:Math.max(1,Math.hypot(a.x-b.x,a.y-b.y)),zoom};drag=null;suppressClick=true;e.preventDefault();return;}
+      if(touchPoints.size>2)return;
+    }else if(e.isPrimary===false)return;
     suppressClick=false;drag={id:e.pointerId,startX:e.clientX,startY:e.clientY,x:camera.x,y:camera.y,moved:false};
   });
   scene.addEventListener("pointermove",e=>{
+    if(touchPoints.has(e.pointerId))touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pinch){if(touchPoints.size>=2){const [a,b]=[...touchPoints.values()];setZoom(pinch.zoom*Math.hypot(a.x-b.x,a.y-b.y)/pinch.distance);hideLookHint();}e.preventDefault();return;}
     if(!drag||drag.id!==e.pointerId)return;
     const dx=e.clientX-drag.startX,dy=e.clientY-drag.startY;
     if(!drag.moved&&Math.hypot(dx,dy)<8)return;
     if(!drag.moved){drag.moved=true;scene.setPointerCapture(e.pointerId);scene.classList.add("dragging");hideLookHint();}
-    panTo(drag.x-dx*.16,drag.y+dy*.10);e.preventDefault();
+    panTo(drag.x-dx*.16/zoom,drag.y+dy*.10/zoom);e.preventDefault();
   });
-  const finish=e=>{if(!drag||drag.id!==e.pointerId)return;suppressClick=drag.moved;drag=null;scene.classList.remove("dragging");if(scene.hasPointerCapture(e.pointerId))scene.releasePointerCapture(e.pointerId);};
+  const finish=e=>{touchPoints.delete(e.pointerId);if(pinch){if(touchPoints.size===0)pinch=null;drag=null;suppressClick=true;scene.classList.remove("dragging");return;}if(!drag||drag.id!==e.pointerId)return;suppressClick=drag.moved;drag=null;scene.classList.remove("dragging");if(scene.hasPointerCapture(e.pointerId))scene.releasePointerCapture(e.pointerId);};
   scene.addEventListener("pointerup",finish);scene.addEventListener("pointercancel",finish);scene.addEventListener("lostpointercapture",finish);
   scene.addEventListener("pointerleave",e=>{if(drag&&!drag.moved)finish(e);});
+  scene.addEventListener("wheel",e=>{if(moving||app.querySelector("dialog"))return;e.preventDefault();const delta=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?scene.clientHeight:1);setZoom(zoom*Math.exp(-Math.max(-150,Math.min(150,delta))*.0015));hideLookHint();},{passive:false});
   scene.addEventListener("keydown",e=>{
+    if(["+","=","-","0"].includes(e.key)){e.preventDefault();setZoom(e.key==="0"?1:zoom+(e.key==="-"?-.15:.15));return;}
     const delta={ArrowLeft:[-15,0],ArrowRight:[15,0],ArrowUp:[0,6],ArrowDown:[0,-6]}[e.key];
     if(!delta||moving)return;e.preventDefault();hideLookHint();panTo(camera.x+delta[0],camera.y+delta[1]);
   });
   scene.addEventListener("focusin",e=>{
     if(!e.target.matches(".target:focus-visible"))return;
     const id=e.target.dataset.action?.replace("approach-","");
-    if(places[id])panTo(places[id].wall,-5);
+    if(places[id])panTo(id==="map"?-45:places[id].wall,-5);
   });
 }
 function modal(title,content,kind="") {
@@ -177,6 +199,8 @@ function modal(title,content,kind="") {
 }
 function inspect() {
   if(moving||!target)return;
+  if(target==="filebox")modal("낡은 서류함",`<div class="decoy-detail">${artifact("filebox")}</div><p>얇은 서류 몇 장이 들어 있다. 설레는 마음으로 꺼내 펼쳐 본다.</p><div class="notice-paper"><h3>실습 준비물</h3><p>연필 · 지우개 · 활동지</p></div><p>준비물 목록이다. 출입번호는 적혀 있지 않다.</p>${btn("서류를 돌려놓기","close","primary wide")}`);
+  if(target==="envelope")modal("접힌 봉투",`<div class="decoy-detail">${artifact("envelope")}</div><p>봉투 안에 종이가 들어 있다. 조심히 꺼내 본다.</p><div class="notice-paper"><h3>장비 청소 안내</h3><p>사용 후 부드러운 천으로 화면을 닦아 주세요.</p></div><p>장비 관리 안내였다. 비밀번호 쪽지는 아니다.</p>${btn("봉투를 내려놓기","close","primary wide")}`);
   if(target==="door")door();
   if(target==="lock")lock();
   if(target==="map")guide();
@@ -191,7 +215,7 @@ function door(tried=false) {
   modal("출입문",`<div class="door-detail" aria-hidden="true"><div class="device"></div></div><p>${tried?"손잡이를 돌려도 문이 열리지 않는다.":"닫힌 출입문이다. 옆에 숫자 도어락이 달려 있다."}</p>${tried?dialogue("robot","문 옆에 도어락이 있습니다."):""}<div class="action-row">${btn("손잡이 돌려보기","handle","secondary")}${btn("도어락 살펴보기","lock","primary")}</div>`);
 }
 function guide() {
-  state.guide=true;save("발견","벽면 안내도의 비상 출입 지침");app.querySelector(".room-goal").textContent=state.unlocked?"잠금 해제":"비상 출입번호 찾기";
+  state.guide=true;save("발견","벽면 안내도의 비상 출입 지침");
   modal("벽면 안내도",`<section class="map-preview"><h3>연구소 전체 지도</h3><div class="map-placeholder"><span>지도 준비 중</span><small>전체 지도는 추후 추가됩니다.</small></div></section><div class="notice-paper"><h3>비상 출입 안내</h3><p>출입 시스템 정지 시<br>관리용 쪽지의 비밀번호를 사용하십시오.</p></div>${dialogue("student","비밀번호가 적힌 쪽지가 있다는 거네.")}${btn("방으로 돌아가기","close","primary wide")}`);
 }
 function robot() {
@@ -214,7 +238,7 @@ function submitCode(value) {
   if(!/^\d{4}$/.test(code)){status.textContent="숫자 네 자리를 입력하십시오.";return;}
   state.attempts++;save("입력",code);
   if(code!=="4732"){tone(false);status.textContent="번호가 일치하지 않습니다.";app.querySelector("#code").select();return;}
-  state.unlocked=true;save("잠금 해제","4732 입력");tone();app.querySelector(".world").classList.add("unlocked");app.querySelector(".room-goal").textContent="잠금 해제";
+  state.unlocked=true;save("잠금 해제","4732 입력");tone();app.querySelector(".world").classList.add("unlocked");
   modal("잠금 해제",`<p>딸깍. 문 안쪽에서 걸쇠가 풀리는 소리가 난다.</p>${btn("손잡이를 돌려 문 열기","escape","primary wide")}`);
 }
 function ending() {
@@ -226,6 +250,8 @@ function handle(a) {
   if(a==="next"){if(state.line<intro.length-1){state.line++;renderIntro();}else{state.phase="room";save("도입","B-0와 만나 탐색 시작");revealRoom();}return;}
   if(a==="continue"){if(state.phase==="escaped")enterRoom();else revealRoom();return;}
   if(a==="restart"){modal("처음으로 돌아갈까요?",`<p>이번 탐색의 쪽지와 도어락 진행을 초기화하고 B-0와 처음 만나는 장면으로 돌아갑니다.</p><div class="action-row">${btn("계속하기","close","secondary")}${btn("처음부터 시작","new","primary")}</div>`);return;}
+  if(a==="view-home"){panTo(0,-5);setZoom(1);return;}
+  if(a.startsWith("zoom-")){setZoom(a==="zoom-reset"?1:zoom+(a==="zoom-in"?.15:-.15));return;}
   if(a==="new"){state=fresh();save();opening();return;}
   if(a.startsWith("approach-")){approach(a.slice(9));return;}
   if(a==="inspect"){inspect();return;}

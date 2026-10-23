@@ -41,7 +41,7 @@ console.log('PASS: face-first intro, no student avatar, guide mission, B-0 compa
 run('panTo(380,-9999)');assert.equal(run('camera.x'),20);assert.equal(run('camera.y'),-18);
 run('panTo(-380,9999)');assert.equal(run('camera.x'),-20);assert.equal(run('camera.y'),18);
 assert.match(el('.room-rig').style.transform,/rotateY\(-20deg\)/);
-assert.match(app.innerHTML,/내 위치: 교육 실습실/);assert.match(app.innerHTML,/처음으로/);
+assert.match(app.innerHTML,/내 위치: 교육 실습실/);assert.match(app.innerHTML,/원위치로/);assert.doesNotMatch(app.innerHTML,/view-direction|room-goal/);
 for(const wall of ['wall-left','wall-right'])assert.ok(app.innerHTML.includes(wall));
 assert.doesNotMatch(app.innerHTML,/방 전체 보기/);
 console.log('PASS: bounded camera and removal of full-room navigation button');
@@ -64,3 +64,15 @@ console.log('PASS: 360-degree keyboard turn, side-wall inspections, restart conf
 
 assert.match(run('portrait()'),/b0-body-v3.webp/);assert.doesNotMatch(run('portrait()'),/portrait-photo|portrait-character|b0-awakening/);
 console.log('PASS: shared transparent body source; no rectangular portrait layer');
+
+run('enterRoom();setZoom(999)');assert.equal(run('zoom'),1.8);
+run('setZoom(-999)');assert.equal(run('zoom'),.55);
+run('panTo(60,10);handle("view-home")');assert.equal(run('zoom'),1);assert.equal(run('camera.x'),0);assert.equal(run('camera.y'),-5);assert.equal(run('state.phase'),'intro');
+assert.equal(el('.scene').style.perspective,'348px');
+run('setZoom(1.5)');assert.equal(el('.scene').style.perspective,'522px');
+const touch=(id,x)=>({...pointer(x,100),pointerId:id,pointerType:'touch',isPrimary:id===1});
+run('setZoom(1);bindCamera()');scene.handlers.pointerdown(touch(1,100));scene.handlers.pointerdown(touch(2,200));scene.handlers.pointermove(touch(2,250));assert.equal(run('zoom'),1.5);
+scene.handlers.pointerup(touch(1,100));scene.handlers.pointerup(touch(2,250));assert.equal(run('pinch'),null);assert.equal(run('touchPoints.size'),0);assert.equal(run('suppressClick'),true);
+run('state=fresh();state.phase="room";approach("filebox")');assert.match(run('panel.content'),/준비물 목록/);assert.equal(run('state.noteFound'),false);
+run('approach("envelope")');assert.match(run('panel.content'),/장비 관리 안내/);assert.equal(run('state.noteTaken'),false);assert.equal(run('state.unlocked'),false);
+console.log('PASS: zoom limits, shared focal length, home view without progress reset, pinch cleanup, optional decoys');

@@ -30,14 +30,14 @@ function createRoomPanorama(canvas, report) {
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
   gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,1,1,0,gl.RGB,gl.UNSIGNED_BYTE,new Uint8Array([28,44,58]));
   const locations={resolution:gl.getUniformLocation(program,"resolution"),focal:gl.getUniformLocation(program,"focal"),angle:gl.getUniformLocation(program,"angle")};
-  let yaw=0,pitch=-5,dead=false,ready=false;
+  let yaw=0,pitch=-5,dead=false,ready=false,cameraFocal=240;
   const img=new Image();
-  function view(x,y){
-    if(dead||gl.isContextLost())return;yaw=x;pitch=y;
+  function view(x,y,f=cameraFocal){
+    if(dead||gl.isContextLost())return;yaw=x;pitch=y;cameraFocal=f;
     const ratio=Math.min(window.devicePixelRatio||1,2),w=Math.max(1,Math.round(canvas.clientWidth*ratio)),h=Math.max(1,Math.round(canvas.clientHeight*ratio));
     if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
     gl.viewport(0,0,w,h);gl.useProgram(program);
-    gl.uniform2f(locations.resolution,w,h);gl.uniform1f(locations.focal,Math.max(240,canvas.clientHeight*.67)*ratio);gl.uniform2f(locations.angle,yaw*Math.PI/180,pitch*Math.PI/180);
+    gl.uniform2f(locations.resolution,w,h);gl.uniform1f(locations.focal,cameraFocal*ratio);gl.uniform2f(locations.angle,yaw*Math.PI/180,pitch*Math.PI/180);
     gl.drawArrays(gl.TRIANGLES,0,6);
     if(ready)canvas.classList.add("ready");
   }
