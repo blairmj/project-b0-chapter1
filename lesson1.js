@@ -103,13 +103,23 @@ function enterRoom() {
   </main>`;
   render();
 }
-function ready() { return ["door", "terminal", "map"].every(k => state.clues.includes(k)); }
+function ready() { return ["door", "terminal"].every(k => state.clues.includes(k)); }
+function focusObject() {
+  if (state.phase !== "room" || busy || view === "confirm" || state.tab === "command") return "";
+  if (state.open || state.power) return "door";
+  if (!state.clues.includes("door")) return "door";
+  if (!state.clues.includes("terminal")) return "terminal";
+  return "";
+}
 function objective() {
-  if (state.open) return "열린 문으로 B-0와 함께 나가기";
-  if (state.verified) return "B-0에게 출입문을 열도록 지시하기";
-  if (state.power) return "출입문의 잠금 표시 확인하기";
-  if (ready()) return "B-0에게 대상과 행동을 알려 주기";
-  return "잠긴 출입문을 열 단서 찾기";
+  if (state.phase === "intro") return "B-0와 만나기";
+  if (state.phase === "clear") return "함께 탈출 성공!";
+  if (state.open) return "열린 문으로 나가기";
+  if (state.verified) return "B-0에게 문 열기를 부탁하기";
+  if (state.power) return "문 옆 잠금 표시 확인하기";
+  if (ready()) return "B-0에게 전원 켜기를 부탁하기";
+  if (state.clues.includes("door")) return "전선이 이어진 단말기 살펴보기";
+  return "출입문을 눌러 살펴보기";
 }
 function render() {
   if (screen !== "game") return;
@@ -123,20 +133,16 @@ function render() {
   const sprite = robot.querySelector(".robot-sprite");
   sprite.className = `robot-sprite pose-${pose}`;
   app.querySelector(".objective").innerHTML = `<b>목표</b> ${objective()}`;
-  const step = state.open ? 3 : state.power ? 2 : ready() ? 1 : 0;
-  app.querySelectorAll(".progress li").forEach((el, i) => { el.classList.toggle("done", i < step); el.classList.toggle("current", i === step); });
-  app.querySelector(".room-caption").textContent = state.open ? "출입문 열림 · 다음 구역: 데이터 복구실" : state.power ? "단말기 작동 중 · 문 옆 잠금 표시가 초록색" : "단말기 전원 꺼짐 · 출입문 잠김";
   app.querySelectorAll(".hotspot").forEach(el => {
     const key = el.dataset.action.slice(8);
-    el.disabled = busy || state.phase !== "room";
+    el.hidden = state.phase !== "room" || (!state.clues.includes("door") && key !== "door");
+    el.disabled = busy || state.phase !== "room" || view === "confirm" || state.tab === "command";
+    el.classList.toggle("suggested", key === focusObject());
     el.classList.toggle("found", state.clues.includes(key));
-    el.classList.toggle("selected", key === selected);
   });
-  const sound = app.querySelector('[data-action="sound"]');
-  sound.textContent = state.muted ? "소리 꺼짐" : "소리 켜짐";
-  sound.setAttribute("aria-label", state.muted ? "효과음 켜기" : "효과음 끄기");
   const dialogue = app.querySelector(".dialogues");
-  const markup = `<div class="speech student-speech"><b>학생</b><p>${esc(state.student)}</p></div><div class="speech robot-speech"><b>B-0</b><p>${esc(state.robot)}</p></div>`;
+  const studentSpeaking = state.speaker === "student";
+  const markup = '<div class="speech ' + (studentSpeaking ? 'student' : 'robot') + '-speech"><b>' + (studentSpeaking ? '학생' : 'B-0') + '</b><p>' + esc(studentSpeaking ? state.student : state.robot) + '</p></div>';
   if (dialogue.innerHTML !== markup) {
     dialogue.innerHTML = markup;
     clearTimeout(talkTimer); if (!studentSpeaking) sprite.classList.add("talking");
@@ -146,29 +152,38 @@ function render() {
   save();
 }
 function controls() {
-  if (state.phase === "intro") return `<p class="panel-eyebrow">낯선 곳에서의 첫 만남 · ${state.intro+1} / ${intro.length}</p>${btn(state.intro === intro.length-1 ? "방 둘러보기 시작" : "대화 계속 →", "next", "primary wide")}`;
+  if (state.phase === "intro") return btn(state.intro === intro.length-1 ? "출입문 살펴보러 가기" : "다음", "next", "primary wide");
   if (state.phase === "clear") return clearPanel();
-  if (busy) return `<div class="execution" role="status"><span class="activity-dot"></span><b>B-0가 지시를 실행하고 있어요.</b><p>어떤 장치가 달라지는지 살펴보세요.</p></div>`;
-  if (view === "confirm") return `<p class="panel-eyebrow">실행 전 · B-0가 이해한 내용</p><p class="readback">${esc(pending.label)}</p><div class="action-pair">${btn("맞아, 실행해", "execute", "primary")}${btn("지시 고치기", "edit", "secondary")}</div>`;
-  if (view === "verify") return `<p class="panel-eyebrow">결과 확인</p><h2>잠금이 풀렸다는 근거는?</h2><div class="option-stack">${btn("문 옆 잠금 표시가 초록색이다", "verify-lock", "secondary")}${btn("비상등이 더 밝아졌다", "verify-light", "secondary")}${btn("B-0가 성공했다고 말했다", "verify-word", "secondary")}</div>${btn("방을 다시 살펴보기", "explore", "text-button")}`;
-  const nav = `<nav class="action-tabs" aria-label="행동 선택">${btn("방 조사", "explore", state.tab === "explore" ? "active" : "", `aria-pressed="${state.tab === "explore"}"`)}${btn("B-0에게 지시", "command", state.tab === "command" ? "active" : "", `aria-pressed="${state.tab === "command"}"`)}${btn(`단서함 ${state.clues.length}/4`, "clues", state.tab === "clues" ? "active" : "", `aria-pressed="${state.tab === "clues"}"`)}</nav>`;
-  let body = "";
-  if (state.tab === "clues") body = `<div class="clue-list">${state.clues.length ? state.clues.map(k => `<article>${icon(objects[k].icon)}<div><h3>${objects[k].name}</h3><p>${objects[k].clue}</p></div></article>`).join("") : '<p>방의 물건을 조사하면 단서가 여기에 모입니다.</p>'}</div>`;
-  else if (state.tab === "command") body = commandPanel();
-  else body = `<div class="panel-heading"><h2>${state.power && !state.verified ? "문을 눌러 잠금 상태 확인" : "조사할 곳 선택"}</h2><span>${state.clues.length}/4 발견</span></div><div class="object-grid">${Object.entries(objects).map(([k,o]) => btn(`${icon(o.icon)}<span>${o.name}</span><small>${state.clues.includes(k) ? "✓ 조사함" : "조사"}</small>`, `inspect-${k}`, `object-button ${selected===k ? "chosen" : ""}`)).join("")}</div>${state.open ? btn("B-0와 함께 나가기 →", "exit", "primary wide") : ready() && !state.power ? btn("단서를 바탕으로 지시하기 →", "command", "primary wide") : ""}`;
-  return `${nav}${body}<div class="utility-row">${btn("힌트", "hint", "text-button")}${btn("학습 기록", "record", "text-button")}</div>${view === "hint" ? `<aside class="hint" role="status">${hint()}</aside>` : ""}`;
+  if (busy) return '<p class="scene-prompt" role="status">B-0가 움직이고 있어요. 장치의 변화를 살펴보세요.</p>';
+  if (view === "confirm") return '<p class="panel-eyebrow">이대로 실행할까요?</p><div class="action-pair">' + btn("맞아, 실행해", "execute", "primary") + btn("다시 고를게", "edit", "secondary") + '</div>';
+  if (view === "verify") return '<h2>잠금이 풀린 걸 어떻게 알 수 있을까?</h2><div class="option-stack">' + btn("문 옆 표시가 초록색으로 바뀌었어", "verify-lock", "secondary") + btn("B-0가 성공했다고 했으니까", "verify-word", "secondary") + '</div>';
+  if (state.open) return btn("B-0와 함께 나가기 →", "exit", "primary wide");
+  if (state.tab === "command" || state.verified) return commandPanel();
+  if (state.power) return '<p class="scene-prompt">방 안의 <strong>출입문</strong>을 눌러 확인하세요.</p>';
+  if (ready()) return btn("B-0에게 부탁하기", "command", "primary wide");
+  return '<p class="scene-prompt">방 안의 <strong>' + (state.clues.includes("door") ? "단말기" : "출입문") + '</strong>을 눌러 보세요.</p>';
 }
 function commandPanel() {
-  if (!ready()) return `<div class="guidance"><h2>먼저 지시할 근거를 찾아요.</h2><p>출입문 · 단말기 · 안내도를 살펴보세요. 아직 못 찾은 곳: ${["door","terminal","map"].filter(k=>!state.clues.includes(k)).map(k=>objects[k].name).join(", ")}</p>${btn("방 살펴보기", "explore", "secondary")}</div>`;
-  const verbs = { on:"전원을 켜 줘", open:"열어 줘", inspect:"상태를 확인해 줘" };
-  return `<form id="command-form"><div class="command-fields"><label><span>① 어떤 대상?</span><select name="target" aria-label="지시 대상" required><option value="">대상 선택</option>${["terminal","light","door"].map(k=>`<option value="${k}" ${state.target===k?'selected':''}>${objects[k].name}</option>`).join("")}</select></label><label><span>② 어떤 행동?</span><select name="verb" aria-label="지시 행동" required><option value="">행동 선택</option>${Object.entries(verbs).map(([k,v])=>`<option value="${k}" ${state.verb===k?'selected':''}>${v}</option>`).join("")}</select></label></div><button class="primary wide" type="submit">B-0에게 전달하기</button></form>${btn('“저거 켜 줘”라고만 말하면?', "vague", "text-button example")}`;
+  if (!ready()) return btn("방 살펴보기", "explore", "primary wide");
+  if (state.verified) return btn("“출입문을 열어 줘.”", "request-door", "primary wide");
+  return '<h2>B-0에게 뭐라고 말할까?</h2><div class="option-stack">' + btn("“단말기 전원을 켜 줘.”", "request-terminal", "secondary") + (view === "clarify" ? btn("“비상등 전원을 켜 줘.”", "request-light", "secondary") : btn("“저거 켜 줘.”", "vague", "secondary")) + '</div>';
 }
 function hint() {
-  if (state.open) return "문이 열렸어요. ‘방 조사’에서 B-0와 함께 나갈 수 있어요.";
-  if (state.verified) return "대상은 ‘출입문’, 행동은 ‘열어 줘’로 지시해 보세요.";
-  if (state.power) return "B-0의 말만 믿기 전에 출입문을 조사하고, 잠금 표시의 색을 확인해 보세요.";
-  if (!ready()) return "출입문, 단말기, 안내도에서 연결 관계를 찾아보세요. 비상등도 비교해 볼 수 있어요.";
-  return state.hints > 1 ? "‘단말기’에 ‘전원을 켜 줘’라고 전달해 보세요. 실행한 뒤 문 상태를 확인하세요." : "안내도에서 출입문으로 이어지는 장치는 무엇인가요? 대상과 행동을 따로 정해 보세요.";
+  if (state.open) return "아래 ‘B-0와 함께 나가기’를 누르세요.";
+  if (state.verified) return "B-0에게 ‘출입문을 열어 줘’라고 부탁하세요.";
+  if (state.power) return "출입문을 누르고 잠금 표시가 어떤 색으로 바뀌었는지 확인하세요.";
+  if (!state.clues.includes("door")) return "방 가운데 있는 출입문을 눌러 보세요.";
+  if (!ready()) return "문에서 나온 전선이 오른쪽 단말기로 이어져요. 단말기를 눌러 보세요.";
+  return "단말기 안내에 전원을 켜면 잠금이 풀린다고 적혀 있었어요. 장치 이름과 할 일을 알려 주세요.";
+}
+function request(target) {
+  if (!["door", "terminal", "light"].includes(target)) return;
+  const verb = target === "door" ? "open" : "on";
+  const label = target === "door" ? "출입문을 열기" : objects[target].name + " 전원을 켜기";
+  pending = {target, verb, label}; view = "confirm";
+  state.target = target; state.verb = verb;
+  say("", "‘" + label + "’. 내가 이해한 게 맞아?", "thinking");
+  save("지시", label);
 }
 function inspect(key) {
   if (!objects[key]) return;
