@@ -117,3 +117,12 @@ body{display:flow-root}
 .departure.body-retreat .face{inset:auto;left:0;top:0;margin:0;aspect-ratio:auto;animation:none;transform-origin:0 0;transform:none}
 .departure.body-retreat{background:none}
 .revealing .panorama-canvas{animation:room-focus 1.8s ease-out both}
+/* Large wall guide: deliberately empty until the full laboratory map is ready. */
+.map-board{position:absolute;left:-26%;top:18%;width:42%;height:40%;padding:22px;display:flex;flex-direction:column;gap:12px;color:#35434b;background:linear-gradient(115deg,#bdbdb1,#dedbcd 50%,#c3c2b4);border:10px solid #58656c;border-radius:4px;box-shadow:0 8px 12px #0007,inset 0 0 0 2px #8a918b;pointer-events:none}
+.map-board>small{font-size:15px;letter-spacing:2px}.map-board>strong{font-size:29px;font-weight:700}
+.map-placeholder{flex:1;min-height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;border:2px dashed #8e9997;background:#a7b4ad16;color:#677875}
+.map-board .map-placeholder{font-size:23px}
+.target-map{left:-26%;top:18%;width:42%;height:40%}
+.map-preview{padding:20px;background:#dad8cb;color:#35434b;border:6px solid #63727a;border-radius:5px;margin:10px 0 16px}
+.map-preview h3{margin:0 0 16px;font-size:20px}.map-preview .map-placeholder{min-height:200px}.map-preview .map-placeholder span{font-size:20px}.map-preview .map-placeholder small{font-size:12px}
+.revealing>header,.revealing>footer{animation-duration:1.8s}

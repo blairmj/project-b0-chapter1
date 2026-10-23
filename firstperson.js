@@ -2,6 +2,7 @@
 
 // Static, first-person chapter. B-0 owns the note but has not checked his compartment.
 const SAVE_KEY = "project-b0-firstperson-v4";
+const progressStore = typeof location !== "undefined" && location.pathname.endsWith("/preview-v2.html") ? sessionStorage : localStorage;
 const app = document.querySelector("#app");
 const intro = [
   ["student", "넌, 넌 누구야?"],
@@ -19,7 +20,7 @@ const fresh = () => ({ phase:"intro", line:0, guide:false, noteFound:false, note
   unlocked:false, attempts:0, muted:false, logs:[] });
 function load() {
   try {
-    const d = JSON.parse(localStorage.getItem(SAVE_KEY));
+    const d = JSON.parse(progressStore.getItem(SAVE_KEY));
     if (!d || !["intro","room","escaped"].includes(d.phase)) return null;
     return {...fresh(),...d,line:Math.max(0,Math.min(intro.length-1,Number(d.line)||0)),logs:Array.isArray(d.logs)?d.logs:[]};
   } catch { return null; }
@@ -58,7 +59,7 @@ function performSpeech(who,text,mood="attentive",scope=app) {
 }
 const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const btn = (s,a,c="",attrs="") => `<button type="button" data-action="${a}" class="${c}" ${attrs}>${s}</button>`;
-function save(kind,text) { if(kind)state.logs.push({kind,text,time:new Date().toISOString()});try{localStorage.setItem(SAVE_KEY,JSON.stringify(state));}catch{} }
+function save(kind,text) { if(kind)state.logs.push({kind,text,time:new Date().toISOString()});try{progressStore.setItem(SAVE_KEY,JSON.stringify(state));}catch{} }
 function tone(ok=true) {
   if(state.muted)return;
   try { audio ||= new (window.AudioContext||window.webkitAudioContext)();void audio.resume();const o=audio.createOscillator(),g=audio.createGain();o.frequency.value=ok?720:220;g.gain.setValueAtTime(.035,audio.currentTime);g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+.18);o.connect(g).connect(audio.destination);o.start();o.stop(audio.currentTime+.18); }catch{}
@@ -95,7 +96,7 @@ function enterRoom(reveal=false) {
   camera={x:0,y:-5};drag=null;suppressClick=false;
   app.innerHTML=`<main class="game${reveal?" revealing":""}"><header><div class="location"><h1>내 위치: 교육 실습실</h1><span class="view-direction">출입문 쪽</span></div><nav aria-label="게임 메뉴">${btn("처음으로","restart","quiet")}${btn("메뉴","menu","quiet")}</nav></header><section class="scene" tabindex="0" aria-label="교육 실습실. 드래그하거나 방향키로 시선을 돌려 네 벽과 구석을 살펴보세요."><canvas class="panorama-canvas" role="img" aria-label="벽과 바닥이 하나로 이어진 교육 실습실"></canvas><p class="render-error" hidden role="alert"></p><div class="room-rig"><div class="room-wall world${state.unlocked?" unlocked":""}" data-yaw="0">
     <div class="door-art" aria-hidden="true"><div class="device door-left"></div><div class="device door-right"></div></div><span class="lock-led" aria-hidden="true"></span>
-    <div class="device terminal-art" aria-hidden="true"></div><div class="device map-art" aria-hidden="true"></div><div class="device light-art" aria-hidden="true"></div>
+    <div class="device terminal-art" aria-hidden="true"></div><div class="map-board" aria-hidden="true"><small>연구소 안내</small><strong>연구소 전체 지도</strong><div class="map-placeholder"><span>지도 준비 중</span></div><small>비상 출입 안내</small></div><div class="device light-art" aria-hidden="true"></div>
     <div class="targets">${Object.keys(places).filter(id=>places[id].wall===0&&id!=="robot").map(wallTarget).join("")}</div></div>${otherWalls()}<div class="robot-anchor"><div class="robot-sprite live-body" role="img" aria-label="함께 있는 AI 로봇 B-0">${portrait()}</div>${wallTarget("robot")}</div></div>
     <p class="look-hint">끌어서 시선 돌리기 · 물건을 눌러 조사</p><div class="room-speech" aria-live="polite" hidden></div><div class="arrival sr-only" role="status"></div>
     </section><footer>${btn("소지품 <span class=\"item-count\">"+(state.noteTaken?"1":"0")+"</span>","inventory","secondary")}<span class="room-goal">${state.unlocked?"잠금 해제":state.guide?"비상 출입번호 찾기":""}</span></footer></main>`;
@@ -191,7 +192,7 @@ function door(tried=false) {
 }
 function guide() {
   state.guide=true;save("발견","벽면 안내도의 비상 출입 지침");app.querySelector(".room-goal").textContent=state.unlocked?"잠금 해제":"비상 출입번호 찾기";
-  modal("벽면 안내도",`<div class="map-detail" role="img" aria-label="기존 벽면 안내도 확대"><div class="device"></div></div><div class="notice-paper"><h3>비상 출입 안내</h3><p>출입 시스템 정지 시<br>관리용 쪽지의 비밀번호를 사용하십시오.</p></div>${dialogue("student","비밀번호가 적힌 쪽지가 있다는 거네.")}${btn("방으로 돌아가기","close","primary wide")}`);
+  modal("벽면 안내도",`<section class="map-preview"><h3>연구소 전체 지도</h3><div class="map-placeholder"><span>지도 준비 중</span><small>전체 지도는 추후 추가됩니다.</small></div></section><div class="notice-paper"><h3>비상 출입 안내</h3><p>출입 시스템 정지 시<br>관리용 쪽지의 비밀번호를 사용하십시오.</p></div>${dialogue("student","비밀번호가 적힌 쪽지가 있다는 거네.")}${btn("방으로 돌아가기","close","primary wide")}`);
 }
 function robot() {
   const art=`<div class="robot-detail${state.noteFound&&!state.noteTaken?" found":""}" role="img" aria-label="B-0와 가슴 아래 보관함"><div class="robot-sprite">${state.noteFound&&!state.noteTaken?"":spriteFace()}</div></div>`;
