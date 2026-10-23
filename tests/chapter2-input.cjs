@@ -21,7 +21,7 @@ const context={window:{B0RoomTwo:M,addEventListener(){},removeEventListener(){}}
   performance:{now:()=>clock},requestAnimationFrame(fn){frames.set(++frame,fn);return frame;},
   matchMedia:()=>({matches:reduceMotion}),setTimeout:()=>0,clearTimeout(){},cancelAnimationFrame(id){frames.delete(id);}};
 const source=fs.readFileSync(require.resolve('../chapter2.js'),'utf8').replace('return {dispose};',
-  'return {act,pointerDown,pointerMove,pointerUp,cancelPointer,select,rescuePose,state:()=>({s,camera,standing,mode,selection,view:view(),travelling})};');
+  'return {act,pointerDown,pointerMove,pointerUp,cancelPointer,select,rescuePose,armBend,state:()=>({s,camera,standing,mode,selection,view:view(),travelling})};');
 vm.runInNewContext(source,context);
 const game=context.window.startChapterTwo({app,portrait:()=>'',onBack(){},preview:true});
 function event(x,y,object){return {pointerId:1,button:0,clientX:x,clientY:y,preventDefault(){},
@@ -92,6 +92,11 @@ assert.equal(state.phase,'complete');assert.ok(app.innerHTML.includes('c2-outsid
 assert.equal(node('.c2-stage').dataset.handContact,'held','first-person hand stays attached through the pull');
 assert.equal(node('.c2-player-grip').hidden,false);
 assert.ok(Number.isFinite(parseFloat(node('.c2-player-grip').style.left)),'hand anchor projects to finite screen coordinates');
+assert.ok(Number(node('.c2-stage').dataset.gripWidth)<=616*.30,'clasp has a strict close-up size limit');
+assert.equal(node('.c2-stage').dataset.elbowFold,1,'elbow folds fully while bringing B-0 over the sill');
+const shoulder={x:60,y:520},wrist={x:300,y:200},straight=game.armBend(shoulder,wrist,0),bent=game.armBend(shoulder,wrist,1);
+assert.ok(bent.x<straight.x-50,'elbow bends outward instead of stretching a straight arm');
+assert.ok(Number.isFinite(bent.y));
 let lastLift=-1,lastApproach=-1;
 for(let i=0;i<=100;i++){const pose=game.rescuePose(i/100);assert.ok(pose.lift>=lastLift&&pose.approach>=lastApproach);lastLift=pose.lift;lastApproach=pose.approach;}
 assert.equal(game.rescuePose(.1).phase,'reach');assert.equal(game.rescuePose(.1).lift,0,'B-0 stays on the floor until the boy reaches him');

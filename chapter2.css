@@ -76,6 +76,10 @@
 .c2-player-grip{position:absolute;width:0;height:0;z-index:3;pointer-events:none;transform-origin:0 0}
 .c2-player-arm{position:absolute;box-sizing:border-box;border-style:solid;border-color:transparent;border-width:0;border-image-source:url('./assets/player-rescue-reach-v1.webp');border-image-slice:800 0 200 0 fill;border-image-repeat:stretch;pointer-events:none}
 .c2-player-grip.clasped .c2-player-arm{border-image-source:url('./assets/player-rescue-grip-v1.webp')}
+.c2-player-upper-arm{position:absolute;z-index:3;box-sizing:border-box;border-style:solid;border-color:transparent;border-width:0;border-image-source:url('./assets/player-rescue-reach-v1.webp');border-image-slice:800 0 200 0 fill;border-image-repeat:stretch;transform-origin:50% 0;pointer-events:none}
+.c2-player-elbow{position:absolute;z-index:3;border-radius:50%;border:1px solid #5c3529;background:linear-gradient(115deg,#ffcf9c,#f6b47c 55%,#cc875b);pointer-events:none}
+.c2-player-grip{z-index:4}
+.c2-ledge-game .c2-speech{z-index:5}
 .c2-sill{position:absolute;left:0;right:0;bottom:-2px;height:65px;pointer-events:none;background:#596a75 url('./assets/chapter2-metal-v1.webp') center/300px;border-top:8px solid #a9b7b9;box-shadow:0 -10px 20px #07152180;clip-path:polygon(8% 0,92% 0,100% 100%,0 100%);z-index:2}
 .c2-ledge-game .c2-speech{bottom:78px;z-index:4}
 .c2-ledge-game .c2-stage{cursor:default}
