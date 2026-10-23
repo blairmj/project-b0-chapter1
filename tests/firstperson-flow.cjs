@@ -3,7 +3,7 @@ const elements=new Map();
 function el(k){if(!elements.has(k))elements.set(k,{innerHTML:'',textContent:'',value:'',hidden:false,style:{},dataset:{},offsetWidth:600,offsetHeight:700,clientWidth:400,clientHeight:600,handlers:{},addEventListener(k,f){this.handlers[k]=f},setPointerCapture(){},hasPointerCapture(){return false},querySelector(){return null},getBoundingClientRect(){return {left:0,top:0,width:600,height:900}},cloneNode(){return null},classList:{add(){},remove(){},contains(){return false}},insertAdjacentHTML(){},select(){}});return elements.get(k);}
 const app={innerHTML:'',querySelector:k=>k==='dialog'?null:el(k),addEventListener(){},querySelectorAll:()=>[]};
 let storage=null;
-const ctx=vm.createContext({createRoomPanorama:()=>({view(){},dispose(){}}),document:{querySelector:()=>app},localStorage:{getItem:()=>storage,setItem:(k,v)=>storage=v},setTimeout:f=>{f();return 1},clearTimeout(){},window:{addEventListener(){},matchMedia:()=>({matches:true})}});
+const ctx=vm.createContext({createRoomPanorama:()=>({view(){},setDoorOpen(){},openDoor(){},dispose(){}}),document:{querySelector:()=>app},localStorage:{getItem:()=>storage,setItem:(k,v)=>storage=v},setTimeout:f=>{f();return 1},clearTimeout(){},window:{addEventListener(){},matchMedia:()=>({matches:true})}});
 const run=s=>vm.runInContext(s,ctx);
 run(fs.readFileSync(path.join(__dirname,'../firstperson.js'),'utf8').replace(/boot\(\);\s*$/,''));
 run('tone=()=>{};modal=(title,content)=>{globalThis.panel={title,content}};');

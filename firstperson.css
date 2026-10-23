@@ -133,3 +133,5 @@ body{display:flow-root}
 /* Questions are selectable dialogue, separate from actions on objects. */
 .conversation-modal .robot-detail{height:125px;margin:-8px 0 4px}.conversation-modal .robot-detail>.robot-sprite{width:150px;height:150px}.conversation-reply .speech{margin-top:10px}.conversation-reply .speech p{margin:0;font-size:14px}.question-panel{margin-top:22px;padding-top:16px;border-top:1px solid #395466}.question-panel>p{font-size:12px;color:#aec5d4;margin:0 0 12px}.question-choices{display:grid;grid-template-columns:1fr 1fr;gap:9px}.question-choices button{text-align:left;font-size:13px;line-height:1.5;padding:12px;min-height:48px}.conversation-modal .wide{margin-top:16px}
 @media(max-width:380px){.question-choices{grid-template-columns:1fr}.conversation-modal .robot-detail{height:95px}.conversation-modal .robot-detail>.robot-sprite{width:115px;height:115px}}
+/* Door leaves now use the panorama camera; retain the original room frame only. */
+.world>.door-art{display:none}

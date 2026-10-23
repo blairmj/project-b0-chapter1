@@ -108,6 +108,7 @@ function enterRoom(reveal=false) {
   if(state.phase==="escaped")ending();
   const report=text=>{const el=app.querySelector(".render-error");if(el){el.textContent=text;el.hidden=false;}};
   try{roomView=createRoomPanorama(app.querySelector(".panorama-canvas"),report);}catch{report("방 화면을 시작하지 못했습니다. 페이지를 새로고침해 주세요.");}
+  if(state.phase==="escaped")roomView?.setDoorOpen(1);
   bindCamera();
   panTo(camera.x,camera.y);
 }
@@ -279,7 +280,9 @@ function handle(a) {
   if(a.startsWith("digit-")){const input=app.querySelector("#code");if(input.value.length<4)input.value+=a.slice(6);return;}
   if(a==="erase"){const input=app.querySelector("#code");input.value=input.value.slice(0,-1);return;}
   if(a==="submit-code"){submitCode();return;}
-  if(a==="escape"&&state.unlocked){state.phase="escaped";save("탈출","B-0와 함께 출입문을 열고 나감");app.querySelector(".world").classList.add("door-open");ending();return;}
+  if(a==="escape"&&state.unlocked){state.phase="escaped";save("탈출","B-0와 함께 출입문을 열고 나감");app.querySelector("dialog")?.close();panTo(-14,-5);setZoom(1);moving=true;const ticket=token;
+    if(reduced()){roomView?.setDoorOpen(1);moving=false;ending();return;}
+    roomView?.openDoor();timer=setTimeout(()=>{if(ticket!==token)return;moving=false;ending();},1450);return;}
   if(a==="menu"){menu();return;}
   if(a==="sound"){state.muted=!state.muted;save();menu();return;}
   if(a==="hint"){modal("생각거리",`<p>${state.noteTaken?"쪽지에 적힌 번호를 문 옆 도어락에 입력할 수 있어요.":state.guide?"방 안의 물건뿐 아니라 함께 있는 B-0도 살펴봤나요?":"벽에 붙은 안내도에 출입 방법이 적혀 있을 수 있어요."}</p>`);return;}
