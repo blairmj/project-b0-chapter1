@@ -25,6 +25,38 @@ function load() {
   } catch { return null; }
 }
 let state = load() || fresh(), target = "", moving = false, token = 0, timer, speechTimer, audio, lastFocus;
+let faceId=0, talkTimer, camera={x:0,y:0}, drag=null, suppressClick=false;
+const reduced=()=>window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+// The illustration stays intact. Screen features are separate SVG animation layers.
+function portrait() {
+  const id="face-"+(++faceId),src="./assets/b0-awakening-v1.webp";
+  return `<svg class="live-portrait" viewBox="0 0 1024 1536" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs>
+    <clipPath id="${id}-body"><path d="M0 457L68 404L147 392Q239 213 434 199L715 193L687 88Q680 35 734 70L832 153L868 248Q941 326 970 614L1024 684V1536H0V941L63 930L114 962L146 934L0 838Z"/></clipPath>
+    <clipPath id="${id}-eye-l"><ellipse cx="300" cy="686" rx="110" ry="143"/></clipPath><clipPath id="${id}-eye-r"><ellipse cx="700" cy="760" rx="108" ry="138"/></clipPath>
+    <radialGradient id="${id}-shade"><stop offset="75%" stop-color="#070d11"/><stop offset="100%" stop-color="#070d11" stop-opacity="0"/></radialGradient></defs>
+    <image class="portrait-character" href="${src}" width="1024" height="1536" clip-path="url(#${id}-body)"/><image class="portrait-photo" href="${src}" width="1024" height="1536"/>
+    <ellipse cx="300" cy="686" rx="117" ry="151" fill="url(#${id}-shade)"/><ellipse cx="700" cy="760" rx="115" ry="146" fill="url(#${id}-shade)"/>
+    <g class="eye eye-left" style="--eye-x:300px;--eye-y:686px"><image href="${src}" width="1024" height="1536" clip-path="url(#${id}-eye-l)"/></g>
+    <g class="eye eye-right" style="--eye-x:700px;--eye-y:760px"><image href="${src}" width="1024" height="1536" clip-path="url(#${id}-eye-r)"/></g>
+    <ellipse cx="346" cy="509" rx="84" ry="39" fill="url(#${id}-shade)"/><ellipse cx="743" cy="599" rx="83" ry="48" fill="url(#${id}-shade)"/>
+    <path class="brow brow-left" d="M300 515 Q346 493 390 510"/><path class="brow brow-right" d="M706 583 Q747 591 780 620"/>
+    <ellipse cx="484" cy="834" rx="80" ry="43" fill="url(#${id}-shade)"/><g transform="rotate(11 484 834)"><rect class="live-mouth" x="439" y="825" width="90" height="18" rx="9" style="--mouth-x:484px;--mouth-y:834px"/></g></svg>`;
+}
+function spriteFace(pose="neutral") {
+  const note=pose==="note",x=note?634:pose==="thinking"?236:284,y=note?420:pose==="thinking"?192:196,w=note?45:20,h=note?14:4;
+  return `<svg class="sprite-face" viewBox="0 0 ${note?"1310 1201":"512 512"}" aria-hidden="true"><ellipse cx="${x}" cy="${y}" rx="${w*.85}" ry="${h*2.3}" fill="#081218"/><rect class="live-mouth" x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" rx="${h/2}" style="--mouth-x:${x}px;--mouth-y:${y}px"/></svg>`;
+}
+function performSpeech(who,text,mood="attentive",scope=app) {
+  clearTimeout(talkTimer);
+  app.querySelectorAll(".speaking").forEach(el=>el.classList.remove("speaking"));
+  const actor=scope.querySelector(".face")||scope.querySelector(".robot-sprite");
+  if(!actor)return;
+  actor.dataset.mood=mood;
+  if(actor.classList.contains("robot-sprite"))actor.innerHTML=spriteFace(actor.closest(".found")?"note":mood==="thinking"?"thinking":"neutral");
+  if(who!=="robot")return;
+  actor.classList.add("speaking");
+  talkTimer=setTimeout(()=>actor.classList.remove("speaking"),Math.min(5500,Math.max(1600,text.length*95)));
+}
 const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const btn = (s,a,c="",attrs="") => `<button type="button" data-action="${a}" class="${c}" ${attrs}>${s}</button>`;
 function save(kind,text) { if(kind)state.logs.push({kind,text,time:new Date().toISOString()});try{localStorage.setItem(SAVE_KEY,JSON.stringify(state));}catch{} }
@@ -36,47 +68,87 @@ function dialogue(who,text) { return `<div class="speech ${who}"><b>${who==="rob
 function boot() {
   if(state.phase==="intro") opening();
   else {
-    app.innerHTML=`<main class="awakening resume"><div class="face" role="img" aria-label="눈앞을 가득 채운 B-0의 얼굴"></div><div class="wake-controls"><p class="chapter-label">PROJECT B-0 · 깨어난 실습실</p>${dialogue("robot","다시 만났네요.")}<div class="resume-actions">${btn(state.phase==="escaped"?"탈출 기록 보기":"이어서 탐색","continue","primary")}${btn("처음부터","restart","secondary")}</div></div></main>`;
+    app.innerHTML=`<main class="awakening resume"><div class="face" role="img" aria-label="눈앞을 가득 채운 B-0의 얼굴">${portrait()}</div><div class="wake-controls"><p class="chapter-label">PROJECT B-0 · 깨어난 실습실</p>${dialogue("robot","다시 만났네요.")}<div class="resume-actions">${btn(state.phase==="escaped"?"탈출 기록 보기":"이어서 탐색","continue","primary")}${btn("처음부터","restart","secondary")}</div></div></main>`;
+    performSpeech("robot","다시 만났네요.","friendly");
   }
 }
 function opening() {
   token++;clearTimeout(timer);clearTimeout(speechTimer);target="";moving=false;
-  app.innerHTML=`<main class="awakening${state.line===0?" waking":""}"><div class="face" role="img" aria-label="잠에서 깨어나 처음 마주한 B-0의 얼굴"></div><div class="eyelids" aria-hidden="true"></div><div class="wake-controls"><div class="intro-speech"></div>${btn("다음","next","next")}</div></main>`;
+  app.innerHTML=`<main class="awakening${state.line===0?" waking":""}"><div class="face" role="img" aria-label="잠에서 깨어나 처음 마주한 B-0의 얼굴">${portrait()}</div><div class="eyelids" aria-hidden="true"></div><div class="wake-controls"><div class="intro-speech"></div>${btn("다음","next","next")}</div></main>`;
   renderIntro();
 }
 function renderIntro() {
   const line=intro[state.line];app.querySelector(".intro-speech").innerHTML=dialogue(...line);
   app.querySelector('[data-action="next"]').textContent=state.line===intro.length-1?"주변 둘러보기":"다음";
+  performSpeech(...line,["attentive","friendly","attentive","thinking","attentive","thinking","concerned","concerned","thinking","friendly"][state.line]);
   save();
 }
 const places={door:{name:"출입문",origin:"38% 40%",scale:1.55},lock:{name:"도어락",origin:"55% 44%",scale:2},map:{name:"벽면 안내도",origin:"13% 34%",scale:1.7},robot:{name:"B-0",origin:"79% 75%",scale:1.35},terminal:{name:"단말기",origin:"65% 52%",scale:1.6}};
-function enterRoom() {
+function enterRoom(reveal=false) {
   token++;clearTimeout(timer);clearTimeout(speechTimer);target="";moving=false;
-  app.innerHTML=`<main class="game"><header><h1>교육 실습실</h1>${btn("메뉴","menu","quiet")}</header><section class="scene" aria-label="나의 시선으로 보는 교육 실습실"><div class="world${state.unlocked?" unlocked":""}"><div class="background" role="img" aria-label="기존 교육 실습실 배경"></div>
+  camera={x:0,y:0};drag=null;suppressClick=false;
+  app.innerHTML=`<main class="game${reveal?" revealing":""}"><header><h1>교육 실습실</h1>${btn("메뉴","menu","quiet")}</header><section class="scene" tabindex="0" aria-label="교육 실습실. 화면을 드래그하거나 방향키로 둘러보고 물건을 눌러 조사하세요."><div class="world${state.unlocked?" unlocked":""}"><div class="background" role="img" aria-label="기존 교육 실습실 배경"></div>
     <div class="door-art" aria-hidden="true"><div class="device door-left"></div><div class="device door-right"></div></div><span class="lock-led" aria-hidden="true"></span>
     <div class="device terminal-art" aria-hidden="true"></div><div class="device map-art" aria-hidden="true"></div><div class="device light-art" aria-hidden="true"></div>
-    <div class="robot-sprite" role="img" aria-label="함께 있는 AI 로봇 B-0"></div>
-    <div class="targets">${Object.entries(places).map(([id,p])=>btn("",`approach-${id}`,`target target-${id}`,`aria-label="${p.name} 쪽으로 다가가기"`)).join("")}</div></div>
-    <div class="approach-controls" hidden>${btn("방 전체 보기","back","secondary")}${btn("살펴보기","inspect","primary")}</div><div class="room-speech" aria-live="polite" hidden></div><div class="arrival sr-only" role="status"></div>
+    <div class="robot-sprite" role="img" aria-label="함께 있는 AI 로봇 B-0">${spriteFace()}</div>
+    <div class="targets">${Object.entries(places).map(([id,p])=>btn("",`approach-${id}`,`target target-${id}`,`aria-label="${p.name} 살펴보기"`)).join("")}</div></div>
+    <p class="look-hint">화면을 끌어 둘러보기 · 물건을 눌러 조사</p><div class="room-speech" aria-live="polite" hidden></div><div class="arrival sr-only" role="status"></div>
     </section><footer>${btn("소지품 <span class=\"item-count\">"+(state.noteTaken?"1":"0")+"</span>","inventory","secondary")}<span class="room-goal">${state.unlocked?"잠금 해제":state.guide?"비상 출입번호 찾기":""}</span></footer></main>`;
   if(state.phase==="escaped")ending();
+  bindCamera();
+}
+function revealRoom() {
+  if(moving)return;
+  const oldFace=app.querySelector(".face")?.cloneNode(true);
+  enterRoom(!reduced());
+  if(reduced()||!oldFace)return;
+  moving=true;const ticket=token,game=app.querySelector(".game");
+  const overlay=document.createElement("div");overlay.className="departure";overlay.setAttribute("aria-hidden","true");overlay.append(oldFace);game.append(overlay);
+  timer=setTimeout(()=>{if(ticket!==token)return;overlay.remove();game.classList.remove("revealing");moving=false;app.querySelector(".scene").focus({preventScroll:true});},2200);
 }
 function roomSpeech(who,text) {const el=app.querySelector(".room-speech");if(!el)return;clearTimeout(speechTimer);el.innerHTML=dialogue(who,text);el.hidden=false;speechTimer=setTimeout(()=>{el.hidden=true;},4800);}
 function approach(id) {
-  if(!places[id]||app.querySelector("dialog"))return;
-  clearTimeout(timer);clearTimeout(speechTimer);const ticket=++token;target=id;moving=true;
-  app.querySelector(".room-speech").hidden=true;app.querySelector(".approach-controls").hidden=true;
-  const world=app.querySelector(".world");world.style.transformOrigin=places[id].origin;world.style.transform=`scale(${places[id].scale})`;
-  app.querySelector(".targets").classList.add("inactive");
-  timer=setTimeout(()=>{if(ticket!==token)return;moving=false;app.querySelector(".approach-controls").hidden=false;app.querySelector('[data-action="inspect"]').textContent=id==="robot"?"B-0와 이야기하기":"살펴보기";app.querySelector(".arrival").textContent=places[id].name+" 앞에 도착했습니다.";},window.matchMedia("(prefers-reduced-motion: reduce)").matches?0:600);
+  if(moving||!places[id]||app.querySelector("dialog"))return;
+  target=id;inspect();
 }
-function back() {
-  token++;clearTimeout(timer);moving=false;target="";const w=app.querySelector(".world");if(!w)return;w.style.transform="scale(1)";
-  app.querySelector(".targets").classList.remove("inactive");app.querySelector(".approach-controls").hidden=true;app.querySelector(".arrival").textContent="방 전체를 둘러봅니다.";
+function panTo(x,y) {
+  const scene=app.querySelector(".scene"),world=app.querySelector(".world");if(!scene||!world)return;
+  const mx=Math.max(0,(world.offsetWidth-scene.clientWidth)/2),my=Math.max(0,(world.offsetHeight-scene.clientHeight)/2);
+  camera={x:Math.max(-mx,Math.min(mx,x)),y:Math.max(-my,Math.min(my,y))};
+  world.style.transform=`translate3d(${camera.x}px,${camera.y}px,0)`;
+}
+function hideLookHint(){app.querySelector(".look-hint")?.classList.add("dismissed");}
+function bindCamera() {
+  const scene=app.querySelector(".scene");
+  scene.addEventListener("pointerdown",e=>{
+    if(moving||app.querySelector("dialog")||e.isPrimary===false||e.button!==0)return;
+    suppressClick=false;drag={id:e.pointerId,startX:e.clientX,startY:e.clientY,x:camera.x,y:camera.y,moved:false};
+  });
+  scene.addEventListener("pointermove",e=>{
+    if(!drag||drag.id!==e.pointerId)return;
+    const dx=e.clientX-drag.startX,dy=e.clientY-drag.startY;
+    if(!drag.moved&&Math.hypot(dx,dy)<8)return;
+    if(!drag.moved){drag.moved=true;scene.setPointerCapture(e.pointerId);scene.classList.add("dragging");hideLookHint();}
+    panTo(drag.x+dx,drag.y+dy);e.preventDefault();
+  });
+  const finish=e=>{if(!drag||drag.id!==e.pointerId)return;suppressClick=drag.moved;drag=null;scene.classList.remove("dragging");if(scene.hasPointerCapture(e.pointerId))scene.releasePointerCapture(e.pointerId);};
+  scene.addEventListener("pointerup",finish);scene.addEventListener("pointercancel",finish);scene.addEventListener("lostpointercapture",finish);
+  scene.addEventListener("pointerleave",e=>{if(drag&&!drag.moved)finish(e);});
+  scene.addEventListener("keydown",e=>{
+    const delta={ArrowLeft:[65,0],ArrowRight:[-65,0],ArrowUp:[0,55],ArrowDown:[0,-55]}[e.key];
+    if(!delta||moving)return;e.preventDefault();hideLookHint();panTo(camera.x+delta[0],camera.y+delta[1]);
+  });
+  scene.addEventListener("focusin",e=>{
+    if(!e.target.matches(".target:focus-visible"))return;
+    const r=e.target.getBoundingClientRect(),s=scene.getBoundingClientRect();
+    panTo(camera.x+s.left+s.width/2-r.left-r.width/2,camera.y+s.top+s.height/2-r.top-r.height/2);
+  });
 }
 function modal(title,content,kind="") {
   const previous=app.querySelector("dialog");if(!previous)lastFocus=document.activeElement;previous?.remove();
   const d=document.createElement("dialog");d.className="modal "+kind;d.innerHTML=`<div class="modal-header"><h2>${title}</h2>${btn("닫기","close","quiet")}</div><div class="modal-body">${content}</div>`;app.append(d);d.addEventListener("close",()=>{d.remove();if(lastFocus?.isConnected)lastFocus.focus();});d.showModal();
+  const spoken=d.querySelector(".speech.robot p");
+  if(spoken)performSpeech("robot",spoken.textContent,state.noteFound?"friendly":"thinking",d);
 }
 function inspect() {
   if(moving||!target)return;
@@ -95,12 +167,12 @@ function guide() {
   modal("벽면 안내도",`<div class="map-detail" role="img" aria-label="기존 벽면 안내도 확대"><div class="device"></div></div><div class="notice-paper"><h3>비상 출입 안내</h3><p>출입 시스템 정지 시<br>관리용 쪽지의 비밀번호를 사용하십시오.</p></div>${dialogue("student","비밀번호가 적힌 쪽지가 있다는 거네.")}${btn("방으로 돌아가기","close","primary wide")}`);
 }
 function robot() {
-  const art=`<div class="robot-detail${state.noteFound&&!state.noteTaken?" found":""}" role="img" aria-label="B-0와 가슴 아래 보관함"><div class="robot-sprite"></div></div>`;
+  const art=`<div class="robot-detail${state.noteFound&&!state.noteTaken?" found":""}" role="img" aria-label="B-0와 가슴 아래 보관함"><div class="robot-sprite">${state.noteFound&&!state.noteTaken?"":spriteFace()}</div></div>`;
   if(state.noteTaken){modal("B-0",`${art}${dialogue("robot","쪽지는 건네드렸습니다. 소지품에서 다시 볼 수 있어요.")}${btn("비밀번호 쪽지 보기","note","primary wide")}`);return;}
   if(state.noteFound){modal("B-0의 보관함",`${art}${dialogue("robot","제 보관함에 들어 있었습니다. 확인하기 전에는 몰랐네요.")}${btn("쪽지 받기","take-note","primary wide")}`);return;}
   modal("B-0",`${art}${dialogue("robot",state.guide?"관리용 쪽지 말인가요? 아직 본 기억은 없습니다.":"어떤 것을 확인해 볼까요?")}<div class="options">${state.guide?btn("네가 갖고 있는 건 없어?","ask-note","secondary"):""}${btn("네 보관함을 살펴봐도 돼?","ask-storage","secondary")}${btn("방을 더 둘러볼게","close","quiet")}</div>`);
 }
-function askStorage() { modal("B-0의 보관함",`${dialogue("student",state.guide?"네 보관함도 확인해 볼까?":"몸에 보관함이 있네. 안에 뭐가 있어?")}${dialogue("robot","안쪽은 아직 확인하지 않았습니다. 열어 보겠습니다.")}<div class="robot-detail thinking" aria-hidden="true"><div class="robot-sprite"></div></div>${btn("보관함 열어 보기","open-storage","primary wide")}`); }
+function askStorage() { modal("B-0의 보관함",`${dialogue("student",state.guide?"네 보관함도 확인해 볼까?":"몸에 보관함이 있네. 안에 뭐가 있어?")}${dialogue("robot","안쪽은 아직 확인하지 않았습니다. 열어 보겠습니다.")}<div class="robot-detail thinking" aria-hidden="true"><div class="robot-sprite">${spriteFace("thinking")}</div></div>${btn("보관함 열어 보기","open-storage","primary wide")}`); }
 function openStorage() { state.noteFound=true;save("발견","B-0가 확인하지 않았던 보관함에서 관리용 쪽지 발견");tone();robot(); }
 function noteMarkup() {return '<div class="password-note"><small>관리용 쪽지</small><h3>비상 출입번호</h3><strong>4732</strong><p>사용 후 보관함에 넣어 두십시오.</p></div>';}
 function showNote() { if(!state.noteTaken)return;modal("비밀번호 쪽지",`${noteMarkup()}${dialogue("student","찾았다! 이 번호로 해보자.")}${btn("쪽지 보관하고 돌아가기","close","primary wide")}`); }
@@ -123,12 +195,11 @@ function ending() {
 function menu() {modal("메뉴",`<p>진행은 이 기기에 자동 저장됩니다.</p><div class="options">${btn("계속 탐색","close","primary")}${btn(state.muted?"효과음 켜기":"효과음 끄기","sound","secondary")}${btn("막혔을 때 생각거리","hint","secondary")}${btn("수업 안내","teacher","secondary")}${btn("처음부터 다시 보기","restart","quiet")}</div>`);}
 function handle(a) {
   if(a==="close"){app.querySelector("dialog")?.close();return;}
-  if(a==="next"){if(state.line<intro.length-1){state.line++;renderIntro();}else{state.phase="room";save("도입","B-0와 만나 탐색 시작");enterRoom();}return;}
-  if(a==="continue"){enterRoom();return;}
+  if(a==="next"){if(state.line<intro.length-1){state.line++;renderIntro();}else{state.phase="room";save("도입","B-0와 만나 탐색 시작");revealRoom();}return;}
+  if(a==="continue"){if(state.phase==="escaped")enterRoom();else revealRoom();return;}
   if(a==="restart"){modal("처음부터 다시 볼까요?",`<p>이번 버전의 진행만 새로 시작합니다.</p>${btn("처음부터 시작","new","primary wide")}`);return;}
   if(a==="new"){state=fresh();save();opening();return;}
   if(a.startsWith("approach-")){approach(a.slice(9));return;}
-  if(a==="back"){back();return;}
   if(a==="inspect"){inspect();return;}
   if(a==="handle"){door(true);return;}
   if(a==="lock"){lock();return;}
@@ -146,6 +217,10 @@ function handle(a) {
   if(a==="hint"){modal("생각거리",`<p>${state.noteTaken?"쪽지에 적힌 번호를 문 옆 도어락에 입력할 수 있어요.":state.guide?"방 안의 물건뿐 아니라 함께 있는 B-0도 살펴봤나요?":"벽에 붙은 안내도에 출입 방법이 적혀 있을 수 있어요."}</p>`);return;}
   if(a==="teacher"){modal("1차시 · 첫 만남",'<p>초등 고학년용 탐색 도입. AI도 확인하지 않은 정보는 모를 수 있으며, 사람과 함께 정보를 찾아 문제를 해결한다는 경험.</p><p>플레이: 출입문·안내도 탐색 → B-0의 보관함 확인 → 쪽지 획득 → 도어락 입력 → 탈출. 순서 강제 없음.</p><p>수업 대화: B-0는 쪽지를 갖고 있었는데 왜 몰랐을까요? 모른다고 했을 때 함께 무엇을 확인했나요?</p><small>정해진 게임 규칙으로 동작하며 실제 AI나 얼굴 인식은 사용하지 않습니다. 기록은 이 기기에만 저장됩니다.</small>');}
 }
-app.addEventListener("click",e=>{const b=e.target.closest("button[data-action]");if(b&&!b.disabled)handle(b.dataset.action);});
+app.addEventListener("click",e=>{
+  if(suppressClick&&e.detail!==0){suppressClick=false;e.preventDefault();return;}
+  const b=e.target.closest("button[data-action]");if(b&&!b.disabled&&!moving)handle(b.dataset.action);
+});
+window.addEventListener("resize",()=>panTo(camera.x,camera.y));
 app.addEventListener("keydown",e=>{if(e.target.id==="code"&&e.key==="Enter"){e.preventDefault();submitCode();}});
 boot();

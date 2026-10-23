@@ -1,9 +1,9 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
 const elements=new Map();
-function el(k){if(!elements.has(k))elements.set(k,{innerHTML:'',textContent:'',value:'',hidden:false,style:{},classList:{add(){},remove(){}},select(){}});return elements.get(k);}
-const app={innerHTML:'',querySelector:k=>k==='dialog'?null:el(k),addEventListener(){}};
+function el(k){if(!elements.has(k))elements.set(k,{innerHTML:'',textContent:'',value:'',hidden:false,style:{},dataset:{},offsetWidth:600,offsetHeight:700,clientWidth:400,clientHeight:600,addEventListener(){},querySelector(){return null},cloneNode(){return null},classList:{add(){},remove(){},contains(){return false}},select(){}});return elements.get(k);}
+const app={innerHTML:'',querySelector:k=>k==='dialog'?null:el(k),addEventListener(){},querySelectorAll:()=>[]};
 let storage=null;
-const ctx=vm.createContext({document:{querySelector:()=>app},localStorage:{getItem:()=>storage,setItem:(k,v)=>storage=v},setTimeout:f=>{f();return 1},clearTimeout(){},window:{matchMedia:()=>({matches:true})}});
+const ctx=vm.createContext({document:{querySelector:()=>app},localStorage:{getItem:()=>storage,setItem:(k,v)=>storage=v},setTimeout:f=>{f();return 1},clearTimeout(){},window:{addEventListener(){},matchMedia:()=>({matches:true})}});
 const run=s=>vm.runInContext(s,ctx);
 run(fs.readFileSync(path.join(__dirname,'../firstperson.js'),'utf8').replace(/boot\(\);\s*$/,''));
 run('tone=()=>{};modal=(title,content)=>{globalThis.panel={title,content}};');
@@ -36,3 +36,8 @@ assert.match(run('panel.content'),/함께 출구를 찾아/);
 run('state=fresh();state.phase="room";robot();handle("ask-storage");handle("open-storage");handle("take-note");');
 assert.equal(run('state.guide'),false);assert.equal(run('state.noteTaken'),true);
 console.log('PASS: face-first intro, no student avatar, guide mission, B-0 compartment, recoverable note pickup, keypad retry, exit, save, free exploration order');
+
+// Camera limits never reveal empty space, even after extreme pointer travel.
+run('panTo(9999,-9999)');assert.equal(run('camera.x'),100);assert.equal(run('camera.y'),-50);
+assert.doesNotMatch(app.innerHTML,/방 전체 보기/);
+console.log('PASS: bounded camera and removal of full-room navigation button');
