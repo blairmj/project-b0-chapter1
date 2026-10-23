@@ -3,7 +3,7 @@
   window.startChapterThree=function({app,portrait,onBack,preview=false}){
     const M=window.B0RoomThree,storage=preview?sessionStorage:localStorage,key='project-b0-room3-v1';
     let s;try{s=M.restore(JSON.parse(storage.getItem(key)));}catch{s=M.fresh();}
-    let camera={x:0,z:30,yaw:-12,pitch:-8,zoom:1},stage,world,bar,speech,selection=null,pointer=null,suppress=false,dead=false,busy=false,frame=0,mode=null,conversation=null;
+    let camera={x:0,z:30,yaw:-12,pitch:-8,zoom:1},stage,world,bar,speech,selection=null,pointer=null,suppress=false,dead=false,busy=false,cameraMoving=false,frame=0,mode=null,conversation=null;
     const helperPosition=()=>({x:-195,z:s.shelfZ+(s.shelfZ>=0?-90:90)});
     let robot=s.helper?helperPosition():{x:120,z:-190},timers=[];
     const intro=[['student','생각보다 무겁네, 너.'],['robot','저도 같은 생각을 했습니다.'],['student','뭐?'],['robot','아까 들어 올릴 때요.'],['student','……다음에는 네가 먼저 올라가.'],['robot','제 지도에 외부 통로와 연결된 출입 관리실이 있습니다. 함께 가 보겠습니다.']];
@@ -63,8 +63,8 @@
       app.querySelector('.c3-robot').classList.toggle('helping',s.helper&&!M.clear(s));updateCamera();
     }
     function animateCamera(to,done){
-      cancelAnimationFrame(frame);busy=true;pointer=null;const from={...camera},start=performance.now(),turn=(((to.yaw??from.yaw)-from.yaw+540)%360)-180;
-      function step(t){if(dead)return;const v=reduced()?1:Math.min(1,(t-start)/650),e=v*v*(3-2*v);for(const k of ['x','z','pitch','zoom'])camera[k]=from[k]+((to[k]??from[k])-from[k])*e;camera.yaw=from.yaw+turn*e;updateCamera();if(v<1)frame=requestAnimationFrame(step);else{busy=false;done?.();}}
+      cancelAnimationFrame(frame);busy=true;cameraMoving=true;pointer=null;const from={...camera},start=performance.now(),turn=(((to.yaw??from.yaw)-from.yaw+540)%360)-180;
+      function step(t){if(dead)return;const v=reduced()?1:Math.min(1,(t-start)/650),e=v*v*(3-2*v);for(const k of ['x','z','pitch','zoom'])camera[k]=from[k]+((to[k]??from[k])-from[k])*e;camera.yaw=from.yaw+turn*e;updateCamera();if(v<1)frame=requestAnimationFrame(step);else{busy=false;cameraMoving=false;done?.();}}
       frame=requestAnimationFrame(step);
     }
     function approach(id){
@@ -92,7 +92,7 @@
     function shelfRequests(){actions('보관장의 어느 부분을 확인할까?',[['바닥을 살펴봐 줘','ask-floor'],['아래쪽 틈을 봐 줘','ask-gap'],['같이 밀어 줘','help-shelf'],['돌아가기','select-shelf']]);}
     function helpShelf(){
       if(s.helper){say('robot','같이 밀 준비가 되어 있습니다. 움직일 방향은 직접 정해 주세요.');showActions('shelf');return;}
-      busy=true;const from={...robot},to=helperPosition(),start=performance.now();say('robot','옆에서 함께 밀겠습니다.');
+      cancelAnimationFrame(frame);cameraMoving=false;busy=true;const from={...robot},to=helperPosition(),start=performance.now();say('robot','옆에서 함께 밀겠습니다.');
       app.querySelector('.c3-robot').classList.add('walking');
       function step(t){if(dead)return;const v=reduced()?1:Math.min(1,(t-start)/850);robot={x:from.x+(to.x-from.x)*v,z:from.z+(to.z-from.z)*v};updateCamera();if(v<1)frame=requestAnimationFrame(step);else{busy=false;s.helper=true;M.note(s,'help','shelf');save();app.querySelector('.c3-robot').classList.remove('walking');update();showActions('shelf');}}
       frame=requestAnimationFrame(step);
@@ -133,7 +133,7 @@
       app.innerHTML=`<main class="game c3-end"><header><h1>내 위치: 중앙관리실 앞</h1>${b('메뉴','menu','quiet')}</header><section class="c3-central-scene"><div class="c3-central-door"><i></i><span>중앙관리실</span></div><div class="c3-central-dialogue"><div class="speech student"><b>나</b><p>출구까지 찾았는데, 누가 못 나가게 하는 거야?</p></div><div class="speech robot"><b>B-0</b><p>이 안에서 출입을 관리하고 있습니다.</p></div><div class="speech student"><b>나</b><p>그럼 직접 만나 보자.</p></div></div></section><footer>${b('이번 방의 기록','record')}<small>3차시 끝 · 4차시로 이어집니다.</small></footer></main>`;
     }
     function leaveRoom(){
-      if(!M.leave(s))return;save();busy=true;
+      if(!M.leave(s))return;cancelAnimationFrame(frame);cameraMoving=false;save();busy=true;
       talk([['robot','제 지도에는 이 문이 없었습니다.'],['student',s.seen.wall?'너는 지도 봤고, 나는 방을 봤잖아. 같이 찾은 거지.':'지도에 없어도 실제로는 있었네. 직접 보길 잘했어.'],['robot','지금 확인한 위치로 지도를 수정하겠습니다.']],()=>{busy=false;render();});
     }
     function act(a){
@@ -141,7 +141,7 @@
       if(a==='menu'){modal('메뉴',`<p>차시별 진행은 따로 저장됩니다.</p><div class="options">${b('계속하기','close-modal','primary')}${b('조작 방법','controls')}${b('탐색 기록','record')}${b('3차시 다시 시작','reset-confirm','quiet')}${b('2차시로 돌아가기','back','quiet')}</div>`);return;}
       if(a==='back'){dispose();onBack();return;}
       if(a==='reset-confirm'){modal('3차시를 다시 시작할까요?',`<p>출입 관리실의 진행만 초기화합니다.</p>${b('초기화하고 시작','reset','primary')}`);return;}
-      if(a==='reset'){cancelAnimationFrame(frame);busy=false;s=M.fresh();camera={x:0,z:30,yaw:-12,pitch:-8,zoom:1};robot={x:120,z:-190};app.querySelector('.c3-modal')?.remove();save();render();return;}
+      if(a==='reset'){cancelAnimationFrame(frame);busy=false;cameraMoving=false;s=M.fresh();camera={x:0,z:30,yaw:-12,pitch:-8,zoom:1};robot={x:120,z:-190};app.querySelector('.c3-modal')?.remove();save();render();return;}
       if(a==='controls'){modal('조작 방법','<p>빈 공간을 끌거나 방향키로 방을 둘러봅니다. 물건을 누르면 가까이 다가가 살펴볼 수 있습니다.</p><p>보관장은 직접 끌거나 밀기 버튼으로 움직입니다. 혼자 밀면 조금씩 움직이고, 함께 밀면 더 쉽게 움직입니다.</p><p>B-0에게 부탁할 때는 확인할 대상과 내용을 골라 주세요. 원위치로는 시점과 배율만 되돌립니다.</p>');return;}
       if(a==='record'){const labels={map:'배치 기록 01',oldDoor:'출구 표지판의 문',wall:'문 뒤의 벽',record:'개조 기록 07',shelf:'보관장',floor:'바퀴 자국',gap:'아래쪽 빛',exit:'새로 발견한 문',desk:'기록 책상'};modal('직접 확인한 것',`<ul>${Object.keys(s.seen).map(id=>`<li>${labels[id]}</li>`).join('')||'<li>아직 살펴본 기록이 없습니다.</li>'}</ul><p>어떤 사실이 기록과 달랐나요? 그 근거는 직접 본 것인가요, B-0에게 들은 것인가요?</p>`);return;}
       if(a==='intro-next'){if(s.line<intro.length-1)s.line++;else{s.phase='room';s.line=0;}save();render();if(s.phase==='room')talk([['student','이번에는 문이 있네.'],['robot','제 지도에서는 앞쪽 문이 출구입니다. 현재 상태는 함께 확인해 보겠습니다.']]);return;}
@@ -150,7 +150,7 @@
       if(a==='inspect-gate'){say('student','바깥 불빛이 보이는데 문이 안 열려. 옆 화면에 승인 안내가 있어.');return;}
       if(a==='request-approval'){if(M.request(s)){save();renderGate();talk([['robot','승인 요청을 보냈지만 외부 이동이 보류되었습니다. 중앙관리실에서 직접 확인하라고 나옵니다.'],['student','여기까지 왔는데 왜 못 나가게 하는 거야?']]);}return;}
       if(a==='go-central'){if(M.finish(s)){save();render();}return;}
-      if(s.phase!=='room'||busy)return;
+      if(s.phase!=='room'||(busy&&!cameraMoving))return;
       if(a==='home'){selection=null;mode=null;conversation=null;speech.hidden=true;actions('방 안을 자유롭게 살펴보세요.');animateCamera({x:0,z:30,yaw:-12,pitch:-8,zoom:1});return;}
       if(a.startsWith('zoom-')){camera.zoom=Math.max(.65,Math.min(1.5,camera.zoom+(a==='zoom-in'?.15:-.15)));updateCamera();return;}
       if(a==='clear'){mode=null;selection=null;actions('방 안을 자유롭게 살펴보세요.');return;}

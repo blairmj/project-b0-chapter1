@@ -11,7 +11,7 @@ for(let i=0;i<6;i++)game.act('intro-next');game.act('talk-next');game.act('talk-
 assert.equal(game.state().s.phase,'room');
 assert.match(node('.c3-real-exit')['aria-hidden'],/true/);
 game.act('robot');game.act('ask-route');assert.doesNotMatch(node('.c3-speech').innerHTML,/보관장/);
-game.select('oldDoor');flush();game.act('old-door');assert.equal(game.state().s.seen.wall,true);
+game.select('oldDoor');game.act('old-door');assert.equal(game.state().s.seen.wall,true,'context buttons work during the approach');flush();
 game.act('talk-next');game.act('talk-next');game.act('ask-route');assert.match(node('.c3-speech').innerHTML,/현재 출구 위치는 아직 확인하지/);
 game.select('shelf');flush();
 function ev(x,y,object){return {pointerId:1,button:0,clientX:x,clientY:y,preventDefault(){},target:{closest:sel=>sel==='[data-object]'&&object?{dataset:{object}}:null}};}
