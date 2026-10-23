@@ -31,7 +31,7 @@ run('inventory();');assert.match(run('panel.content'),/4732/);
 run('approach("lock");inspect();submitCode("4732");');assert.equal(run('state.unlocked'),true);
 assert.equal(run('state.phase'),'room');run('handle("escape");');assert.equal(run('state.phase'),'escaped');
 assert.equal(run('load().noteTaken'),true);
-assert.match(app.innerHTML,/연구소 복도/);run('handle("epilogue-1")');assert.match(app.innerHTML,/함께 출구를 찾아/);run('handle("epilogue-2")');assert.match(app.innerHTML,/AXIOM/);
+assert.match(app.innerHTML,/연구소 복도/);run('handle("epilogue-1")');assert.match(app.innerHTML,/함께 출구를 찾아/);run('handle("epilogue-2")');assert.doesNotMatch(app.innerHTML,/AXIOM/);
 // The player can discover the compartment without being forced to read the guide first.
 run('state=fresh();state.phase="room";enterRoom();robot();handle("ask-storage");handle("open-storage");handle("take-note");');
 assert.equal(run('state.guide'),false);assert.equal(run('state.noteTaken'),true);
@@ -90,7 +90,7 @@ assert.doesNotMatch(run('JSON.stringify(intro)'),/실망하셨나요|먼저 출�
 assert.match(run('JSON.stringify(intro)'),/궁금한 것이 있으면/);
 assert.doesNotMatch(run('openingHeader()'),/restart|처음으로/);
 run('state.phase="escaped";state.noteTaken=true;state.unlocked=true;ending(1)');assert.match(app.innerHTML,/corridor-b0 walking/);
-run('handle("epilogue-2")');assert.match(app.innerHTML,/corridor-b0 halted/);assert.match(app.innerHTML,/AXIOM/);
-run('handle("epilogue-3")');assert.match(app.innerHTML,/B-0\? 왜 그래\?/);assert.doesNotMatch(app.innerHTML,/data-action="epilogue-|data-action="restart"/);
+run('handle("epilogue-2")');assert.match(app.innerHTML,/corridor-b0 walking/);assert.doesNotMatch(app.innerHTML,/AXIOM/);
+run('handle("epilogue-3")');assert.match(app.innerHTML,/같이 가 보자/);assert.match(app.innerHTML,/chapter-two/);assert.doesNotMatch(app.innerHTML,/data-action="epilogue-|data-action="restart"/);
 run('enterRoom(false,true);panTo(70,12);setZoom(1.6);handle("view-home")');assert.equal(run('state.phase'),'escaped');assert.equal(run('state.noteTaken'),true);assert.equal(run('state.unlocked'),true);assert.equal(run('camera.x'),0);assert.equal(run('zoom'),1);
-console.log('PASS: revised opening, visible B-0 halt, final unanswered question, home preserves completed progress');
+console.log('PASS: revised opening, corridor continuation, late AXIOM reveal preserved, home preserves completed progress');

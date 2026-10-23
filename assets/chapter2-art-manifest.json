@@ -1,0 +1,7 @@
+{
+  "tool": "built-in image_gen",
+  "file": "chapter2-metal-v1.webp",
+  "prompt": "Use case: stylized-concept. Asset type: seamless material texture for a real interactive 3D room in the attached illustrated game. Reference image is style reference only. Create ONE square 1024x1024 seamlessly tileable aged blue-gray metal wall material, viewed perfectly straight on orthographic, flat even lighting, NO perspective. Match the reference's carefully painted graphic-novel industrial science-laboratory style: brushed steel, restrained scratches, worn cool blue-gray paint, subtle mottled rust, fine dark ink edges. Four broad metal panels in a 2x2 layout, fine flush seams and a few small rivets, symmetrical matching outer edges so the texture tiles on the four walls AND floor. No doors, windows, lamps, cables, holes, text, furniture, characters, shadows from external objects or shiny glare. The material should be legible and calm, not a busy collage. Full bleed square texture.",
+  "reference": "room-panorama-v2.webp",
+  "original": "exec-d9d62d23-b1ce-41f8-89be-62b2f0d67c1e.png"
+}
