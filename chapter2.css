@@ -66,7 +66,7 @@
 .c2-robot.boosting>.robot-sprite{background:url('./assets/b0-bracing-v1.webp') center/contain no-repeat!important;rotate:-8deg;transform-origin:50% 100%;transition:rotate .6s}
 .c2-robot.boosting .live-portrait{visibility:hidden}
 .c2-support-arm{position:absolute;width:46px;height:11px;right:-23px;top:94px;background:linear-gradient(#e5e0cf,#90978e);border:2px solid #263a47;border-radius:9px;transform:rotate(-12deg);box-shadow:18px 0 0 -2px #475e66}
-.c2-robot.reaching>.robot-sprite{background:none!important}
+.c2-robot.reaching>.robot-sprite{background:none!important;width:384px;height:624px;transform:scale(.25);transform-origin:0 0;filter:none}
 .c2-robot.reaching>.robot-sprite:before,.c2-robot.reaching>.robot-sprite:after{content:'';position:absolute;inset:0;background-position:center;background-size:contain;background-repeat:no-repeat;pointer-events:none}
 .c2-robot.reaching>.robot-sprite:before{background-image:url('./assets/b0-rescue-reach-v1.webp');opacity:calc(1 - var(--rescue-climb,0))}
 .c2-robot.reaching>.robot-sprite:after{background-image:url('./assets/b0-rescue-climb-v1.webp');opacity:var(--rescue-climb,0)}
