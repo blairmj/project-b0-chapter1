@@ -81,9 +81,15 @@ body{display:flow-root}
 .wall-floor{transform:rotateX(90deg) translateZ(-511.5px);background:url('./assets/room-sides-v1.webp') 100% 100%/200% 200%}
 .wall-ceiling{transform:rotateX(-90deg) translateZ(-511.5px);background:repeating-linear-gradient(0deg,transparent 0 248px,#142433 249px 254px),repeating-linear-gradient(90deg,#283a49 0 248px,#142433 249px 254px)}
 .side-wall .target{z-index:5}
-.target-cabinet{left:13%;top:25%;width:70%;height:48%}
+.target-cabinet{left:4%;top:34%;width:52%;height:47%}
 .target-bench{left:9%;top:38%;width:82%;height:40%}
 .target-window{left:23%;top:19%;width:55%;height:42%}
 .revealing .wall-paint{animation:room-focus 2.2s ease-out both}
 .revealing .side-wall .target{visibility:hidden}
+.room-wall:not(.wall-floor):not(.wall-ceiling)::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,#172533cc,transparent 12px,transparent calc(100% - 12px),#172533cc);z-index:6}
+.robot-anchor{position:absolute;left:-150px;top:-150px;width:300px;height:300px;backface-visibility:hidden}
+.robot-anchor>.robot-sprite{left:0;bottom:0;width:100%;height:100%}
+.robot-anchor>.target-robot{left:20%;top:3%;bottom:auto;width:65%;height:94%}
+.revealing .robot-anchor>.robot-sprite{animation:retreat-body 2.2s ease-out both;transform-origin:50% 35%}
+.revealing .robot-anchor>.target{visibility:hidden}
 @media(max-width:380px){.game>header{padding:8px 10px}.location h1{font-size:11px}.game>header .quiet{padding:8px;font-size:11px}}

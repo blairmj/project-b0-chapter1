@@ -95,8 +95,7 @@ function enterRoom(reveal=false) {
   app.innerHTML=`<main class="game${reveal?" revealing":""}"><header><div class="location"><h1>내 위치: 교육 실습실</h1><span class="view-direction">출입문 쪽</span></div><nav aria-label="게임 메뉴">${btn("처음으로","restart","quiet")}${btn("메뉴","menu","quiet")}</nav></header><section class="scene" tabindex="0" aria-label="교육 실습실. 드래그하거나 방향키로 시선을 돌려 네 벽과 구석을 살펴보세요."><div class="room-rig"><div class="room-wall world${state.unlocked?" unlocked":""}" data-yaw="0"><div class="background" role="img" aria-label="기존 교육 실습실 배경"></div>
     <div class="door-art" aria-hidden="true"><div class="device door-left"></div><div class="device door-right"></div></div><span class="lock-led" aria-hidden="true"></span>
     <div class="device terminal-art" aria-hidden="true"></div><div class="device map-art" aria-hidden="true"></div><div class="device light-art" aria-hidden="true"></div>
-    <div class="robot-sprite" role="img" aria-label="함께 있는 AI 로봇 B-0">${spriteFace()}</div>
-    <div class="targets">${Object.keys(places).filter(id=>places[id].wall===0).map(wallTarget).join("")}</div></div>${otherWalls()}</div>
+    <div class="targets">${Object.keys(places).filter(id=>places[id].wall===0&&id!=="robot").map(wallTarget).join("")}</div></div>${otherWalls()}<div class="robot-anchor"><div class="robot-sprite" role="img" aria-label="함께 있는 AI 로봇 B-0">${spriteFace()}</div>${wallTarget("robot")}</div></div>
     <p class="look-hint">끌어서 시선 돌리기 · 물건을 눌러 조사</p><div class="room-speech" aria-live="polite" hidden></div><div class="arrival sr-only" role="status"></div>
     </section><footer>${btn("소지품 <span class=\"item-count\">"+(state.noteTaken?"1":"0")+"</span>","inventory","secondary")}<span class="room-goal">${state.unlocked?"잠금 해제":state.guide?"비상 출입번호 찾기":""}</span></footer></main>`;
   if(state.phase==="escaped")ending();
@@ -124,6 +123,9 @@ function panTo(x,y) {
   const focal=Math.max(240,scene.clientHeight*.67);
   scene.style.perspective=focal+"px";
   rig.style.transform=`translateZ(${focal}px) rotateX(${camera.y}deg) rotateY(${camera.x}deg)`;
+  // Keep the existing character art facing the viewer instead of flattening it onto a wall.
+  const robot=app.querySelector(".robot-anchor");
+  if(robot)robot.style.transform=`translate3d(210px,230px,-470px) rotateY(${-camera.x}deg) rotateX(${-camera.y}deg)`;
   const sector=((Math.round(camera.x/90)%4)+4)%4;
   app.querySelector(".view-direction").textContent=["출입문 쪽","실습대 쪽","관찰창 쪽","보관장 쪽"][sector];
 }
