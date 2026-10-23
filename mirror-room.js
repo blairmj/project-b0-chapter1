@@ -28,7 +28,7 @@
       ${['front','left','right','back'].map(f=>`<div class="c2-wall c2-wall-${f}"><div class="c3-conduit"></div><div class="c2-light"></div></div>`).join('')}<div class="c2-floor"></div><div class="c2-ceiling"></div>
       <div class="mr-room-sign" aria-hidden="true"><small>VISUAL PERCEPTION LAB</small><strong>시각 인식 관찰실</strong></div>
       <div class="mr-partition ${glassUp?'raised':''}"><div class="mr-glass"><i></i><i></i><span class="mr-glass-edge" data-mr-object="glass" role="button" tabindex="0" aria-label="두 구역 사이의 유리벽"></span></div></div><div class="mr-glass-rail" aria-hidden="true"></div>
-      <div class="mr-door" data-mr-object="door" role="button" tabindex="0" aria-label="관찰실 출입문"><span class="mr-passage"></span><div class="mr-door-leaf"><span class="mr-door-plate">${symbol('triangle')}</span><i class="mr-bolt mr-bolt-upper"></i><i class="mr-bolt mr-bolt-lower"></i><span class="mr-door-grip"></span></div></div>
+      <div class="mr-door" data-mr-object="door" role="button" tabindex="0" aria-label="관찰실 출입문"><span class="mr-passage"></span><div class="mr-door-leaf"><span class="mr-door-plate">${symbol('triangle')}</span><span class="mr-door-grip"></span></div><i class="mr-bolt mr-bolt-upper"></i><i class="mr-bolt mr-bolt-lower"></i></div>
       <div class="mr-own-lever" data-mr-object="own" role="button" tabindex="0" aria-label="문 옆 수동 손잡이"><svg class="mr-hand-mark" viewBox="0 0 40 40" aria-hidden="true"><path d="M10 28V15q0-3 3-3t3 3v5-13q0-3 3-3t3 3v13-11q0-3 3-3t3 3v11-6q0-3 3-3t3 3v14l-7 9H16Z"/></svg><span class="mr-lever-track"></span><span class="mr-own-knob" data-mr-drag="own"><i></i></span></div>
       <div class="mr-control-panel" data-mr-object="panel" role="group" aria-label="B-0 쪽 조작반">${M.symbols.map((id,i)=>`<div class="mr-remote-lever" data-mr-object="${id}" role="button" tabindex="0" aria-label="${M.names[id]} 손잡이" style="left:${-118+i*82}px">${symbol(id)}<span class="mr-lever-track"></span><span class="mr-remote-knob" data-knob="${id}"><i></i></span></div>`).join('')}</div>
       <div class="mr-vent" data-mr-object="vent" role="button" tabindex="0" aria-label="반대편 환기 장치"><span></span><i></i><i></i><i></i></div>
@@ -64,8 +64,8 @@
       camFrame=requestAnimationFrame(step);
     }
     function walk(to,done){
-      cancelAnimationFrame(botFrame);robotBusy=true;const from={...robot},start=performance.now();app.querySelector('.mr-robot').classList.add('walking');
-      function step(t){if(dead)return;const v=reduce()?1:Math.min(1,(t-start)/950),e=v*v*(3-2*v);robot={x:from.x+(to.x-from.x)*e,z:from.z+(to.z-from.z)*e};updateCamera();if(v<1)botFrame=requestAnimationFrame(step);else{robotBusy=false;app.querySelector('.mr-robot').classList.remove('walking');done?.();}}
+      cancelAnimationFrame(botFrame);robotBusy=true;bar?.querySelectorAll('[data-mr^="command-"]').forEach(el=>el.disabled=true);const from={...robot},start=performance.now();app.querySelector('.mr-robot').classList.add('walking');
+      function step(t){if(dead)return;const v=reduce()?1:Math.min(1,(t-start)/950),e=v*v*(3-2*v);robot={x:from.x+(to.x-from.x)*e,z:from.z+(to.z-from.z)*e};updateCamera();if(v<1)botFrame=requestAnimationFrame(step);else{robotBusy=false;app.querySelector('.mr-robot').classList.remove('walking');done?.();if(!robotBusy)bar?.querySelectorAll('[data-mr^="command-"]').forEach(el=>el.disabled=false);}}
       botFrame=requestAnimationFrame(step);
     }
     function introLine(){
@@ -103,8 +103,8 @@
       walk({x:245,z:controlZ[id]+48},()=>{
         const wasSolved=M.solved(s),result=M.command(s,id,verb);save();update();sound('lever');if(!wasSolved&&M.solved(s)){afterUnlock();return;}requestMenu(id);
         if(result==='momentary'){
-          say('robot',M.names[id]+' 손잡이를 내리겠습니다.');pulse=later(()=>{if(s.active!==id||s.holding)return;M.release(s,id);save();update();say('robot','내렸다가 놓았습니다.');},700);
-        }else if(result==='holding')say('robot',M.names[id]+' 손잡이를 내린 채 잡고 있습니다.');else say('robot',result==='raised'?'위로 올렸습니다.':'손을 놓았습니다.');
+          say('robot',M.names[id]+' 손잡이를 내리겠습니다.');pulse=later(()=>{if(s.active!==id||s.holding)return;M.release(s,id);save();update();say('robot','내렸다가 놓았습니다.');walk({x:145,z:55});},700);
+        }else if(result==='holding')say('robot',M.names[id]+' 손잡이를 내린 채 잡고 있습니다.');else{say('robot',result==='raised'?'위로 올렸습니다.':'손을 놓았습니다.');walk({x:145,z:55});}
       });
     }
     function unlockedActions(){actions('출입문이 열렸다.',[['이제 놓아도 돼','reunite'],['문 살펴보기','select-door']]);}
