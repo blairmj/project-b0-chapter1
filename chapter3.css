@@ -4,7 +4,7 @@
 .c3-stage .c2-basic-help{font-size:11px}
 .c3-old-exit{position:absolute;left:17px;top:-40px;width:126px;height:220px;transform:translateZ(-295px);background:#34444c;border:9px solid #26323a;transform-style:preserve-3d;cursor:pointer}
 .c3-exit-sign{position:absolute;left:12px;right:12px;top:-47px;padding:4px 2px;text-align:center;color:#d4ded4;background:#345a53;border:3px solid #283e3c;font-size:17px;letter-spacing:.2em}
-.c3-brick-wall{position:absolute;inset:2px;background:linear-gradient(90deg,transparent 49%,#353d3e 50% 52%,transparent 53%) 0 0/78px 45px,repeating-linear-gradient(#737b7b 0 39px,#3e494a 40px 45px);box-shadow:inset 0 0 28px 12px #10212a88;transform:translateZ(-1px)}
+.c3-brick-wall{position:absolute;inset:2px;background:linear-gradient(90deg,transparent 49%,#353d3e 50% 52%,transparent 53%) 0 0/78px 45px,repeating-linear-gradient(#737b7b 0 39px,#3e494a 40px 45px);box-shadow:inset 0 0 28px 12px #10212a88;transform:translateZ(1px)}
 .c3-old-leaf{position:absolute;inset:0;background:#667381 url('./assets/chapter2-metal-v1.webp') center/240px;border:4px solid #384850;transform-origin:left;transform:translateZ(2px);transition:transform .8s;backface-visibility:visible}
 .c3-old-leaf:before{content:'';position:absolute;left:15px;right:15px;top:18px;bottom:23px;border:2px solid #34434b;box-shadow:inset 1px 1px #a5b1b0}
 .c3-old-leaf i,.c3-real-leaf i{position:absolute;right:12px;top:48%;width:8px;height:28px;background:#b3b9b4;border:2px solid #293d46;border-radius:4px}
@@ -16,11 +16,11 @@
 .c3-map-board .c3-map-art{height:110px}
 .c3-real-exit{position:absolute;left:-70px;top:-40px;width:140px;height:220px;transform:translateX(-295px) rotateY(90deg);border:9px solid #273840;transform-style:preserve-3d;background:#243c48}
 .c3-real-exit[aria-hidden="true"]{pointer-events:none}
-.c3-exit-space{position:absolute;inset:0;background:#345361 url('./assets/lab-corridor-v1.webp') center/cover;transform:translateZ(-2px)}
-.c3-real-leaf{position:absolute;inset:0;background:#62747b url('./assets/chapter2-metal-v1.webp') center/230px;border:4px solid #32434c;transform-origin:right;transition:transform .9s;backface-visibility:visible}
+.c3-exit-space{position:absolute;inset:0;background:#345361 url('./assets/lab-corridor-v1.webp') center/cover;transform:translateZ(1px)}
+.c3-real-leaf{position:absolute;inset:0;background:#62747b url('./assets/chapter2-metal-v1.webp') center/230px;border:4px solid #32434c;transform-origin:right;transform:translateZ(2px);transition:transform .9s;backface-visibility:visible}
 .c3-real-leaf:before{content:'';position:absolute;top:15px;bottom:18px;left:14px;right:14px;border:2px solid #3c5057}
 .c3-real-leaf i{right:auto;left:10px}
-.c3-real-exit.open .c3-real-leaf{transform:rotateY(105deg)}
+.c3-real-exit.open .c3-real-leaf{transform:translateZ(2px) rotateY(105deg)}
 .c3-tracks{position:absolute;width:78px;height:420px;left:-277px;top:-210px;transform:translateY(177px) rotateX(90deg);background:linear-gradient(90deg,transparent 15%,#131e2766 17% 20%,#c0c9b744 21%,transparent 23% 76%,#16212b66 78% 81%,#acb6ac44 82%,transparent 84%);cursor:pointer}
 .c3-gap{position:absolute;left:-45px;top:-4px;width:90px;height:7px;min-height:0;padding:0;border:0;border-radius:0;transform:translate3d(-291px,178px,0) rotateY(90deg);background:#bed6c0;box-shadow:0 -2px 9px #bad9bb80;backface-visibility:hidden}
 .c3-gap:hover{background:#c8ddce}
