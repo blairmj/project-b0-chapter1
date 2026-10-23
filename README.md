@@ -35,3 +35,5 @@
 - 저장 키: project-b0-firstperson-v4. 이전 버전 저장은 유지. 브라우저에만 저장, 외부 전송 없음.
 - 정적 HTML/CSS/JS, 빌드나 API 키 불필요. main 변경 시 GitHub Pages 자동 배포.
 - 검사: node tests/firstperson-flow.cjs.
+
+- assets/b0-note-v1.webp: 같은 B-0 디자인으로 보관함을 열고 쪽지를 건네는 추가 자세.

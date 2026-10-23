@@ -10,3 +10,7 @@
 @media(max-height:650px){.game{height:auto;min-height:100dvh}.scene{height:440px;flex:none}.awakening{min-height:480px}.intro-speech{min-height:90px}.modal{max-height:94dvh}.map-detail{height:130px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}.eyelids{opacity:0}.face{filter:none}}
 .door-art{background:transparent}.door-open .door-art{background:#0c1722}
+
+.robot-detail.thinking>.robot-sprite{background-position:50% 0}
+.robot-detail.found{height:250px}
+.robot-detail.found>.robot-sprite{width:260px;height:250px;background:url('./assets/b0-note-v1.webp') center/contain no-repeat}

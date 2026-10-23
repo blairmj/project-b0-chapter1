@@ -5,5 +5,14 @@
   "original": "B0_기상_얼굴_v1.png",
   "purpose": "First-person awakening close-up; preserve original B-0 identity",
   "prompt": "Identity-preserve. Approved B-0 identity sheet: ivory weathered shell, cyan oval eyes on glossy black display, cyan ear rings, little top antenna, polished hand-drawn adventure illustration. One 1024x1536 portrait. B-0 leaning toward the waking player, face fills nearly entire width and upper 75%, ears slightly cropped, hint of shoulders at bottom. Friendly curious neutral expression. Narrow defocused dark blue-grey abandoned educational lab ceiling. No human, no text, no UI. Lower 15% dark shoulders for separately rendered dialogue. Preserve exact original identity and illustration style.",
-  "delivery": "WebP quality 92; no semantic edits after generation"
+  "delivery": "WebP quality 92; no semantic edits after generation",
+  "notePose": {
+    "tool": "built-in image_gen",
+    "reference": "b0-poses-v2.png",
+    "output": "b0-note-v1.webp",
+    "original": "B0_보관함_쪽지_v1.png",
+    "prompt": "Preserve approved B-0 identity: weathered ivory shell, cyan eyes and ear rings, same proportions and hand-drawn illustration. Single full-body transparent pose. Small open storage hatch in lower front torso above pelvis. Holding a small blank folded cream note at chest height, other hand beside open hatch. Friendly mildly surprised expression. No text, no other characters, no sprite sheet. Preserve original design.",
+    "alpha": "preserved",
+    "delivery": "WebP quality 92"
+  }
 }

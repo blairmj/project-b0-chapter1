@@ -95,12 +95,12 @@ function guide() {
   modal("벽면 안내도",`<div class="map-detail" role="img" aria-label="기존 벽면 안내도 확대"><div class="device"></div></div><div class="notice-paper"><h3>비상 출입 안내</h3><p>출입 시스템 정지 시<br>관리용 쪽지의 비밀번호를 사용하십시오.</p></div>${dialogue("student","비밀번호가 적힌 쪽지가 있다는 거네.")}${btn("방으로 돌아가기","close","primary wide")}`);
 }
 function robot() {
-  const art=`<div class="robot-detail${state.noteFound?" found":""}" role="img" aria-label="B-0와 가슴 아래 보관함"><div class="robot-sprite"></div>${state.noteFound&&!state.noteTaken?'<span class="little-paper" aria-hidden="true"></span>':""}</div>`;
+  const art=`<div class="robot-detail${state.noteFound&&!state.noteTaken?" found":""}" role="img" aria-label="B-0와 가슴 아래 보관함"><div class="robot-sprite"></div></div>`;
   if(state.noteTaken){modal("B-0",`${art}${dialogue("robot","쪽지는 건네드렸습니다. 소지품에서 다시 볼 수 있어요.")}${btn("비밀번호 쪽지 보기","note","primary wide")}`);return;}
   if(state.noteFound){modal("B-0의 보관함",`${art}${dialogue("robot","제 보관함에 들어 있었습니다. 확인하기 전에는 몰랐네요.")}${btn("쪽지 받기","take-note","primary wide")}`);return;}
   modal("B-0",`${art}${dialogue("robot",state.guide?"관리용 쪽지 말인가요? 아직 본 기억은 없습니다.":"어떤 것을 확인해 볼까요?")}<div class="options">${state.guide?btn("네가 갖고 있는 건 없어?","ask-note","secondary"):""}${btn("네 보관함을 살펴봐도 돼?","ask-storage","secondary")}${btn("방을 더 둘러볼게","close","quiet")}</div>`);
 }
-function askStorage() { modal("B-0의 보관함",`${dialogue("student",state.guide?"네 보관함도 확인해 볼까?":"몸에 보관함이 있네. 안에 뭐가 있어?")}${dialogue("robot","안쪽은 아직 확인하지 않았습니다. 열어 보겠습니다.")}<div class="compartment-mark" aria-hidden="true"></div>${btn("보관함 열어 보기","open-storage","primary wide")}`); }
+function askStorage() { modal("B-0의 보관함",`${dialogue("student",state.guide?"네 보관함도 확인해 볼까?":"몸에 보관함이 있네. 안에 뭐가 있어?")}${dialogue("robot","안쪽은 아직 확인하지 않았습니다. 열어 보겠습니다.")}<div class="robot-detail thinking" aria-hidden="true"><div class="robot-sprite"></div></div>${btn("보관함 열어 보기","open-storage","primary wide")}`); }
 function openStorage() { state.noteFound=true;save("발견","B-0가 확인하지 않았던 보관함에서 관리용 쪽지 발견");tone();robot(); }
 function noteMarkup() {return '<div class="password-note"><small>관리용 쪽지</small><h3>비상 출입번호</h3><strong>4732</strong><p>사용 후 보관함에 넣어 두십시오.</p></div>';}
 function showNote() { if(!state.noteTaken)return;modal("비밀번호 쪽지",`${noteMarkup()}${dialogue("student","찾았다! 이 번호로 해보자.")}${btn("쪽지 보관하고 돌아가기","close","primary wide")}`); }
