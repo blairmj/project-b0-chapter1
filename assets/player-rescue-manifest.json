@@ -1,1 +1,17 @@
-fs is not defined
+{
+  "tool": "built-in image_gen",
+  "reference": "b0-rescue-climb-v1.webp",
+  "assets": [
+    {
+      "file": "player-rescue-reach-v1.webp",
+      "source": "../../PROJECT_B0_디자인/player-rescue-reach-v1.png",
+      "prompt": "Use case: compositing. Asset type: transparent FIRST-PERSON child arm game overlay, matching the reference's detailed painted comic style. Reference is B-0 identity/style only; DO NOT draw the robot body. Draw exactly ONE elementary-school boy's LEFT bare hand and a long left forearm reaching forward/up from the BOTTOM CENTER edge of a narrow 1:2 portrait canvas. The hand is near the TOP CENTER, fingers extended and slightly curled ready to catch someone's hand, palm facing forward and slightly right, natural five fingers and small youthful hand. The long forearm points straight vertically down the image and exits the bottom center edge, with a simple muted blue-gray sleeve cuff at the bottom only. Arm has roughly consistent width along lower two-thirds so it can be stretched in a game overlay. Warm natural light skin, matching ink outlines and soft painted shading of B-0 reference, no photorealism. Keep at least 15% TRANSPARENT margins on BOTH sides and above the fingertips. No shoulder, face, torso, second arm, robot, object, text, window, room, background, ground or shadow on background. Actual alpha transparency. Hand and wrist in upper 40%, long forearm in lower 60%."
+    },
+    {
+      "file": "player-rescue-grip-v1.webp",
+      "source": "../../PROJECT_B0_디자인/player-rescue-grip-v1.png",
+      "prompt": "Use case: compositing. Edit target Image 1: the boy's transparent left hand and forearm. Image 2 is B-0 robot identity reference. Make an animation variant of Image 1 with exactly the SAME canvas size, long forearm, blue-gray sleeve cuff at bottom, skin color, outlined painted style, transparent side margins, and straight vertical arm from bottom center. Change ONLY the hand area in the UPPER 40%: the boy's LEFT hand now FIRMLY CLASPS B-0's raised RIGHT hand/wrist. Human fingers curl across the BACK of the robot's small worn ivory mechanical hand, with human thumb locking from opposite side. Clearly show TWO SEPARATE HANDS in a secure rescue grip, human skin wrapping black segmented robot fingers/ivory wrist with cyan joint, load-bearing grasp. Keep clasp centered around x=50%, y=24% of canvas, with fingertips/robot hand cluster inside upper 40%. Robot's small wrist stub extends down-right behind the clasp only; DO NOT include any robot body or long robot arm. Both hands overlap physically, no gap between them. The boy's long lower forearm remains completely identical to image 1 for seamless stretch animation. No other human hand, no face, no scene, no text, no ledge. Actual transparent alpha background."
+    }
+  ],
+  "note": "PNG originals preserved, WebP format conversion only, alpha retained. Stretch only the forearm below the 800px hand cap."
+}
