@@ -1,6 +1,6 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
 const elements=new Map();
-function el(k){if(!elements.has(k))elements.set(k,{innerHTML:'',textContent:'',value:'',hidden:false,style:{},dataset:{},offsetWidth:600,offsetHeight:700,clientWidth:400,clientHeight:600,addEventListener(){},querySelector(){return null},cloneNode(){return null},classList:{add(){},remove(){},contains(){return false}},select(){}});return elements.get(k);}
+function el(k){if(!elements.has(k))elements.set(k,{innerHTML:'',textContent:'',value:'',hidden:false,style:{},dataset:{},offsetWidth:600,offsetHeight:700,clientWidth:400,clientHeight:600,handlers:{},addEventListener(k,f){this.handlers[k]=f},setPointerCapture(){},hasPointerCapture(){return false},querySelector(){return null},cloneNode(){return null},classList:{add(){},remove(){},contains(){return false}},select(){}});return elements.get(k);}
 const app={innerHTML:'',querySelector:k=>k==='dialog'?null:el(k),addEventListener(){},querySelectorAll:()=>[]};
 let storage=null;
 const ctx=vm.createContext({document:{querySelector:()=>app},localStorage:{getItem:()=>storage,setItem:(k,v)=>storage=v},setTimeout:f=>{f();return 1},clearTimeout(){},window:{addEventListener(){},matchMedia:()=>({matches:true})}});
@@ -41,3 +41,13 @@ console.log('PASS: face-first intro, no student avatar, guide mission, B-0 compa
 run('panTo(9999,-9999)');assert.equal(run('camera.x'),100);assert.equal(run('camera.y'),-50);
 assert.doesNotMatch(app.innerHTML,/방 전체 보기/);
 console.log('PASS: bounded camera and removal of full-room navigation button');
+
+const scene=el('.scene');
+run('moving=false;bindCamera();panTo(0,0)');
+function pointer(x,y){return {pointerId:1,isPrimary:true,button:0,clientX:x,clientY:y,preventDefault(){}}}
+scene.handlers.pointerdown(pointer(100,100));scene.handlers.pointermove(pointer(104,100));
+assert.equal(run('camera.x'),0);scene.handlers.pointerup(pointer(104,100));assert.equal(run('suppressClick'),false);
+scene.handlers.pointerdown(pointer(100,100));scene.handlers.pointermove(pointer(180,130));
+assert.equal(run('camera.x'),80);assert.equal(run('camera.y'),30);scene.handlers.pointerup(pointer(180,130));assert.equal(run('suppressClick'),true);
+scene.handlers.pointerdown(pointer(100,100));scene.handlers.pointercancel(pointer(100,100));assert.equal(run('drag'),null);
+console.log('PASS: click slop, mouse/touch pointer drag, click suppression, pointer cancellation');
