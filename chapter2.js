@@ -54,7 +54,7 @@
       const r=app.querySelector('.c2-robot');r.style.transform=`translate3d(${robot.x-48}px,${24-robotLift}px,${robot.z}px) rotateY(${-camera.yaw}deg)${s.phase==='ledge'?' rotateX(28deg)':''}`;
       const zoom=app.querySelector('.c2-zoom'),down=app.querySelector('.c2-descend');if(zoom)zoom.textContent=Math.round(camera.zoom*100)+'%';if(down)down.hidden=!standing||s.phase!=='room';
     }
-    const view=()=>({x:viewX,z:viewZ,height:viewHeight,yaw:camera.yaw,pitch:camera.pitch});
+    const view=()=>({x:viewX,z:viewZ,height:viewHeight,yaw:camera.yaw,pitch:camera.pitch,zoom:camera.zoom});
     const direction=(x,z)=>Math.atan2(x,-z)*180/Math.PI;
     function travel(points,done,animate=true){
       cancelAnimationFrame(heightFrame);
@@ -65,7 +65,7 @@
         const turn=((to.yaw-from.yaw+540)%360)-180;
         function step(t){if(dead)return;const v=!animate||reduced()?1:Math.min(1,(t-t0)/(target.ms||450)),e=v*v*(3-2*v);
           viewX=from.x+(to.x-from.x)*e;viewZ=from.z+(to.z-from.z)*e;viewHeight=from.height+(to.height-from.height)*e;
-          camera.yaw=from.yaw+turn*e;camera.pitch=from.pitch+(to.pitch-from.pitch)*e;updateCamera();
+          camera.yaw=from.yaw+turn*e;camera.pitch=from.pitch+(to.pitch-from.pitch)*e;camera.zoom=from.zoom+(to.zoom-from.zoom)*e;updateCamera();
           if(v<1)heightFrame=requestAnimationFrame(step);else segment();}
         if(!animate||reduced())step(t0);else heightFrame=requestAnimationFrame(step);
       }
@@ -77,7 +77,7 @@
       const distance=Math.min(ux?Math.abs((base.w/2+30)/ux):Infinity,uz?Math.abs((base.d/2+30)/uz):Infinity);
       const edge={x:p.x+ux*distance,z:p.z+uz*distance},yaw=direction(p.x-edge.x,p.z-edge.z);
       groundView={...start,edge};standing=id;speech.hidden=true;actions('상자에 다가가는 중…',[]);
-      travel([{...edge,height:0,yaw,pitch:-24,ms:650},{...edge,height:M.top(s,id),pitch:-42,ms:450},{x:p.x,z:p.z,height:M.top(s,id),pitch:-56,ms:400}],()=>{select(id);say('student','상자 위에 올라섰어. 발밑에 상자가 있어.');});
+      travel([{...edge,height:0,yaw,pitch:-24,ms:650},{...edge,height:M.top(s,id),pitch:-42,ms:450},{x:p.x,z:p.z,height:M.top(s,id),pitch:-56,ms:400}],()=>{select(id);say('student','올라왔어. 이제 주위를 살펴보자.');});
     }
     function update(){
       if(s.phase==='complete')return;
@@ -220,8 +220,9 @@
       say('robot','발을 받쳐 드릴게요. 준비되면 창틀을 잡으세요.');
       walkRobot(p.x-135,p.z+20,()=>{
         if(standing!==id||!M.boost(s,id))return;
-        busy=true;update();const t0=performance.now();
-        function rise(t){if(dead)return;const v=reduced()?1:Math.min(1,(t-t0)/1100);lift=64*(v*v*(3-2*v));updateCamera();
+        busy=true;update();const t0=performance.now(),fromYaw=camera.yaw,fromPitch=camera.pitch;
+        const targetYaw=direction(105-viewX,-296-viewZ),turn=((targetYaw-fromYaw+540)%360)-180,targetPitch=-Math.atan2(viewHeight+64-150,Math.hypot(105-viewX,-296-viewZ))*180/Math.PI;
+        function rise(t){if(dead)return;const v=reduced()?1:Math.min(1,(t-t0)/1100),e=v*v*(3-2*v);lift=64*e;camera.yaw=fromYaw+turn*e;camera.pitch=fromPitch+(targetPitch-fromPitch)*e;updateCamera();
           if(v<1)animation=requestAnimationFrame(rise);else{busy=false;save();say('student','닿았어! 조금만 기다려. 나도 너 잡아 줄게.');select('window');}}
         animation=requestAnimationFrame(rise);
       });
@@ -239,7 +240,7 @@
       speech.hidden=true;helpText.hidden=true;actions('창틀을 넘어 몸을 돌리는 중…',[]);
       const x=105,z=-286,height=200,dx=robot.x-x,dz=robot.z-z;
       const yaw=direction(dx,dz),pitch=-Math.atan2(height+90,Math.hypot(dx,dz))*180/Math.PI;
-      travel([{x,z,height,pitch:-5,ms:650},{yaw,pitch,ms:750}],()=>{
+      travel([{x,z,height,pitch:-5,ms:650},{yaw,pitch,zoom:1.35,ms:750}],()=>{
         app.querySelector('.c2-sill').hidden=false;actions('아래에 있는 B-0에게 손 내밀기',[['B-0의 손 잡기','help-b0']]);say('student','이제 너 올라와. 손 줘.');
       },animate);
     }
