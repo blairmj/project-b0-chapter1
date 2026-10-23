@@ -21,7 +21,7 @@ run('submitCode("1111");');assert.equal(run('state.unlocked'),false);
 assert.equal(el('#lock-status').textContent,'번호가 일치하지 않습니다.');
 run('approach("map");inspect();');assert.equal(run('state.guide'),true);
 assert.match(run('panel.content'),/관리용 쪽지/);
-run('approach("robot");inspect();');assert.match(run('panel.content'),/네가 갖고 있는 건 없어/);
+run('approach("robot");inspect();');assert.match(run('panel.content'),/비밀번호 쪽지를 알아/);
 run('handle("ask-note");handle("open-storage");');
 assert.equal(run('state.noteFound'),true);assert.equal(run('state.noteTaken'),false);
 assert.match(run('panel.content'),/확인하기 전에는 몰랐/);
@@ -76,3 +76,12 @@ scene.handlers.pointerup(touch(1,100));scene.handlers.pointerup(touch(2,250));as
 run('state=fresh();state.phase="room";approach("filebox")');assert.match(run('panel.content'),/준비물 목록/);assert.equal(run('state.noteFound'),false);
 run('approach("envelope")');assert.match(run('panel.content'),/장비 관리 안내/);assert.equal(run('state.noteTaken'),false);assert.equal(run('state.unlocked'),false);
 console.log('PASS: zoom limits, shared focal length, home view without progress reset, pinch cleanup, optional decoys');
+
+run('state=fresh();state.phase="room";robot()');assert.match(run('panel.content'),/무엇을 물어볼까/);assert.doesNotMatch(run('panel.content'),/talk-password|<input|<textarea/);
+for(const t of ['identity','where','exit','belongings']){run('handle("talk-'+t+'")');assert.match(run('panel.content'),/conversation-reply/);assert.equal(run('state.noteFound'),false);}
+assert.match(run('panel.content'),/ask-storage/);
+run('state.guide=true;robot()');assert.match(run('panel.content'),/talk-password/);assert.match(run('panel.content'),/talk-limits/);
+run('handle("talk-password")');assert.doesNotMatch(run('panel.content'),/4732/);assert.match(run('panel.content'),/확인하지 않은 번호/);
+run('handle("talk-belongings");handle("ask-storage");handle("open-storage")');assert.equal(run('state.noteFound'),true);assert.match(run('panel.content'),/쪽지 받기/);
+run('handle("take-note");handle("talk-limits")');assert.match(run('panel.content'),/안을 확인하기 전/);assert.equal(run('state.noteTaken'),true);
+console.log('PASS: selectable questions, context-sensitive topics, no early password reveal, conversation-to-compartment flow');
