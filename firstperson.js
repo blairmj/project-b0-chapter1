@@ -25,22 +25,21 @@ function load() {
   } catch { return null; }
 }
 let state = load() || fresh(), target = "", moving = false, token = 0, timer, speechTimer, audio, lastFocus;
-let faceId=0, talkTimer, camera={x:0,y:0}, drag=null, suppressClick=false;
+let faceId=0, talkTimer, camera={x:0,y:0}, drag=null, suppressClick=false, roomView;
 const reduced=()=>window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 // The illustration stays intact. Screen features are separate SVG animation layers.
 function portrait() {
-  const id="face-"+(++faceId),src="./assets/b0-awakening-v1.webp";
-  return `<svg class="live-portrait" viewBox="0 0 1024 1536" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs>
-    <clipPath id="${id}-body"><path d="M0 457L68 404L147 392Q239 213 434 199L715 193L687 88Q680 35 734 70L832 153L868 248Q941 326 970 614L1024 684V1536H0V941L63 930L114 962L146 934L0 838Z"/></clipPath>
-    <clipPath id="${id}-eye-l"><ellipse cx="300" cy="686" rx="110" ry="143"/></clipPath><clipPath id="${id}-eye-r"><ellipse cx="700" cy="760" rx="108" ry="138"/></clipPath>
-    <radialGradient id="${id}-shade"><stop offset="75%" stop-color="#070d11"/><stop offset="100%" stop-color="#070d11" stop-opacity="0"/></radialGradient></defs>
-    <image class="portrait-character" href="${src}" width="1024" height="1536" clip-path="url(#${id}-body)"/><image class="portrait-photo" href="${src}" width="1024" height="1536"/>
-    <ellipse cx="300" cy="686" rx="117" ry="151" fill="url(#${id}-shade)"/><ellipse cx="700" cy="760" rx="115" ry="146" fill="url(#${id}-shade)"/>
-    <g class="eye eye-left" style="--eye-x:300px;--eye-y:686px"><image href="${src}" width="1024" height="1536" clip-path="url(#${id}-eye-l)"/></g>
-    <g class="eye eye-right" style="--eye-x:700px;--eye-y:760px"><image href="${src}" width="1024" height="1536" clip-path="url(#${id}-eye-r)"/></g>
-    <ellipse cx="346" cy="509" rx="84" ry="39" fill="url(#${id}-shade)"/><ellipse cx="743" cy="599" rx="83" ry="48" fill="url(#${id}-shade)"/>
-    <path class="brow brow-left" d="M300 515 Q346 493 390 510"/><path class="brow brow-right" d="M706 583 Q747 591 780 620"/>
-    <ellipse cx="484" cy="834" rx="80" ry="43" fill="url(#${id}-shade)"/><g transform="rotate(11 484 834)"><rect class="live-mouth" x="439" y="825" width="90" height="18" rx="9" style="--mouth-x:484px;--mouth-y:834px"/></g></svg>`;
+  const id="body-"+(++faceId),src="./assets/b0-body-v3.webp";
+  return `<svg class="live-portrait" viewBox="0 0 1024 1536" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><defs>
+    <clipPath id="${id}-left"><ellipse cx="390" cy="451" rx="74" ry="96"/></clipPath><clipPath id="${id}-right"><ellipse cx="649" cy="496" rx="77" ry="94"/></clipPath>
+    <radialGradient id="${id}-shade"><stop offset="72%" stop-color="#080d12"/><stop offset="100%" stop-color="#080d12" stop-opacity="0"/></radialGradient></defs>
+    <image href="${src}" width="1024" height="1536"/>
+    <ellipse cx="390" cy="451" rx="81" ry="104" fill="url(#${id}-shade)"/><ellipse cx="649" cy="496" rx="84" ry="102" fill="url(#${id}-shade)"/>
+    <g class="eye eye-left" style="--eye-x:390px;--eye-y:451px"><image href="${src}" width="1024" height="1536" clip-path="url(#${id}-left)"/></g>
+    <g class="eye eye-right" style="--eye-x:649px;--eye-y:496px"><image href="${src}" width="1024" height="1536" clip-path="url(#${id}-right)"/></g>
+    <ellipse cx="419" cy="337" rx="58" ry="29" fill="url(#${id}-shade)"/><ellipse cx="682" cy="387" rx="56" ry="37" fill="url(#${id}-shade)"/>
+    <path class="brow brow-left" d="M387 342 Q421 326 451 335"/><path class="brow brow-right" d="M653 375 Q687 382 710 402"/>
+    <ellipse cx="507" cy="541" rx="52" ry="28" fill="url(#${id}-shade)"/><g transform="rotate(10 507 541)"><rect class="live-mouth" x="475" y="534" width="64" height="14" rx="7" style="--mouth-x:507px;--mouth-y:541px"/></g></svg>`;
 }
 function spriteFace(pose="neutral") {
   const note=pose==="note",x=note?634:pose==="thinking"?236:284,y=note?420:pose==="thinking"?192:196,w=note?45:20,h=note?14:4;
@@ -52,7 +51,7 @@ function performSpeech(who,text,mood="attentive",scope=app) {
   const actor=scope.querySelector(".face")||scope.querySelector(".robot-sprite");
   if(!actor)return;
   actor.dataset.mood=mood;
-  if(actor.classList.contains("robot-sprite"))actor.innerHTML=spriteFace(actor.closest(".found")?"note":mood==="thinking"?"thinking":"neutral");
+  if(actor.classList.contains("robot-sprite")&&!actor.classList.contains("live-body"))actor.innerHTML=spriteFace(actor.closest(".found")?"note":mood==="thinking"?"thinking":"neutral");
   if(who!=="robot")return;
   actor.classList.add("speaking");
   talkTimer=setTimeout(()=>actor.classList.remove("speaking"),Math.min(5500,Math.max(1600,text.length*95)));
@@ -75,6 +74,7 @@ function boot() {
   }
 }
 function opening() {
+  roomView?.dispose();roomView=null;
   token++;clearTimeout(timer);clearTimeout(speechTimer);target="";moving=false;
   app.innerHTML=`<main class="awakening${state.line===0?" waking":""}"><div class="face" role="img" aria-label="잠에서 깨어나 처음 마주한 B-0의 얼굴">${portrait()}</div><div class="eyelids" aria-hidden="true"></div><div class="wake-controls"><div class="intro-speech"></div>${btn("다음","next","next")}</div></main>`;
   renderIntro();
@@ -86,30 +86,40 @@ function renderIntro() {
   performSpeech(...line,["attentive","friendly","attentive","thinking","attentive","thinking","concerned","concerned","thinking","friendly"][state.line]);
   save();
 }
-const places={door:{name:"출입문",wall:0},lock:{name:"도어락",wall:0},map:{name:"벽면 안내도",wall:0},robot:{name:"B-0",wall:0},terminal:{name:"단말기",wall:0},cabinet:{name:"보관장",wall:-90},bench:{name:"실습대",wall:90},window:{name:"관찰창",wall:180}};
+const places={door:{name:"출입문",wall:0},lock:{name:"도어락",wall:0},map:{name:"벽면 안내도",wall:0},robot:{name:"B-0",wall:0},terminal:{name:"단말기",wall:0},cabinet:{name:"보관장",wall:-90},bench:{name:"실습대",wall:90},window:{name:"관찰창",wall:90}};
 const wallTarget=id=>btn("",`approach-${id}`,`target target-${id}`,`aria-label="${places[id].name} 살펴보기"`);
-function otherWalls(){return `<div class="room-wall side-wall wall-left" data-yaw="-90"><div class="wall-paint" role="img" aria-label="왼쪽 벽의 보관장과 장비 상자"></div>${wallTarget("cabinet")}</div><div class="room-wall side-wall wall-right" data-yaw="90"><div class="wall-paint" role="img" aria-label="오른쪽 벽을 따라 이어지는 실습대"></div>${wallTarget("bench")}</div><div class="room-wall side-wall wall-back" data-yaw="180"><div class="wall-paint" role="img" aria-label="뒤쪽 벽의 관찰창과 꺼진 화면"></div>${wallTarget("window")}</div><div class="room-wall wall-floor" aria-hidden="true"></div><div class="room-wall wall-ceiling" aria-hidden="true"></div>`;}
+function otherWalls(){return `<div class="room-wall side-wall wall-left" data-yaw="-90">${wallTarget("cabinet")}</div><div class="room-wall side-wall wall-right" data-yaw="90">${wallTarget("bench")}${wallTarget("window")}</div>`;}
 function enterRoom(reveal=false) {
+  roomView?.dispose();roomView=null;
   token++;clearTimeout(timer);clearTimeout(speechTimer);target="";moving=false;
   camera={x:0,y:-5};drag=null;suppressClick=false;
-  app.innerHTML=`<main class="game${reveal?" revealing":""}"><header><div class="location"><h1>내 위치: 교육 실습실</h1><span class="view-direction">출입문 쪽</span></div><nav aria-label="게임 메뉴">${btn("처음으로","restart","quiet")}${btn("메뉴","menu","quiet")}</nav></header><section class="scene" tabindex="0" aria-label="교육 실습실. 드래그하거나 방향키로 시선을 돌려 네 벽과 구석을 살펴보세요."><div class="room-rig"><div class="room-wall world${state.unlocked?" unlocked":""}" data-yaw="0"><div class="background" role="img" aria-label="기존 교육 실습실 배경"></div>
+  app.innerHTML=`<main class="game${reveal?" revealing":""}"><header><div class="location"><h1>내 위치: 교육 실습실</h1><span class="view-direction">출입문 쪽</span></div><nav aria-label="게임 메뉴">${btn("처음으로","restart","quiet")}${btn("메뉴","menu","quiet")}</nav></header><section class="scene" tabindex="0" aria-label="교육 실습실. 드래그하거나 방향키로 시선을 돌려 네 벽과 구석을 살펴보세요."><canvas class="panorama-canvas" role="img" aria-label="벽과 바닥이 하나로 이어진 교육 실습실"></canvas><p class="render-error" hidden role="alert"></p><div class="room-rig"><div class="room-wall world${state.unlocked?" unlocked":""}" data-yaw="0">
     <div class="door-art" aria-hidden="true"><div class="device door-left"></div><div class="device door-right"></div></div><span class="lock-led" aria-hidden="true"></span>
     <div class="device terminal-art" aria-hidden="true"></div><div class="device map-art" aria-hidden="true"></div><div class="device light-art" aria-hidden="true"></div>
-    <div class="targets">${Object.keys(places).filter(id=>places[id].wall===0&&id!=="robot").map(wallTarget).join("")}</div></div>${otherWalls()}<div class="robot-anchor"><div class="robot-sprite" role="img" aria-label="함께 있는 AI 로봇 B-0">${spriteFace()}</div>${wallTarget("robot")}</div></div>
+    <div class="targets">${Object.keys(places).filter(id=>places[id].wall===0&&id!=="robot").map(wallTarget).join("")}</div></div>${otherWalls()}<div class="robot-anchor"><div class="robot-sprite live-body" role="img" aria-label="함께 있는 AI 로봇 B-0">${portrait()}</div>${wallTarget("robot")}</div></div>
     <p class="look-hint">끌어서 시선 돌리기 · 물건을 눌러 조사</p><div class="room-speech" aria-live="polite" hidden></div><div class="arrival sr-only" role="status"></div>
     </section><footer>${btn("소지품 <span class=\"item-count\">"+(state.noteTaken?"1":"0")+"</span>","inventory","secondary")}<span class="room-goal">${state.unlocked?"잠금 해제":state.guide?"비상 출입번호 찾기":""}</span></footer></main>`;
   if(state.phase==="escaped")ending();
+  const report=text=>{const el=app.querySelector(".render-error");if(el){el.textContent=text;el.hidden=false;}};
+  try{roomView=createRoomPanorama(app.querySelector(".panorama-canvas"),report);}catch{report("방 화면을 시작하지 못했습니다. 페이지를 새로고침해 주세요.");}
   bindCamera();
   panTo(camera.x,camera.y);
 }
 function revealRoom() {
   if(moving)return;
-  const oldFace=app.querySelector(".face")?.cloneNode(true);
+  const face=app.querySelector(".face"),source=face?.getBoundingClientRect(),body=face?.cloneNode(true);
   enterRoom(!reduced());
-  if(reduced()||!oldFace)return;
-  moving=true;const ticket=token,game=app.querySelector(".game");
-  const overlay=document.createElement("div");overlay.className="departure";overlay.setAttribute("aria-hidden","true");overlay.append(oldFace);game.append(overlay);
-  timer=setTimeout(()=>{if(ticket!==token)return;overlay.remove();game.classList.remove("revealing");moving=false;app.querySelector(".scene").focus({preventScroll:true});},2200);
+  if(reduced()||!body||!source)return;
+  moving=true;const ticket=token,game=app.querySelector(".game"),base=game.getBoundingClientRect();
+  const target=app.querySelector(".robot-anchor>.robot-sprite").getBoundingClientRect();
+  const width=Math.min(target.width,target.height*2/3),height=width*1.5;
+  const overlay=document.createElement("div");overlay.className="departure body-retreat";overlay.setAttribute("aria-hidden","true");
+  body.style.width=source.width+"px";body.style.height=source.height+"px";
+  overlay.append(body);game.append(overlay);
+  const from=`translate(${source.left-base.left}px,${source.top-base.top}px) scale(1)`;
+  const to=`translate(${target.left-base.left+(target.width-width)/2}px,${target.top-base.top+(target.height-height)/2}px) scale(${width/source.width})`;
+  body.animate([{transform:from},{transform:to}],{duration:1800,easing:"cubic-bezier(.25,.55,.3,1)",fill:"forwards"});
+  timer=setTimeout(()=>{if(ticket!==token)return;overlay.remove();game.classList.remove("revealing");moving=false;app.querySelector(".scene").focus({preventScroll:true});},1850);
 }
 function roomSpeech(who,text) {const el=app.querySelector(".room-speech");if(!el)return;clearTimeout(speechTimer);el.innerHTML=dialogue(who,text);el.hidden=false;speechTimer=setTimeout(()=>{el.hidden=true;},4800);}
 function approach(id) {
@@ -118,16 +128,18 @@ function approach(id) {
 }
 function panTo(x,y) {
   const scene=app.querySelector(".scene"),rig=app.querySelector(".room-rig");if(!scene||!rig)return;
-  // Rotate a camera at the center of six 3D faces. No image translation.
+  // The spherical background and object planes share one camera.
   camera={x:((x+180)%360+360)%360-180,y:Math.max(-18,Math.min(18,y))};
   const focal=Math.max(240,scene.clientHeight*.67);
   scene.style.perspective=focal+"px";
   rig.style.transform=`translateZ(${focal}px) rotateX(${camera.y}deg) rotateY(${camera.x}deg)`;
+  scene.dataset.yaw=String(camera.x);scene.dataset.pitch=String(camera.y);
+  roomView?.view(camera.x,camera.y);
   // Keep the existing character art facing the viewer instead of flattening it onto a wall.
   const robot=app.querySelector(".robot-anchor");
   if(robot)robot.style.transform=`translate3d(125px,230px,-470px) rotateY(${-camera.x}deg) rotateX(${-camera.y}deg)`;
   const sector=((Math.round(camera.x/90)%4)+4)%4;
-  app.querySelector(".view-direction").textContent=["출입문 쪽","실습대 쪽","관찰창 쪽","보관장 쪽"][sector];
+  app.querySelector(".view-direction").textContent=["출입문 쪽","실습대·관찰창 쪽","뒤쪽 벽","보관장 쪽"][sector];
 }
 function hideLookHint(){app.querySelector(".look-hint")?.classList.add("dismissed");}
 function bindCamera() {

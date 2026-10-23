@@ -1,9 +1,9 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
 const elements=new Map();
-function el(k){if(!elements.has(k))elements.set(k,{innerHTML:'',textContent:'',value:'',hidden:false,style:{},dataset:{},offsetWidth:600,offsetHeight:700,clientWidth:400,clientHeight:600,handlers:{},addEventListener(k,f){this.handlers[k]=f},setPointerCapture(){},hasPointerCapture(){return false},querySelector(){return null},cloneNode(){return null},classList:{add(){},remove(){},contains(){return false}},insertAdjacentHTML(){},select(){}});return elements.get(k);}
+function el(k){if(!elements.has(k))elements.set(k,{innerHTML:'',textContent:'',value:'',hidden:false,style:{},dataset:{},offsetWidth:600,offsetHeight:700,clientWidth:400,clientHeight:600,handlers:{},addEventListener(k,f){this.handlers[k]=f},setPointerCapture(){},hasPointerCapture(){return false},querySelector(){return null},getBoundingClientRect(){return {left:0,top:0,width:600,height:900}},cloneNode(){return null},classList:{add(){},remove(){},contains(){return false}},insertAdjacentHTML(){},select(){}});return elements.get(k);}
 const app={innerHTML:'',querySelector:k=>k==='dialog'?null:el(k),addEventListener(){},querySelectorAll:()=>[]};
 let storage=null;
-const ctx=vm.createContext({document:{querySelector:()=>app},localStorage:{getItem:()=>storage,setItem:(k,v)=>storage=v},setTimeout:f=>{f();return 1},clearTimeout(){},window:{addEventListener(){},matchMedia:()=>({matches:true})}});
+const ctx=vm.createContext({createRoomPanorama:()=>({view(){},dispose(){}}),document:{querySelector:()=>app},localStorage:{getItem:()=>storage,setItem:(k,v)=>storage=v},setTimeout:f=>{f();return 1},clearTimeout(){},window:{addEventListener(){},matchMedia:()=>({matches:true})}});
 const run=s=>vm.runInContext(s,ctx);
 run(fs.readFileSync(path.join(__dirname,'../firstperson.js'),'utf8').replace(/boot\(\);\s*$/,''));
 run('tone=()=>{};modal=(title,content)=>{globalThis.panel={title,content}};');
@@ -13,7 +13,7 @@ assert.match(el('.intro-speech').innerHTML,/넌, 넌 누구야/);
 assert.doesNotMatch(app.innerHTML,/student-character|student-v2/);
 run('for(let i=0;i<intro.length;i++)handle("next");');
 assert.equal(run('state.phase'),'room');
-assert.match(app.innerHTML,/class="background"/);
+assert.match(app.innerHTML,/class="panorama-canvas"/);
 assert.doesNotMatch(app.innerHTML,/student-character|student-v2/);
 run('approach("door");inspect();handle("handle");handle("lock");');
 assert.equal(run('panel.title'),'출입문 도어락');
@@ -42,7 +42,7 @@ run('panTo(380,-9999)');assert.equal(run('camera.x'),20);assert.equal(run('camer
 run('panTo(-380,9999)');assert.equal(run('camera.x'),-20);assert.equal(run('camera.y'),18);
 assert.match(el('.room-rig').style.transform,/rotateY\(-20deg\)/);
 assert.match(app.innerHTML,/내 위치: 교육 실습실/);assert.match(app.innerHTML,/처음으로/);
-for(const wall of ['wall-left','wall-right','wall-back','wall-floor','wall-ceiling'])assert.ok(app.innerHTML.includes(wall));
+for(const wall of ['wall-left','wall-right'])assert.ok(app.innerHTML.includes(wall));
 assert.doesNotMatch(app.innerHTML,/방 전체 보기/);
 console.log('PASS: bounded camera and removal of full-room navigation button');
 
@@ -61,3 +61,6 @@ for(const [id,title] of [['cabinet','보관장'],['bench','실습대'],['window'
 run('handle("restart")');assert.equal(run('state.noteTaken'),true);assert.match(run('panel.content'),/계속하기/);
 run('handle("new")');assert.equal(run('state.phase'),'intro');assert.equal(run('state.noteTaken'),false);
 console.log('PASS: 360-degree keyboard turn, side-wall inspections, restart confirmation and reset');
+
+assert.match(run('portrait()'),/b0-body-v3.webp/);assert.doesNotMatch(run('portrait()'),/portrait-photo|portrait-character|b0-awakening/);
+console.log('PASS: shared transparent body source; no rectangular portrait layer');

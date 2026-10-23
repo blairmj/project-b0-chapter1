@@ -1,0 +1,30 @@
+{
+  "tool": "built-in image_gen",
+  "outputs": [
+    {
+      "path": "assets/room-panorama-v2.webp",
+      "size": [
+        1774,
+        887
+      ],
+      "reference": [
+        "assets/practice-room-v2.png",
+        "assets/room-sides-v1.webp"
+      ],
+      "prompt": "Create ONE continuous 360-degree equirectangular panorama, exactly 2:1 landscape, ideally 4096x2048. This is NOT a collage, NOT separate panels, NOT a contact sheet. Use the supplied illustrated laboratory images as strict visual references for the SAME room: preserve blue-grey scratched riveted metal panels, reflective square floor, sparse old workbenches and monitors, hanging black cables, cyan ceiling fixtures, dark warm amber workbench lamps, detailed hand-painted anime game-background style. Unify the entire room into a coherent interior viewed from ONE fixed central eye position: a single continuous floor grid, equal wall heights, one consistent ceiling and lighting, no repeated windows or duplicated posters at corners. Correct lat-long/equirectangular projection: horizon exactly halfway up, ceiling toward top pole, floor toward bottom pole; room wraps continuously left-to-right and the two outer edges must match in color and structure seamlessly. The central front direction (middle of image) shows the original dark rectangular exit opening slightly LEFT of center, centered at horizontal 46% and vertical 50%, width about 9% of whole panorama, top about 30%, bottom about 70%. Keep this opening EMPTY DARK so the game's original door sprite will be overlaid there. Immediately right of it is one inactive old terminal and farther right a workbench and one simple science poster without words. At horizontal 25% are tall closed storage cabinets and equipment cases. At horizontal 75% is a long workbench beneath a wide observation window into an empty classroom. At the far-left and far-right image edges the back wall is deliberately a quiet uninterrupted blue-gray metal wall, so the wrap seam passes through plain metal, no windows or furniture crossing that seam. Give the room real connected corners, with cabinets/workbenches sitting on the SAME floor, natural perspective through every direction. NO people, robots, text, UI, labels, split borders, multiple floor horizons, duplicate doors, bright red lights, stylized redesign. Maintain the existing illustration style faithfully; the change is coherent panoramic geometry only."
+    },
+    {
+      "path": "assets/b0-body-v3.webp",
+      "size": [
+        1024,
+        1536
+      ],
+      "transparent_background": true,
+      "reference": [
+        "assets/b0-awakening-v1.webp",
+        "assets/b0-poses-v2.png"
+      ],
+      "prompt": "Use case: identity-preserve. Produce a clean high-resolution FULL BODY cutout of the exact B-0 robot from the references, isolated on a genuinely transparent background. The close-up face reference is the identity/style authority; the sprite sheet's upper-left neutral stance supplies the complete body and proportions. Keep weathered warm ivory shell, charcoal joints, large glossy black face screen, cyan oval eyes with dark inner pupils and white highlights, small cyan line mouth, cyan ear rings, single little right antenna, round cyan chest light, chunky rounded hands and feet. Friendly attentive neutral expression, no smugness or sadness. Standing facing the camera, arms relaxed at the sides, both feet flat and clearly visible. Match the existing detailed anime/painterly game-asset rendering precisely. One character ONLY, centered, full body with room around antenna and shoes. The head should retain the close-up's slight natural tilt. NO background glow, NO grey gradient, NO checkerboard baked into pixels, NO ground plane, NO drop shadow rectangle, NO text, NO props, NO multiple poses. Transparent background, portrait canvas approximately 1024x1536. This ONE sprite will be zoomed into its face then smoothly scaled back to full body, so facial detail must be crisp."
+    }
+  ]
+}

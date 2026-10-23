@@ -93,3 +93,27 @@ body{display:flow-root}
 .revealing .robot-anchor>.robot-sprite{animation:retreat-body 2.2s ease-out both;transform-origin:50% 35%}
 .revealing .robot-anchor>.target{visibility:hidden}
 @media(max-width:380px){.game>header{padding:8px 10px}.location h1{font-size:11px}.game>header .quiet{padding:8px;font-size:11px}}
+
+/* A single spherical image provides every wall, corner, floor and ceiling. */
+.panorama-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none}
+.room-wall{background:transparent!important}
+.room-wall::after{display:none}
+.render-error{position:absolute;top:20px;left:20px;right:20px;padding:16px;z-index:30;background:#142b3e;border:1px solid #8db9d0;border-radius:8px;font-size:13px}
+.door-art{top:23%;height:50%}
+.target-door{top:24%;height:47%}
+.lock-led{top:49%}.target-lock{top:47%}
+.target-cabinet{left:25%;top:34%;width:65%;height:44%}
+.target-window{left:30%;top:19%;width:60%;height:32%}
+.target-bench{left:9%;top:53%;width:82%;height:25%}
+.awakening::before{content:"";position:absolute;inset:-20px;background:url('./assets/practice-room-v2.png') center/cover;filter:blur(12px);opacity:.45}
+.face{inset:auto;left:50%;top:42%;width:148%;height:auto;aspect-ratio:2/3;transform:translate(-50%,-28%);z-index:1;background:none}
+.face:after{display:none}
+.waking .face{animation:none}
+.wake-controls{background:linear-gradient(transparent,#091523e8)}
+.live-portrait .brow{stroke-width:10}
+.live-body{background:none!important}
+.live-body>.live-portrait{width:100%;height:100%}
+.revealing .robot-anchor>.robot-sprite{animation:none;visibility:hidden}
+.departure.body-retreat .face{inset:auto;left:0;top:0;margin:0;aspect-ratio:auto;animation:none;transform-origin:0 0;transform:none}
+.departure.body-retreat{background:none}
+.revealing .panorama-canvas{animation:room-focus 1.8s ease-out both}
