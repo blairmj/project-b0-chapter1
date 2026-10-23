@@ -1,0 +1,17 @@
+{
+  "tool": "built-in image_gen",
+  "reference": "b0-body-v3.webp",
+  "assets": [
+    {
+      "file": "b0-rescue-reach-v1.webp",
+      "source": "../../PROJECT_B0_디자인/b0-rescue-reach-v1.png",
+      "prompt": "Use case: identity-preserve. Edit target: referenced transparent B-0 full body sprite. Create ONE game sprite preserving EXACT robot identity, round worn ivory armor, black glass face with two cyan oval eyes, cyan chest light, one triangular antenna, childlike proportions and painted comic-book linework. Change pose and viewing angle only. We are a boy sitting HIGH ABOVE on a window ledge, looking DOWN at B-0 in the room. B-0 tilts his whole head upward and his cyan eyes look DIRECTLY UP INTO OUR CAMERA, with hopeful trusting focus. His RIGHT ARM reaches STRAIGHT UP above his head TOWARD THE VIEWER/CAMERA to offer a hand to be pulled up; foreshortened open mechanical palm near the TOP CENTER of the image, fingers ready to clasp. His other arm balances near his body. Show top surfaces of head and shoulders, body foreshortened from a high three-quarter downward camera angle. Entire robot, both feet and raised hand fully in frame with 6% padding. Precisely two arms, two legs. Do NOT extend arms sideways or toward image right. No human hand, no ledge, no room, no lettering, no ground, no shadows on backdrop. Genuine transparent background; only robot."
+    },
+    {
+      "file": "b0-rescue-climb-v1.webp",
+      "source": "../../PROJECT_B0_디자인/b0-rescue-climb-v1.png",
+      "prompt": "Use case: identity-preserve. Edit target: referenced B-0 looking-up rescue sprite. Make the NEXT animation key pose of this same robot being hauled up to a high window sill. Keep the SAME ivory worn armor, black face, cyan eyes and chest, antenna, painted outlines, image size, overhead three-quarter camera angle and transparent cutout style. His gaze stays UP toward us. His RIGHT HAND (on image upper left) is now clasped closed around an invisible rescuer's hand above him; keep this hand near x=27%, y=12% of canvas as an animation registration point. His RIGHT ELBOW bends so shoulders and chest have risen much closer to this hand. His LEFT ARM reaches UP and forward too, palm angled downward to plant on an invisible sill near his face height on image right. Torso leans forward as he hauls himself over the edge; one knee lifts toward chest, other leg hangs below. Make his upward climb unmistakable, weight supported by BOTH upper arms. Not sideways pushing. Exactly TWO arms and TWO legs. Entire robot uncropped, 6% transparent margin. No human, no visible ledge, no ropes, no environment, no text, no ground or backdrop. True alpha transparency."
+    }
+  ],
+  "note": "PNG originals preserved in the project design folder; runtime WebP conversion retains alpha."
+}

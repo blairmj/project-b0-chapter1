@@ -51,7 +51,7 @@
       world.style.transform=`translateZ(${focal}px) rotateX(${camera.pitch}deg) rotateY(${camera.yaw}deg) translate3d(${-viewX}px,${elevation}px,${-viewZ}px)`;
       stage.dataset.yaw=camera.yaw;stage.dataset.pitch=camera.pitch;
       stage.dataset.eyeX=viewX;stage.dataset.eyeZ=viewZ;stage.dataset.eyeHeight=elevation;
-      const r=app.querySelector('.c2-robot');r.style.transform=`translate3d(${robot.x-48}px,${24-robotLift}px,${robot.z}px) rotateY(${-camera.yaw}deg)${s.phase==='ledge'?' rotateX(28deg)':''}`;
+      const r=app.querySelector('.c2-robot');r.style.transform=`translate3d(${robot.x-48}px,${24-robotLift}px,${robot.z}px) rotateY(${-camera.yaw}deg)${s.phase==='ledge'?` rotateX(${-camera.pitch}deg)`:''}`;
       const zoom=app.querySelector('.c2-zoom'),down=app.querySelector('.c2-descend');if(zoom)zoom.textContent=Math.round(camera.zoom*100)+'%';if(down)down.hidden=!standing||s.phase!=='room';
     }
     const view=()=>({x:viewX,z:viewZ,height:viewHeight,yaw:camera.yaw,pitch:camera.pitch,zoom:camera.zoom});
@@ -233,7 +233,8 @@
     function enterLedge(animate=true){
       cancelAnimationFrame(animation);busy=false;mode=null;selection=null;standing=null;viewHeight+=lift;lift=0;s.assisted=null;
       if(!animate){const p=M.position(s,'small');robot=M.robotSpot(s,{x:p.x-135,z:p.z+20});}
-      const actor=app.querySelector('.c2-robot');actor.classList.remove('boosting','walking');actor.classList.add('reaching');actor.querySelector('.c2-support-arm').hidden=false;
+      const actor=app.querySelector('.c2-robot');actor.classList.remove('boosting','walking');actor.classList.add('reaching');actor.querySelector('.c2-support-arm').hidden=true;
+      actor.style.setProperty('--rescue-climb','0');stage.style.setProperty('--rescue-fade','0');stage.dataset.rescueStage='reach';
       room.classList.add('c2-ledge-game');app.querySelector('header h1').textContent='내 위치: 창틀 위';
       app.querySelector('[data-c2="home"]').hidden=true;app.querySelector('footer').innerHTML='<small>창틀에 앉아 방 안을 내려다보고 있다.</small>';
       stage.setAttribute('aria-label','창틀에서 방 안의 B-0를 내려다보는 장면');
@@ -244,12 +245,20 @@
         app.querySelector('.c2-sill').hidden=false;actions('아래에 있는 B-0에게 손 내밀기',[['B-0의 손 잡기','help-b0']]);say('student','이제 너 올라와. 손 줘.');
       },animate);
     }
+    function rescuePose(progress){
+      const ease=v=>{v=Math.max(0,Math.min(1,v));return v*v*(3-2*v);};
+      const grip=ease(progress/.18),haul=ease((progress-.18)/.52),crest=ease((progress-.7)/.3);
+      return {lift:10*grip+185*haul+85*crest,approach:.08*grip+.65*haul+.27*crest,
+        blend:ease((progress-.55)/.22),fade:ease((progress-.94)/.06),
+        phase:progress<.18?'grip':progress<.7?'pull':'climb'};
+    }
     function pullCompanion(){
       if(s.phase!=='ledge'||busy||travelling)return;
-      busy=true;app.querySelector('[data-c2="help-b0"]').disabled=true;say('student','잡았어. 놓지 마!');
-      const from={...robot},t0=performance.now();
-      function step(t){if(dead)return;const v=reduced()?1:Math.min(1,(t-t0)/1400),e=v*v*(3-2*v);
-        robot={x:from.x+(viewX-from.x)*e,z:from.z+(viewZ+90-from.z)*e};robotLift=180*e;
+      busy=true;const gripButton=app.querySelector('[data-c2="help-b0"]');gripButton.disabled=true;gripButton.textContent='끌어올리는 중…';say('student','잡았어. 놓지 마!');
+      const from={...robot},t0=performance.now(),actor=app.querySelector('.c2-robot');
+      function step(t){if(dead)return;const v=reduced()?1:Math.min(1,(t-t0)/3400),pose=rescuePose(v);
+        robot={x:from.x+(viewX-from.x)*pose.approach,z:from.z+(viewZ+80-from.z)*pose.approach};robotLift=pose.lift;
+        actor.style.setProperty('--rescue-climb',String(pose.blend));stage.style.setProperty('--rescue-fade',String(pose.fade));stage.dataset.rescueStage=pose.phase;
         camera.yaw=direction(robot.x-viewX,robot.z-viewZ);camera.pitch=-Math.atan2(viewHeight+94-robotLift,Math.hypot(robot.x-viewX,robot.z-viewZ))*180/Math.PI;updateCamera();
         if(v<1)animation=requestAnimationFrame(step);else{busy=false;if(M.finish(s)){save();ending();}}
       }

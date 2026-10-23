@@ -5,7 +5,7 @@ const M=require('../chapter2-model.js');
 // Run the real input handlers with a minimal scene DOM; no test hooks ship in the game.
 const nodes=new Map();
 function node(key){
-  if(!nodes.has(key))nodes.set(key,{style:{},dataset:{},hidden:false,isConnected:true,
+  if(!nodes.has(key))nodes.set(key,{style:{setProperty(key,value){this[key]=value;}},dataset:{},hidden:false,isConnected:true,
     clientWidth:616,clientHeight:500,innerHTML:'',textContent:'',
     classList:{toggle(){},add(){},remove(){}},querySelector:s=>node(key+s),
     setAttribute(name,value){this[name]=value;},listeners:{},addEventListener(type,fn){this.listeners[type]=fn;},removeEventListener(){},setPointerCapture(){},
@@ -21,7 +21,7 @@ const context={window:{B0RoomTwo:M,addEventListener(){},removeEventListener(){}}
   performance:{now:()=>clock},requestAnimationFrame(fn){frames.set(++frame,fn);return frame;},
   matchMedia:()=>({matches:reduceMotion}),setTimeout:()=>0,clearTimeout(){},cancelAnimationFrame(id){frames.delete(id);}};
 const source=fs.readFileSync(require.resolve('../chapter2.js'),'utf8').replace('return {dispose};',
-  'return {act,pointerDown,pointerMove,pointerUp,cancelPointer,select,state:()=>({s,camera,standing,mode,selection,view:view(),travelling})};');
+  'return {act,pointerDown,pointerMove,pointerUp,cancelPointer,select,rescuePose,state:()=>({s,camera,standing,mode,selection,view:view(),travelling})};');
 vm.runInNewContext(source,context);
 const game=context.window.startChapterTwo({app,portrait:()=>'',onBack(){},preview:true});
 function event(x,y,object){return {pointerId:1,button:0,clientX:x,clientY:y,preventDefault(){},
@@ -89,6 +89,12 @@ assert.equal(node('.c2-sill').hidden,false);assert.equal(JSON.stringify(state.bo
 assert.equal(app.innerHTML.includes('c2-outside'),false,'corridor must not appear while B-0 is still below');
 game.act('help-b0');while(frames.size){const [id,fn]=frames.entries().next().value;frames.delete(id);fn(1600);}
 assert.equal(state.phase,'complete');assert.ok(app.innerHTML.includes('c2-outside'),'corridor only after pulling B-0 up');
+let lastLift=-1,lastApproach=-1;
+for(let i=0;i<=100;i++){const pose=game.rescuePose(i/100);assert.ok(pose.lift>=lastLift&&pose.approach>=lastApproach);lastLift=pose.lift;lastApproach=pose.approach;}
+assert.equal(game.rescuePose(.1).phase,'grip');assert.ok(game.rescuePose(.1).lift<10,'grip settles before body rises');
+assert.equal(game.rescuePose(.4).phase,'pull');assert.equal(game.rescuePose(.9).phase,'climb');
+assert.equal(game.rescuePose(.9).blend,1,'bent-elbow climbing pose as torso clears the sill');
+assert.equal(game.rescuePose(1).lift,280,'B-0 reaches the sill, rather than stopping below it');
 game.act('reset');reduceMotion=false;
 const fixed=JSON.stringify(game.state().s.boxes);game.act('climb-wide');
 assert.equal(game.state().view.x,0,'no instantaneous horizontal teleport at climb start');
