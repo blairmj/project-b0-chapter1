@@ -5,7 +5,7 @@
     let s;try{s=M.restore(JSON.parse(storage.getItem(key)));}catch{s=M.fresh();}
     let camera={yaw:-48,pitch:-12,zoom:1},standing=null,selection=null,mode=null,pointer=null,suppress=false,dead=false;
     let room,stage,world,actionbar,speech,helpText,focal=330,animation=0,busy=false;
-    let robot={x:-120,z:-145},timers=[],lift=0;
+    let robot={x:-120,z:-145},timers=[],lift=0,viewHeight=0,heightFrame=0;
     const escaped=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const button=(t,a,cls='')=>`<button type="button" data-c2="${a}" class="${cls}">${t}</button>`;
     const save=()=>{try{storage.setItem(key,JSON.stringify(s));}catch{}};
@@ -44,12 +44,21 @@
       camera.pitch=Math.max(-30,Math.min(40,camera.pitch));camera.yaw=((camera.yaw+180)%360+360)%360-180;
       focal=Math.min(stage.clientWidth*.62,stage.clientHeight*.5)*camera.zoom;
       stage.style.perspective=focal+'px';
-      const elevation=(standing?M.top(s,standing):0)+lift,p=standing?M.position(s,standing):{x:0,z:-100};
-      world.style.transform=`translateZ(${focal}px) rotateX(${camera.pitch}deg) rotateY(${camera.yaw}deg) translate3d(${-p.x}px,${elevation}px,${-(p.z+100)}px)`;
+      // Climbing changes eye height only. Recentring the entire room on the
+      // selected crate made its position appear to jump relative to the walls.
+      const elevation=viewHeight+lift;
+      world.style.transform=`translateZ(${focal}px) rotateX(${camera.pitch}deg) rotateY(${camera.yaw}deg) translate3d(0px,${elevation}px,0px)`;
       stage.dataset.yaw=camera.yaw;stage.dataset.pitch=camera.pitch;
       const r=app.querySelector('.c2-robot');r.style.transform=`translate3d(${robot.x-48}px,24px,${robot.z}px) rotateY(${-camera.yaw}deg)`;
       app.querySelector('.c2-zoom').textContent=Math.round(camera.zoom*100)+'%';
       app.querySelector('.c2-descend').hidden=!standing;
+    }
+    function setViewHeight(height,animate=true){
+      cancelAnimationFrame(heightFrame);
+      if(!animate||reduced()){viewHeight=height;updateCamera();return;}
+      const from=viewHeight,t0=performance.now();
+      function step(t){if(dead)return;const v=Math.min(1,(t-t0)/450);viewHeight=from+(height-from)*(v*v*(3-2*v));updateCamera();if(v<1)heightFrame=requestAnimationFrame(step);}
+      heightFrame=requestAnimationFrame(step);
     }
     function update(){
       if(s.phase!=='room')return;
@@ -105,7 +114,7 @@
       const p=camera.pitch*Math.PI/180,a=camera.yaw*Math.PI/180;
       const yy=Math.cos(p)*y-Math.sin(p),zz=-Math.sin(p)*y-Math.cos(p);
       const xx=Math.cos(a)*x-Math.sin(a)*zz,z=Math.sin(a)*x+Math.cos(a)*zz;
-      const floor=180+(standing?M.top(s,standing):0);if(yy<=.04)return null;const t=floor/yy;
+      const floor=180+viewHeight+lift;if(yy<=.04)return null;const t=floor/yy;
       return {x:xx*t,z:z*t};
     }
     function previewDrop(x,z,support=null){
@@ -200,7 +209,7 @@
       app.querySelector('.c2-modal')?.remove();const d=document.createElement('dialog');d.className='modal c2-modal';d.innerHTML=`<div class="modal-header"><h2>${title}</h2>${button('닫기','close-modal','quiet')}</div><div class="modal-body">${body}</div>`;app.append(d);d.addEventListener('close',()=>{d.remove();stage?.focus({preventScroll:true});});d.showModal();
     }
     function ending(){
-      standing=null;mode=null;lift=0;const done=s.phase==='complete';
+      cancelAnimationFrame(heightFrame);viewHeight=0;standing=null;mode=null;lift=0;const done=s.phase==='complete';
       app.innerHTML=`<main class="game c2-ending"><header><h1>내 위치: ${done?'연구소 통로':'창문 바깥'}</h1>${button('메뉴','menu','quiet')}</header><section class="c2-outside ${done?'together':''}"><div class="c2-ending-b0">${portrait()}</div><div class="c2-end-dialogue"><div class="speech ${done?'robot':'student'}"><b>${done?'B-0':'나'}</b><p>${done?'문은 없었지만, 함께 나왔습니다.':'이제 너 올라와. 손 줘.'}</p></div>${button(done?'2차시 마치기':'B-0의 손 잡기',done?'summary':'help-b0','primary')}</div></section><footer><small>${done?'2차시 · 문이 없는 방':'B-0가 아래에서 기다리고 있다.'}</small></footer></main>`;
     }
     function act(a){
@@ -208,7 +217,7 @@
       if(a==='menu'){showModal('메뉴',`<p>1차시와 2차시 진행은 따로 저장됩니다.</p><div class="options">${button('계속하기','close-modal','primary')}${button('조작 방법','controls')}${button('생각거리','hint')}${button('2차시 다시 시작','reset-confirm','quiet')}${button('1차시로 돌아가기','back','quiet')}</div>`);return;}
       if(a==='back'){dispose();onBack();return;}
       if(a==='reset-confirm'){showModal('2차시를 다시 시작할까요?',`<p>이 방의 상자 배치와 진행만 초기화합니다. 1차시 진행은 유지됩니다.</p>${button('초기화하고 시작','reset','primary')}`);return;}
-      if(a==='reset'){cancelAnimationFrame(animation);busy=false;lift=0;s=M.fresh();standing=null;mode=null;selection=null;camera={yaw:-48,pitch:-12,zoom:1};robot={x:-120,z:-145};save();render();return;}
+      if(a==='reset'){cancelAnimationFrame(animation);cancelAnimationFrame(heightFrame);viewHeight=0;busy=false;lift=0;s=M.fresh();standing=null;mode=null;selection=null;camera={yaw:-48,pitch:-12,zoom:1};robot={x:-120,z:-145};save();render();return;}
       if(a==='controls'){showModal('조작 방법','<p>상자를 누른 채 끌면 바로 옮길 수 있습니다. 빈 공간을 끌면 방을 둘러봅니다. 짧게 누르면 물건의 행동이 나타납니다.</p><p>상자는 다른 상자 위에도 놓을 수 있습니다. 옮기기를 누르면 앞·뒤·왼쪽·오른쪽 버튼과 시점 돌리기 버튼을 사용할 수 있습니다. 위치를 조절한 뒤 놓기를 누르세요.</p><p>상자 위에서는 화면 아래의 내려가기를 누르세요. B-0에게 부탁할 때는 행동을 고르고 대상 물건을 누릅니다. 원위치로는 시점과 배율을 되돌립니다.</p>');return;}
       if(a==='hint'){s.hint=Math.min(4,s.hint+1);save();const hints=['','시선을 위아래로도 움직여 보세요.','창문처럼 보여도 정말 통로인지 확인해 보세요.','방 안의 물건으로 올라설 곳을 만들 수 있습니다.','통로가 보이는 창문 가까이에 넓은 상자를 놓고 작은 상자를 위에 쌓으세요. 올라선 뒤 B-0에게 나를 들어 올려 달라고 부탁해 보세요.'];showModal('생각거리',`<p>${hints[s.hint]}</p>${s.hint<4?button('조금 더 도움받기','hint'):''}`);return;}
       if(a==='help-b0'){if(s.phase!=='ledge'||busy)return;busy=true;app.querySelector('.c2-outside').classList.add('pulling');app.querySelector('[data-c2="help-b0"]').disabled=true;later(()=>{busy=false;if(M.finish(s)){save();ending();}},reduced()?0:1100);return;}
@@ -216,11 +225,11 @@
       if(a==='record'){const moves=s.logs.filter(l=>l.action==='move').length;showModal('이번 방의 기록',`<p>물건 이동 ${moves}회 · 생각거리 ${s.hint}단계 이용</p><p>${s.ventOpen?'환기 덮개 뒤가 막혀 있는 것을 확인했습니다.':'환기 덮개를 열지 않고 탈출했습니다.'}</p><p>어떤 것을 직접 확인했고, B-0에게는 무엇을 부탁했나요?</p>`);return;}
       if(s.phase!=='room')return;
       if(a==='down'){
-        cancelAnimationFrame(animation);busy=false;lift=0;s.assisted=null;app.querySelector('.c2-robot').classList.remove('walking');const id=selection;standing=null;cancelMove();camera.pitch=-12;updateCamera();if(id)select(id);return;
+        cancelAnimationFrame(animation);busy=false;viewHeight+=lift;lift=0;s.assisted=null;app.querySelector('.c2-robot').classList.remove('walking');const id=selection;standing=null;cancelMove();setViewHeight(0);if(id)select(id);return;
       }
       if(busy)return;
       if(a==='dismiss'){speech.hidden=true;return;}
-      if(a==='home'){standing=null;lift=0;s.assisted=null;cancelMove();camera={yaw:-48,pitch:-12,zoom:1};updateCamera();return;}
+      if(a==='home'){standing=null;lift=0;s.assisted=null;cancelMove();camera={yaw:-48,pitch:-12,zoom:1};setViewHeight(0,false);return;}
       if(a.startsWith('zoom-')){camera.zoom=Math.max(.65,Math.min(1.5,camera.zoom+(a==='zoom-in'?.15:-.15)));updateCamera();return;}
       if(a==='clear'||a==='cancel'){cancelMove();return;}
       if(a==='robot'){robotMenu();return;}
@@ -236,12 +245,12 @@
       if(a.startsWith('move-')){beginMove(a.slice(5));return;}
       if(a.startsWith('nudge-')){nudge(a.slice(6));return;}
       if(a==='drop'){if(mode?.candidate){const p=mode.candidate;place(p.x,p.z,p.support);}else say('student','놓을 위치를 먼저 지정해야겠어.');return;}
-      if(a.startsWith('climb-')){const id=a.slice(6);if(s.boxes.small.on===id){say('student','위에 작은 상자가 놓여 있어. 올라설 상자를 다시 골라야겠어.');return;}standing=id;const p=M.position(s,id);camera.yaw=Math.atan2(105-p.x,400+p.z)*180/Math.PI;camera.pitch=8;updateCamera();select(id);say('student','올라서니 보이는 높이가 달라졌어.');return;}
+      if(a.startsWith('climb-')){const id=a.slice(6);if(s.boxes.small.on===id){say('student','위에 작은 상자가 놓여 있어. 올라설 상자를 다시 골라야겠어.');return;}standing=id;setViewHeight(M.top(s,id));select(id);say('student','올라서니 보이는 높이가 달라졌어.');return;}
       if(a==='open-window'){if(M.openWindow(s,standing)){update();say('student','열렸어. 너머로 넘어갈 수 있겠어.');select('window');}else reachMessage();return;}
       if(a==='exit'){if(M.exit(s,standing)){save();ending();}else reachMessage();}
     }
     function click(e){const b=e.target.closest('[data-c2]');if(b){e.preventDefault();act(b.dataset.c2);}}
-    function dispose(){dead=true;timers.forEach(clearTimeout);cancelAnimationFrame(animation);app.removeEventListener('click',click);window.removeEventListener('resize',updateCamera);app.querySelector('.c2-modal')?.remove();}
+    function dispose(){dead=true;timers.forEach(clearTimeout);cancelAnimationFrame(animation);cancelAnimationFrame(heightFrame);app.removeEventListener('click',click);window.removeEventListener('resize',updateCamera);app.querySelector('.c2-modal')?.remove();}
     app.addEventListener('click',click);window.addEventListener('resize',updateCamera);render();
     return {dispose};
   };
