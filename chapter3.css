@@ -2,6 +2,22 @@
 .c3-game>header h1,.c3-intro>header h1,.c3-gate-game>header h1,.c3-end>header h1{font-size:13px}
 .c3-stage{background:#23303b}
 .c3-stage .c2-basic-help{font-size:11px}
+/* The access office has plaster, painted wainscot and tiled flooring. */
+.c3-world .c2-wall{border:0;background:radial-gradient(ellipse at 30% 25%,#f0eee434,transparent 65%),linear-gradient(#b7bdb1 0 61%,#6f8b80 61% 62%,#365954 62% 96%,#213d39 96%);box-shadow:inset 0 0 32px #233e3733}
+.c3-world .c2-wall:after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,#344e3d18,transparent 15% 85%,#344e3d18)}
+.c3-world .c2-light{width:205px;left:197px;height:13px;background:#eee9c9;border:3px solid #7c8b7e;box-shadow:0 2px 15px #eee5b966}
+.c3-world .c2-floor{border:0;background:linear-gradient(90deg,#53665b55 1px,transparent 1px) 0 0/100px 100px,linear-gradient(#53665b55 1px,transparent 1px) 0 0/100px 100px,radial-gradient(ellipse at 40% 40%,#b1b4a2,#8c9b8c 65%);box-shadow:inset 0 0 75px #253c3a55}
+.c3-world .c2-ceiling{filter:none;background:linear-gradient(90deg,#73837666 1px,transparent 2px) 0 0/100px 100px,linear-gradient(#73837666 1px,transparent 2px) 0 0/100px 100px,#a6afa1;box-shadow:inset 0 0 50px #3d514b66}
+.c3-room-plaque{position:absolute;left:-244px;top:-201px;width:325px;padding:8px 16px;transform:translateZ(-297px);background:#2c4a46;border:2px solid #899b86;color:#dfdfc8;pointer-events:none}
+.c3-room-plaque small{display:block;font-size:8px;letter-spacing:.23em;color:#adbcaa}.c3-room-plaque strong{font-size:20px;font-weight:500;letter-spacing:.12em}
+.c3-clock{position:absolute;left:188px;top:-165px;width:49px;height:49px;border:5px solid #596e60;border-radius:50%;background:repeating-conic-gradient(#52665b 0 2deg,transparent 2deg 30deg),#d3d4bc;transform:translateZ(-296px);pointer-events:none;box-shadow:0 3px 4px #2c403d44}
+.c3-clock:after{content:'';position:absolute;inset:5px;background:#d3d4bc;border-radius:50%}.c3-clock i{position:absolute;z-index:1;left:19px;top:8px;width:2px;height:16px;background:#354c42;transform-origin:bottom;transform:rotate(-45deg)}.c3-clock i+i{top:5px;height:19px;transform:rotate(60deg)}
+.c3-observation{position:absolute;width:0;height:0;transform:translate3d(296px,-85px,-120px) rotateY(-90deg);transform-style:preserve-3d;pointer-events:none}
+.c3-observation-frame{position:absolute;left:-115px;top:-65px;width:230px;height:130px;display:flex;border:9px solid #556f68;background:linear-gradient(#173e4266,#173e42bb),url('./assets/lab-corridor-v1.webp') center 40%/cover;box-shadow:0 4px 0 #254740,inset 0 0 16px #142d36}
+.c3-observation-frame>span{flex:1;border-right:5px solid #5b7770;background:linear-gradient(115deg,transparent 35%,#c5d4ba33 36% 42%,transparent 43%);box-shadow:inset 1px 1px #b0baa077}.c3-observation-frame>span:last-of-type{border:0}.c3-observation-frame small{position:absolute;bottom:-29px;left:0;font-size:8px;color:#c0cbb9;letter-spacing:.15em;background:#2e514a;padding:3px 8px}
+.c3-record-wall{position:absolute;left:0;top:0;width:0;height:0;transform:translate3d(-25px,-35px,297px) rotateY(180deg);transform-style:preserve-3d;pointer-events:none}
+.c3-record-window{position:absolute;left:-175px;top:-110px;width:350px;height:220px;border:9px solid #456259;background:repeating-linear-gradient(#243f3b 0 62px,#6e8675 63px 68px);padding:40px 14px 10px;display:grid;grid-template-columns:repeat(3,1fr);gap:20px 8px;box-shadow:inset 0 0 20px #152f2d,0 5px 0 #203e35}
+.c3-record-window>span{position:absolute;top:8px;left:16px;font-size:13px;letter-spacing:.15em;color:#c4c9af}.c3-record-window i{background:repeating-linear-gradient(90deg,#a99c72 0 9px,#6d735c 10px 12px,#acb197 13px 22px,#647465 23px 25px);border-bottom:7px solid #918f72;box-shadow:inset 0 4px #1e383a22}
 .c3-old-exit{position:absolute;left:17px;top:-40px;width:126px;height:220px;transform:translateZ(-295px);background:#34444c;border:9px solid #26323a;transform-style:preserve-3d;cursor:pointer}
 .c3-exit-sign{position:absolute;left:12px;right:12px;top:-47px;padding:4px 2px;text-align:center;color:#d4ded4;background:#345a53;border:3px solid #283e3c;font-size:17px;letter-spacing:.2em}
 .c3-brick-wall{position:absolute;inset:2px;background:linear-gradient(90deg,transparent 49%,#353d3e 50% 52%,transparent 53%) 0 0/78px 45px,repeating-linear-gradient(#737b7b 0 39px,#3e494a 40px 45px);box-shadow:inset 0 0 28px 12px #10212a88;transform:translateZ(1px)}
@@ -67,3 +83,20 @@
 .c3-central-dialogue .speech p{padding:9px 13px}
 @media(max-width:420px){.c3-gate-terminal{padding:8px 6px;border-width:3px}.c3-gate-terminal p{font-size:11px}.c3-central-dialogue{gap:8px}.c3-actions button{padding:6px 8px}}
 @media(prefers-reduced-motion:reduce){.c3-intro .corridor-view{animation:none}.c3-old-leaf,.c3-real-leaf,.c3-drawer{transition:none}}
+/* Office furniture: enamel cabinet, archive boxes and an idle desk terminal. */
+.c3-old-leaf,.c3-real-leaf{background:linear-gradient(90deg,#8a9685,#a4ac95 50%,#879783);border-color:#4a665a}
+.c3-old-leaf:before,.c3-real-leaf:before{border-color:#657e6d;box-shadow:inset 1px 1px #c5c7aa}
+.c3-old-exit,.c3-real-exit{border-color:#3c5a50}.c3-exit-sign{background:#325b48;border-color:#627b62;color:#e2e3c4}
+.c3-map-board{border-color:#6b7b65;background:#d9d5b8}.c3-map-board:hover{background:#d9d5b8}
+.c3-shelf .c2-face{background:#7e9480;border-color:#426252;box-shadow:inset 0 0 12px #2a453b44}
+.c3-shelf .c2-front{background:linear-gradient(90deg,#7f9480 0 8px,transparent 8px 140px,#7f9480 140px),linear-gradient(#7f9480 0 8px,#304b3d 8px 63px,#a6b196 64px 68px,#304b3d 69px 130px,#a6b196 131px 135px,#304b3d 136px 196px,#7f9480 197px)}
+.c3-shelf-load{background:linear-gradient(#b9af83,#a19870);border:2px solid #69765b;box-shadow:inset 0 -7px #817e5c}
+.c3-shelf-load:after{background:#d4cfad;border:1px solid #6f7c63;width:19px;height:9px;left:8px;top:9px}
+.c3-desk-cube .c2-face{background:linear-gradient(90deg,#8b9b85,#a6ad90);border-color:#5a7360;box-shadow:inset 0 0 14px #38533a33}
+.c3-desk-cube .c2-top{background:#707a59;border-color:#596b50}.c3-desk-cube .c2-front:before,.c3-desk-cube .c2-front:after{display:none}
+.c3-drawer{background:#8a9c83;border-color:#5b735f}.c3-drawer>span{background:#526956;border-color:#c4c5a1}
+.c3-monitor{position:absolute;left:-45px;top:-171px;width:90px;height:67px;background:#4c6256;border:5px solid #758c75;transform:translateZ(-5px);box-shadow:0 3px 2px #2c4738;pointer-events:none}
+.c3-monitor:after{content:'';position:absolute;left:33px;bottom:-15px;width:15px;height:12px;background:#475d50;border-bottom:4px solid #5c715c}
+.c3-monitor>span{display:block;height:100%;padding:5px;background:#173b34;color:#a9bda1}.c3-monitor small{font-size:7px;display:block;letter-spacing:.1em}.c3-monitor em{font-size:6px;font-style:normal;display:block;color:#96a995}.c3-monitor i{display:block;height:14px;margin:6px 0;background:repeating-linear-gradient(#718975 0 1px,transparent 1px 4px);opacity:.45}
+.c3-keyboard{position:absolute;left:-39px;top:-104px;width:78px;height:29px;transform:translateZ(22px) rotateX(90deg);border:4px solid #5e725d;background:repeating-linear-gradient(90deg,#a8b399 0 5px,#536c57 5px 6px);pointer-events:none}
+.c3-gate-scene,.c3-central-scene{background:linear-gradient(#b0b8a7 0 60%,#395c53 60% 96%,#253f36 96%)}
