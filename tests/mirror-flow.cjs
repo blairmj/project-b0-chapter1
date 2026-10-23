@@ -15,6 +15,7 @@ M.setOwn(s,1);assert.equal(s.phase,'unlocked');assert.deepEqual(s.seen,{},'no fo
 M.release(s);assert.equal(M.solved(s),true,'mechanical release remains latched after unlocking');
 assert.equal(M.join(s),true);assert.equal(M.finish(s),true);assert.equal(s.phase,'complete');
 const firstTry=fresh();M.command(firstTry,'triangle','hold');M.setOwn(firstTry,1);assert.equal(firstTry.phase,'unlocked','a correct first request is accepted');
+const ownFirst=fresh();M.setOwn(ownFirst,1);M.command(ownFirst,'triangle','hold');assert.equal(ownFirst.phase,'unlocked','the student may hold their handle before B-0');
 const changing=fresh();M.command(changing,'circle','hold');M.command(changing,'triangle','hold');assert.equal(changing.lights,false);assert.equal(changing.holding,'triangle');
 M.command(changing,'square','release');assert.equal(changing.holding,'triangle','naming another target must not release the held handle');
 const restored=M.restore({...changing,own:1,active:'square'});assert.equal(restored.own,0);assert.equal(restored.active,'triangle');

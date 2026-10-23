@@ -11,6 +11,7 @@ assert.equal(s.line,2);assert.equal(node('.mr-stage').dataset.phase,'approach');
 for(let i=0;i<4;i++)game.act('intro-next');assert.equal(s.phase,'split');
 game.act('ask-see');assert.doesNotMatch(node('.mr-speech').innerHTML,/삼각형/);
 game.select('triangle');game.act('command-triangle-down');flush();assert.equal(s.active,'triangle');assert.equal(s.holding,null);
+game.act('command-square-release');assert.equal([...timers.values()].some(t=>t.ms===700),true,'a request about another target must not cancel spring return');
 for(const [id,t]of timers)if(t.ms===700){timers.delete(id);t.fn();}
 assert.equal(s.active,null,'momentary movement springs back');
 game.act('pull');flush();assert.equal(s.phase,'split');

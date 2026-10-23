@@ -88,17 +88,17 @@
       const labels={door:'관찰실 출입문',own:'문 옆 수동 손잡이',glass:'두 구역 사이의 유리벽',panel:'유리 너머 조작반',vent:'반대편 환기 장치',entry:'지나온 통로의 문'};
       const items=[['살펴보기','inspect-'+id]];if(id==='door')items.push([M.solved(s)?'함께 통로로 나가기':'문 당겨 보기',M.solved(s)?'leave':'try-door']);if(id==='own'&&!M.solved(s))items.push(['손잡이 당기기','pull']);items.push(['선택 닫기','clear']);actions(labels[id]||'물건',items);
     }
-    function leverActions(id){selection=id;actions(M.names[id]+' 손잡이',[['살펴보기','inspect-'+id],['B-0에게 부탁','request-'+id],['선택 닫기','clear']]);}
-    function requestMenu(id){selection=id;actions(M.names[id]+' 손잡이를 어떻게 움직일까?',[['내려 줘','command-'+id+'-down'],['올려 줘','command-'+id+'-up'],['내린 채 잡고 있어','command-'+id+'-hold'],['놓아 줘','command-'+id+'-release'],['돌아가기','select-'+id]]);}
-    function robotMenu(){actions('B-0에게 말하기',[['뭐가 보이니?','ask-see'],['방금 어떻게 움직였어?','ask-last'],...(s.phase==='unlocked'?[['이제 놓아도 돼','reunite']]:[]),['대상 가리키기','target-mode'],['닫기','clear']]);}
+    function leverActions(id){selection=id;actions(M.names[id]+' 손잡이',[['살펴보기','inspect-'+id],...(['split','unlocked'].includes(s.phase)?[['B-0에게 부탁','request-'+id]]:[]),['선택 닫기','clear']]);}
+    function requestMenu(id){if(!['split','unlocked'].includes(s.phase)){leverActions(id);return;}selection=id;actions(M.names[id]+' 손잡이를 어떻게 움직일까?',[['내려 줘','command-'+id+'-down'],['올려 줘','command-'+id+'-up'],['내린 채 잡고 있어','command-'+id+'-hold'],['놓아 줘','command-'+id+'-release'],['돌아가기','select-'+id]]);}
+    function robotMenu(){actions('B-0에게 말하기',[['뭐가 보이니?','ask-see'],['방금 어떻게 움직였어?','ask-last'],...(s.phase==='unlocked'?[['이제 놓아도 돼','reunite']]:[]),...(['split','unlocked'].includes(s.phase)?[['대상 가리키기','target-mode']]:[]),['닫기','clear']]);}
     function inspect(id){
       M.inspect(s,id);save();const descriptions={door:M.solved(s)?'두 잠금쇠가 풀렸다. 문 너머로 통로가 보인다.':'두 개의 잠금쇠가 문을 잡고 있다. 위쪽 잠금쇠 옆에는 삼각형이 새겨져 있다.',own:'아래로 움직이는 손잡이다. 손을 떼면 다시 위로 돌아온다.',glass:M.solved(s)?'유리벽이 위로 올라가 있다. 이제 서로에게 갈 수 있다.':'두꺼운 유리다. B-0는 보이지만 이쪽에서 건너갈 수는 없다.',panel:'모양이 다른 손잡이가 세 개 있다. 유리 너머에 있어서 내 손으로는 닿지 않는다.',vent:s.vent?'환기 장치의 덮개가 닫혀 있다.':'높은 벽에 환기 장치가 달려 있다.',entry:'지나온 문이 닫혀 있다. 안쪽 손잡이도 움직이지 않는다.'};
       say('student',M.symbols.includes(id)?`${M.names[id]}가 새겨져 있다. 아래로 움직일 수 있는 손잡이다. 유리 너머에 있어 손이 닿지 않는다.`:descriptions[id]||'직접 살펴보자.');
     }
     function command(id,verb){
       if(robotBusy||!['split','unlocked'].includes(s.phase))return;
-      clearTimeout(pulse);cancelAnimationFrame(handFrame);
       if(verb==='release'&&s.holding!==id&&s.active!==id){M.command(s,id,verb);save();say('robot','그 손잡이는 지금 잡고 있지 않습니다.');return;}
+      clearTimeout(pulse);cancelAnimationFrame(handFrame);
       M.release(s);if(!pointer?.own&&s.phase==='split')M.setOwn(s,0);save();update();robotBusy=true;requestMenu(id);say('robot','그 손잡이로 이동하겠습니다.');
       walk({x:245,z:controlZ[id]+48},()=>{
         const wasSolved=M.solved(s),result=M.command(s,id,verb);save();update();sound('lever');if(!wasSolved&&M.solved(s)){afterUnlock();return;}requestMenu(id);
@@ -139,7 +139,7 @@
       if(a==='controls'){modal('조작 방법','<p>빈 공간을 끌거나 방향키로 둘러봅니다. 물건을 누르면 조사하거나 행동할 수 있습니다.</p><p>유리 너머 물건도 눌러 B-0에게 부탁할 수 있습니다. 대상과 행동은 직접 골라 주세요.</p><p>자기 쪽 손잡이는 잡은 채 아래로 끌거나, 선택 후 당기기 버튼을 사용합니다. 원위치로는 시점과 배율만 되돌립니다.</p>');return;}
       if(a==='record'){modal('관찰실 탐색 기록',`<p>조사 ${s.logs.filter(x=>x.action==='inspect').length}회 · B-0에게 요청 ${s.logs.filter(x=>x.action==='request').length}회</p><p>어떤 장치가 움직였나요? 처음 부탁한 것에 빠진 조건이 있었나요?</p>`);return;}
       if(a==='reset-confirm'){modal('관찰실을 다시 시작할까요?',`<p>출입 관리실의 진행은 유지됩니다.</p>${b('관찰실만 초기화','reset','primary')}`);return;}
-      if(a==='reset'){cancelAnimationFrame(camFrame);cancelAnimationFrame(botFrame);cancelAnimationFrame(handFrame);timers.forEach(clearTimeout);clearTimeout(pulse);robotBusy=false;pointer=null;Object.assign(s,M.fresh());camera={x:-150,z:35,yaw:58,pitch:-8,zoom:1};robot=robotPosition();save();app.querySelector('.mr-modal')?.remove();render();return;}
+      if(a==='reset'){cancelAnimationFrame(camFrame);cancelAnimationFrame(botFrame);cancelAnimationFrame(handFrame);timers.forEach(clearTimeout);clearTimeout(pulse);robotBusy=false;pointer=null;selection=null;targetMode=false;suppress=false;Object.assign(s,M.fresh());camera={x:-150,z:35,yaw:58,pitch:-8,zoom:1};robot=robotPosition();save();app.querySelector('.mr-modal')?.remove();render();return;}
       if(a==='back'){onBack();return;}
       if(a==='intro-next'){nextIntro();return;}if(a==='dismiss'){speech.hidden=true;return;}
       if(a==='home'){selection=null;targetMode=false;actions(s.phase==='approach'?'중앙관리실로 향하는 관찰실':'방 안을 자유롭게 살펴보세요.');cameraTo({x:-150,z:35,yaw:58,pitch:-8,zoom:1});return;}
