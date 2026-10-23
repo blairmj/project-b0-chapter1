@@ -1,6 +1,6 @@
 (function(){
   'use strict';
-  window.startChapterTwo=function({app,portrait,onBack,preview=false}){
+  window.startChapterTwo=function({app,portrait,onBack,onNext,preview=false}){
     const M=window.B0RoomTwo,storage=preview?sessionStorage:localStorage,key='project-b0-room2-v1';
     let s;try{s=M.restore(JSON.parse(storage.getItem(key)));}catch{s=M.fresh();}
     let camera={yaw:-48,pitch:-12,zoom:1},standing=null,selection=null,mode=null,pointer=null,suppress=false,dead=false;
@@ -291,7 +291,7 @@
     function ending(){
       if(s.phase==='ledge'){enterLedge();return;}
       cancelAnimationFrame(heightFrame);viewHeight=0;standing=null;mode=null;lift=0;const done=s.phase==='complete';
-      app.innerHTML=`<main class="game c2-ending"><header><h1>내 위치: ${done?'연구소 통로':'창문 바깥'}</h1>${button('메뉴','menu','quiet')}</header><section class="c2-outside ${done?'together':''}"><div class="c2-ending-b0">${portrait()}</div><div class="c2-end-dialogue"><div class="speech ${done?'robot':'student'}"><b>${done?'B-0':'나'}</b><p>${done?'문은 없었지만, 함께 나왔습니다.':'이제 너 올라와. 손 줘.'}</p></div>${button(done?'2차시 마치기':'B-0의 손 잡기',done?'summary':'help-b0','primary')}</div></section><footer><small>${done?'2차시 · 문이 없는 방':'B-0가 아래에서 기다리고 있다.'}</small></footer></main>`;
+      app.innerHTML=`<main class="game c2-ending"><header><h1>내 위치: ${done?'연구소 통로':'창문 바깥'}</h1>${button('메뉴','menu','quiet')}</header><section class="c2-outside ${done?'together':''}"><div class="c2-ending-b0">${portrait()}</div><div class="c2-end-dialogue"><div class="speech ${done?'robot':'student'}"><b>${done?'B-0':'나'}</b><p>${done?'문은 없었지만, 함께 나왔습니다.':'이제 너 올라와. 손 줘.'}</p></div>${button(done?'복도 따라가기':'B-0의 손 잡기',done?'chapter-three':'help-b0','primary')+(done?button('이번 방의 기록','summary','quiet'):'')}</div></section><footer><small>${done?'2차시 · 문이 없는 방':'B-0가 아래에서 기다리고 있다.'}</small></footer></main>`;
     }
     function act(a){
       if(a==='close-modal'){app.querySelector('.c2-modal')?.close();return;}
@@ -302,7 +302,8 @@
       if(a==='controls'){showModal('조작 방법','<p>상자를 누른 채 끌면 바로 옮길 수 있습니다. 빈 공간을 끌면 방을 둘러봅니다. 짧게 누르면 물건의 행동이 나타납니다.</p><p>상자는 다른 상자 위에도 놓을 수 있습니다. 옮기기를 누르면 앞·뒤·왼쪽·오른쪽 버튼과 시점 돌리기 버튼을 사용할 수 있습니다. 위치를 조절한 뒤 놓기를 누르세요.</p><p>상자 위에서는 화면 아래의 내려가기를 누르세요. B-0에게 부탁할 때는 행동을 고르고 대상 물건을 누릅니다. 원위치로는 시점과 배율을 되돌립니다.</p>');return;}
       if(a==='hint'){s.hint=Math.min(4,s.hint+1);save();const hints=['','시선을 위아래로도 움직여 보세요.','창문처럼 보여도 정말 통로인지 확인해 보세요.','방 안의 물건으로 올라설 곳을 만들 수 있습니다.','통로가 보이는 창문 가까이에 넓은 상자를 놓고 작은 상자를 위에 쌓으세요. 올라선 뒤 B-0에게 나를 들어 올려 달라고 부탁해 보세요.'];showModal('생각거리',`<p>${hints[s.hint]}</p>${s.hint<4?button('조금 더 도움받기','hint'):''}`);return;}
       if(a==='help-b0'){pullCompanion();return;}
-      if(a==='summary'){showModal('2차시 끝','<p>소년과 B-0가 함께 창문을 넘어 통로에 도착했습니다.</p><p>다음 차시는 아직 준비 중입니다.</p>'+button('탐색 기록 보기','record'));return;}
+      if(a==='chapter-three'){if(s.phase==='complete'&&onNext){dispose();onNext();}return;}
+      if(a==='summary'){showModal('2차시 끝','<p>소년과 B-0가 함께 창문을 넘어 통로에 도착했습니다.</p>'+button('복도 따라가기','chapter-three','primary')+button('탐색 기록 보기','record'));return;}
       if(a==='record'){const moves=s.logs.filter(l=>l.action==='move').length;showModal('이번 방의 기록',`<p>물건 이동 ${moves}회 · 생각거리 ${s.hint}단계 이용</p><p>${s.ventOpen?'환기 덮개 뒤가 막혀 있는 것을 확인했습니다.':'환기 덮개를 열지 않고 탈출했습니다.'}</p><p>어떤 것을 직접 확인했고, B-0에게는 무엇을 부탁했나요?</p>`);return;}
       if(a==='dismiss'){speech.hidden=true;return;}
       if(s.phase!=='room')return;
