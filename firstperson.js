@@ -125,7 +125,7 @@ function panTo(x,y) {
   rig.style.transform=`translateZ(${focal}px) rotateX(${camera.y}deg) rotateY(${camera.x}deg)`;
   // Keep the existing character art facing the viewer instead of flattening it onto a wall.
   const robot=app.querySelector(".robot-anchor");
-  if(robot)robot.style.transform=`translate3d(210px,230px,-470px) rotateY(${-camera.x}deg) rotateX(${-camera.y}deg)`;
+  if(robot)robot.style.transform=`translate3d(125px,230px,-470px) rotateY(${-camera.x}deg) rotateX(${-camera.y}deg)`;
   const sector=((Math.round(camera.x/90)%4)+4)%4;
   app.querySelector(".view-direction").textContent=["출입문 쪽","실습대 쪽","관찰창 쪽","보관장 쪽"][sector];
 }
