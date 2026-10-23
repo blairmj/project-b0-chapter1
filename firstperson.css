@@ -14,3 +14,4 @@
 .robot-detail.thinking>.robot-sprite{background-position:50% 0}
 .robot-detail.found{height:250px}
 .robot-detail.found>.robot-sprite{width:260px;height:250px;background:url('./assets/b0-note-v1.webp') center/contain no-repeat}
+body{display:flow-root}
