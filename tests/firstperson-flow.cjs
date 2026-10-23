@@ -31,9 +31,9 @@ run('inventory();');assert.match(run('panel.content'),/4732/);
 run('approach("lock");inspect();submitCode("4732");');assert.equal(run('state.unlocked'),true);
 assert.equal(run('state.phase'),'room');run('handle("escape");');assert.equal(run('state.phase'),'escaped');
 assert.equal(run('load().noteTaken'),true);
-assert.match(run('panel.content'),/함께 출구를 찾아/);
+assert.match(app.innerHTML,/연구소 복도/);run('handle("epilogue-1")');assert.match(app.innerHTML,/함께 출구를 찾아/);run('handle("epilogue-2")');assert.match(app.innerHTML,/AXIOM/);
 // The player can discover the compartment without being forced to read the guide first.
-run('state=fresh();state.phase="room";robot();handle("ask-storage");handle("open-storage");handle("take-note");');
+run('state=fresh();state.phase="room";enterRoom();robot();handle("ask-storage");handle("open-storage");handle("take-note");');
 assert.equal(run('state.guide'),false);assert.equal(run('state.noteTaken'),true);
 console.log('PASS: face-first intro, no student avatar, guide mission, B-0 compartment, recoverable note pickup, keypad retry, exit, save, free exploration order');
 

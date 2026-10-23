@@ -5,7 +5,7 @@ function createRoomPanorama(canvas, report) {
   if(!gl){report("이 브라우저에서는 360도 배경을 표시할 수 없습니다. 최신 브라우저로 열어 주세요.");return {view(){},setDoorOpen(){},openDoor(){},dispose(){}};}
   const vertex="attribute vec2 position;void main(){gl_Position=vec4(position,0.,1.);}";
   const fragment=`precision highp float;
-    uniform sampler2D room;uniform sampler2D door;uniform float doorOpen;uniform vec2 resolution;uniform float focal;uniform vec2 angle;
+    uniform sampler2D room;uniform sampler2D door;uniform sampler2D corridor;uniform float doorOpen;uniform vec2 resolution;uniform float focal;uniform vec2 angle;
     void main(){
       vec3 d=vec3((gl_FragCoord.x-resolution.x*.5)/focal,(resolution.y*.5-gl_FragCoord.y)/focal,-1.);
       float cp=cos(angle.y),sp=sin(angle.y),cy=cos(angle.x),sy=sin(angle.x);
@@ -21,6 +21,7 @@ function createRoomPanorama(canvas, report) {
       vec2 q=(uv-vec2(598./1774.,318./887.))/vec2(175./1774.,220./887.);
       float cut=max(0.,.075-q.y);
       if(q.y>=0.&&q.y<=1.&&q.x>=cut&&q.x<=1.-cut){
+        color=texture2D(corridor,q).rgb;
         float sx=q.x;bool leaf=false;
         if(q.x<.5*(1.-doorOpen)){sx=q.x+doorOpen*.5;leaf=true;}
         else if(q.x>.5*(1.+doorOpen)){sx=q.x-doorOpen*.5;leaf=true;}
@@ -44,6 +45,10 @@ function createRoomPanorama(canvas, report) {
   gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([70,80,88,255]));
   gl.uniform1i(gl.getUniformLocation(program,"room"),0);gl.uniform1i(gl.getUniformLocation(program,"door"),1);
   gl.activeTexture(gl.TEXTURE0);
+  const corridorTexture=gl.createTexture();gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,corridorTexture);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,1,1,0,gl.RGB,gl.UNSIGNED_BYTE,new Uint8Array([84,105,120]));gl.uniform1i(gl.getUniformLocation(program,"corridor"),2);gl.activeTexture(gl.TEXTURE0);
+  const corridorImage=new Image();
   const doorImage=new Image();
   const locations={doorOpen:gl.getUniformLocation(program,"doorOpen"),resolution:gl.getUniformLocation(program,"resolution"),focal:gl.getUniformLocation(program,"focal"),angle:gl.getUniformLocation(program,"angle")};
   let yaw=0,pitch=-5,dead=false,ready=false,cameraFocal=240,doorProgress=0,doorFrame;
@@ -57,6 +62,8 @@ function createRoomPanorama(canvas, report) {
     gl.uniform1f(locations.doorOpen,doorProgress);gl.drawArrays(gl.TRIANGLES,0,6);
     if(ready)canvas.classList.add("ready");
   }
+  corridorImage.onload=()=>{if(dead)return;gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,corridorTexture);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,corridorImage);gl.activeTexture(gl.TEXTURE0);view(yaw,pitch);};
+  corridorImage.onerror=()=>{if(!dead)report("복도 그림을 불러오지 못했습니다. 새로고침해 주세요.");};corridorImage.src="./assets/lab-corridor-v1.webp";
   doorImage.onload=()=>{if(dead)return;gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,doorTexture);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,doorImage);gl.activeTexture(gl.TEXTURE0);view(yaw,pitch);};
   doorImage.onerror=()=>{if(!dead)report("문 이미지를 불러오지 못했습니다. 새로고침해 주세요.");};doorImage.src="./assets/devices-v2.png";
   function setDoorOpen(value){doorProgress=value;view(yaw,pitch);}
@@ -66,5 +73,5 @@ function createRoomPanorama(canvas, report) {
   img.src="./assets/room-panorama-v2.webp";
   const lost=e=>{e.preventDefault();if(!dead)report("화면 연결이 중단되었습니다. 페이지를 새로고침해 주세요. 진행은 저장되어 있습니다.");};
   canvas.addEventListener("webglcontextlost",lost);
-  return {view,setDoorOpen,openDoor,dispose(){dead=true;cancelAnimationFrame(doorFrame);doorImage.onload=null;doorImage.onerror=null;gl.deleteTexture(doorTexture);img.onload=null;img.onerror=null;canvas.removeEventListener("webglcontextlost",lost);gl.deleteTexture(texture);gl.deleteBuffer(buffer);gl.deleteProgram(program);gl.deleteShader(vs);gl.deleteShader(fs);}};
+  return {view,setDoorOpen,openDoor,dispose(){dead=true;corridorImage.onload=null;corridorImage.onerror=null;gl.deleteTexture(corridorTexture);cancelAnimationFrame(doorFrame);doorImage.onload=null;doorImage.onerror=null;gl.deleteTexture(doorTexture);img.onload=null;img.onerror=null;canvas.removeEventListener("webglcontextlost",lost);gl.deleteTexture(texture);gl.deleteBuffer(buffer);gl.deleteProgram(program);gl.deleteShader(vs);gl.deleteShader(fs);}};
 }
