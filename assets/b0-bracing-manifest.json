@@ -1,0 +1,7 @@
+{
+  "tool": "built-in image_gen",
+  "file": "b0-bracing-v1.webp",
+  "reference": "b0-body-v3.webp",
+  "prompt": "Edit target: the attached transparent B-0 game character. Preserve exactly the same robot identity: rounded worn ivory metal shell, black glass face, two cyan oval eyes, cyan chest light, small triangular antenna, same proportions, graphic-novel painted linework. Make ONE full-body game sprite of B-0 firmly bracing an invisible crate to its RIGHT: three-quarter view facing viewer-right, feet planted apart, knees slightly bent, BOTH hands extended toward image right at waist height with palms against an imaginary vertical surface. Mild focused expression, not sad or angry. No crate or other object drawn: only the robot on genuine transparent background, no ground, no text, no frame, no cast backdrop. Keep whole character and all hands and feet uncropped, 5% transparent padding.",
+  "original": "exec-a663c37c-79e1-4794-8064-32dd0a100ef0.png"
+}

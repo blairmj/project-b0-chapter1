@@ -135,7 +135,7 @@
       if(Math.hypot(dx,dy)<7&&!pointer.moved)return;
       pointer.moved=true;stage.setPointerCapture(e.pointerId);helpText.hidden=true;
       if(mode?.type==='move'&&!mode.looking){const support=supportAt(e.clientX,e.clientY),p=support?M.position(s,support):floorPoint(e.clientX,e.clientY);if(p)previewDrop(p.x,p.z,support);}
-      else if(!mode||mode.looking){camera.yaw=pointer.yaw-dx*.19/camera.zoom;camera.pitch=pointer.pitch+dy*.16/camera.zoom;updateCamera();}
+      else if(!mode||mode.looking||mode.type==='target'){camera.yaw=pointer.yaw-dx*.19/camera.zoom;camera.pitch=pointer.pitch+dy*.16/camera.zoom;updateCamera();}
       e.preventDefault();
     }
     function pointerUp(e){
@@ -181,7 +181,7 @@
       if(a==='record'){const moves=s.logs.filter(l=>l.action==='move').length;showModal('이번 방의 기록',`<p>물건 이동 ${moves}회 · 생각거리 ${s.hint}단계 이용</p><p>${s.ventOpen?'환기 덮개 뒤가 막혀 있는 것을 확인했습니다.':'환기 덮개를 열지 않고 탈출했습니다.'}</p><p>어떤 것을 직접 확인했고, B-0에게는 무엇을 부탁했나요?</p>`);return;}
       if(s.phase!=='room'||busy)return;
       if(a==='dismiss'){speech.hidden=true;return;}
-      if(a==='home'){camera={yaw:-48,pitch:-12,zoom:1};updateCamera();return;}
+      if(a==='home'){standing=null;cancelMove();camera={yaw:-48,pitch:-12,zoom:1};updateCamera();return;}
       if(a.startsWith('zoom-')){camera.zoom=Math.max(.65,Math.min(1.5,camera.zoom+(a==='zoom-in'?.15:-.15)));updateCamera();return;}
       if(a==='clear'||a==='cancel'){cancelMove();return;}
       if(a==='robot'){robotMenu();return;}
@@ -197,7 +197,7 @@
       if(a.startsWith('move-')){beginMove(a.slice(5));return;}
       if(a.startsWith('nudge-')){nudge(a.slice(6));return;}
       if(a==='drop'){if(mode?.candidate){const p=mode.candidate;place(p.x,p.z,p.support);}else say('student','놓을 위치를 먼저 지정해야겠어.');return;}
-      if(a==='down'){standing=null;updateCamera();select(selection||'wide');return;}
+      if(a==='down'){standing=null;camera.pitch=-12;updateCamera();select(selection||'wide');return;}
       if(a.startsWith('climb-')){const id=a.slice(6);if(s.boxes.small.on===id){say('student','위에 작은 상자가 놓여 있어. 올라설 상자를 다시 골라야겠어.');return;}standing=id;const p=M.position(s,id);camera.yaw=Math.atan2(105-p.x,400+p.z)*180/Math.PI;camera.pitch=8;updateCamera();select(id);say('student','올라서니 보이는 높이가 달라졌어.');return;}
       if(a==='open-window'){if(M.openWindow(s,standing)){update();say('student','열렸어. 너머로 넘어갈 수 있겠어.');select('window');}else reachMessage();return;}
       if(a==='exit'){if(M.exit(s,standing)){save();ending();}else reachMessage();}
