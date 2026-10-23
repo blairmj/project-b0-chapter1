@@ -3,7 +3,7 @@
   window.startChapterTwo=function({app,portrait,onBack,preview=false}){
     const M=window.B0RoomTwo,storage=preview?sessionStorage:localStorage,key='project-b0-room2-v1';
     let s;try{s=M.restore(JSON.parse(storage.getItem(key)));}catch{s=M.fresh();}
-    let camera={yaw:-48,pitch:-7,zoom:1},standing=null,selection=null,mode=null,pointer=null,suppress=false,dead=false;
+    let camera={yaw:-48,pitch:-12,zoom:1},standing=null,selection=null,mode=null,pointer=null,suppress=false,dead=false;
     let room,stage,world,actionbar,speech,helpText,focal=330,animation=0,busy=false;
     let robot={x:-120,z:-145},timers=[];
     const escaped=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -32,7 +32,7 @@
       <footer><div class="zoom-controls">${button('−','zoom-out') }<output class="c2-zoom">100%</output>${button('+','zoom-in')}</div>${button('B-0에게 부탁','robot','secondary')}</footer></main>`;
       room=app.querySelector('.c2-game');stage=app.querySelector('.c2-stage');world=app.querySelector('.c2-world');actionbar=app.querySelector('.c2-actions');speech=app.querySelector('.c2-speech');helpText=app.querySelector('.c2-basic-help');
       stage.addEventListener('pointerdown',pointerDown);stage.addEventListener('pointermove',pointerMove);stage.addEventListener('pointerup',pointerUp);stage.addEventListener('pointercancel',cancelPointer);
-      stage.addEventListener('click',e=>{if(suppress){suppress=false;return;}if(busy)return;const el=e.target.closest('[data-object]');if(el)select(el.dataset.object);else if(mode?.type==='move'){const p=floorPoint(e.clientX,e.clientY);if(p)place(p.x,p.z);}});
+      stage.addEventListener('click',e=>{if(suppress){suppress=false;return;}if(busy||mode?.looking)return;const el=e.target.closest('[data-object]');if(el)select(el.dataset.object);else if(mode?.type==='move'){const p=floorPoint(e.clientX,e.clientY);if(p)place(p.x,p.z);}});
       stage.addEventListener('wheel',e=>{e.preventDefault();if(!mode)camera.zoom=Math.max(.65,Math.min(1.5,camera.zoom-e.deltaY*.001));updateCamera();},{passive:false});
       stage.addEventListener('keydown',keyDown);
       update();
@@ -41,10 +41,10 @@
     function updateCamera(){
       if(!stage||!stage.isConnected)return;
       camera.pitch=Math.max(-30,Math.min(40,camera.pitch));camera.yaw=((camera.yaw+180)%360+360)%360-180;
-      focal=Math.min(stage.clientWidth*.85,stage.clientHeight*.8)*camera.zoom;
+      focal=Math.min(stage.clientWidth*.62,stage.clientHeight*.5)*camera.zoom;
       stage.style.perspective=focal+'px';
-      const lift=standing?M.top(s,standing):0;
-      world.style.transform=`translateZ(${focal}px) rotateX(${camera.pitch}deg) rotateY(${camera.yaw}deg) translateY(${lift}px)`;
+      const lift=standing?M.top(s,standing):0,p=standing?M.position(s,standing):{x:0,z:-100};
+      world.style.transform=`translateZ(${focal}px) rotateX(${camera.pitch}deg) rotateY(${camera.yaw}deg) translate3d(${-p.x}px,${lift}px,${-(p.z+100)}px)`;
       stage.dataset.yaw=camera.yaw;stage.dataset.pitch=camera.pitch;
       const r=app.querySelector('.c2-robot');r.style.transform=`translate3d(${robot.x-48}px,24px,${robot.z}px) rotateY(${-camera.yaw}deg)`;
       app.querySelector('.c2-zoom').textContent=Math.round(camera.zoom*100)+'%';
@@ -61,11 +61,12 @@
       updateCamera();save();
     }
     function say(who,text){
-      if(!speech)return;speech.hidden=false;speech.innerHTML=`<div class="speech ${who}"><b>${who==='robot'?'B-0':'나'}</b><p>${escaped(text)}</p></div>${button('닫기','dismiss','quiet')}`;
+      if(!speech)return;helpText.hidden=true;speech.hidden=false;speech.innerHTML=`<div class="speech ${who}"><b>${who==='robot'?'B-0':'나'}</b><p>${escaped(text)}</p></div>${button('닫기','dismiss','quiet')}`;
       const actor=app.querySelector('.c2-robot .robot-sprite');if(actor){actor.classList.toggle('speaking',who==='robot');later(()=>actor.classList.remove('speaking'),Math.min(4500,text.length*90));}
     }
     function actions(title,items){actionbar.innerHTML=`<strong>${escaped(title)}</strong><div>${items.map(([t,a])=>button(t,a)).join('')}</div>`;}
     function select(id){
+      if(mode?.looking)return;
       if(mode?.type==='target'){robotTarget(id);return;}
       if(mode?.type==='move'){
         if(M.sizes[id]&&id!==mode.id){const p=M.position(s,id);place(p.x,p.z,id);}return;
@@ -92,9 +93,10 @@
       const other=id==='wide'?'small':'wide';if(s.boxes[other].on===id){say('student','위에 놓인 상자부터 내려야겠어.');return;}
       if(s.holding&&(s.holding===id||s.holding===s.boxes[id].on)){say('robot','제가 잡고 있습니다. 먼저 손을 놓을까요?');robotMenu();return;}
       mode={type:'move',id,byRobot,candidate:null};selection=id;speech.hidden=true;
-      actions(`${M.sizes[id].name} · ${byRobot?'B-0가 옮길':'옮길'} 위치 선택`,[['앞','nudge-front'],['뒤','nudge-back'],['왼쪽','nudge-left'],['오른쪽','nudge-right'],['놓기','drop'],['취소','cancel']]);
+      moveActions();
       helpText.textContent='상자를 끌거나 빈 바닥을 누르세요 · 다른 상자를 누르면 윗면에 놓기';helpText.hidden=false;update();
     }
+    function moveActions(){actions(`${M.sizes[mode.id].name} · ${mode.looking?'빈 공간을 끌어 시점 돌리기':mode.byRobot?'B-0가 옮길 위치 선택':'옮길 위치 선택'}`,mode.looking?[['위치 지정으로','move-view'],['취소','cancel']]:[['앞','nudge-front'],['뒤','nudge-back'],['왼쪽','nudge-left'],['오른쪽','nudge-right'],['놓기','drop'],['시점 돌리기','move-view'],['취소','cancel']]);}
     // Inverse CSS camera ray intersected with the floor; changing yaw never changes world coordinates.
     function floorPoint(clientX,clientY){
       const r=stage.getBoundingClientRect(),x=(clientX-r.left-r.width/2)/focal,y=(clientY-r.top-r.height/2)/focal;
@@ -109,6 +111,7 @@
       const mark=app.querySelector('.c2-floor-target');mark.hidden=false;mark.classList.toggle('invalid',!d.ok);
       const p=d.ok?d:{x:Math.max(-240,Math.min(240,x)),z:Math.max(-245,Math.min(230,z))};
       mark.style.transform=`translate3d(${p.x-45}px,${179-(support?M.top(s,support):0)}px,${p.z}px) rotateX(90deg)`;
+      if(d.ok){const size=M.sizes[mode.id],el=app.querySelector(`[data-object="${mode.id}"]`);el.style.transform=`translate3d(${d.x-size.w/2}px,${180-size.h-(support?M.top(s,support):0)}px,${d.z}px)`;}
     }
     function place(x,z,support=null){
       if(!mode)return;const {id,byRobot}=mode,d=M.move(s,id,x,z,support);
@@ -120,7 +123,7 @@
     function pointerDown(e){
       if(busy||e.button!==0||e.isPrimary===false)return;
       pointer={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:camera.yaw,pitch:camera.pitch,moved:false};suppress=false;
-      if(mode?.type==='move'){stage.setPointerCapture(e.pointerId);e.preventDefault();}
+      if(mode?.type==='move')e.preventDefault();
     }
     function supportAt(x,y){
       const selected=app.querySelector(`[data-object="${mode.id}"]`);selected.style.pointerEvents='none';
@@ -131,13 +134,13 @@
       if(!pointer||pointer.id!==e.pointerId)return;const dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;
       if(Math.hypot(dx,dy)<7&&!pointer.moved)return;
       pointer.moved=true;stage.setPointerCapture(e.pointerId);helpText.hidden=true;
-      if(mode?.type==='move'){const support=supportAt(e.clientX,e.clientY),p=support?M.position(s,support):floorPoint(e.clientX,e.clientY);if(p)previewDrop(p.x,p.z,support);}
-      else if(!mode){camera.yaw=pointer.yaw-dx*.19/camera.zoom;camera.pitch=pointer.pitch+dy*.16/camera.zoom;updateCamera();}
+      if(mode?.type==='move'&&!mode.looking){const support=supportAt(e.clientX,e.clientY),p=support?M.position(s,support):floorPoint(e.clientX,e.clientY);if(p)previewDrop(p.x,p.z,support);}
+      else if(!mode||mode.looking){camera.yaw=pointer.yaw-dx*.19/camera.zoom;camera.pitch=pointer.pitch+dy*.16/camera.zoom;updateCamera();}
       e.preventDefault();
     }
     function pointerUp(e){
       if(!pointer||pointer.id!==e.pointerId)return;suppress=pointer.moved;
-      if(pointer.moved&&mode?.type==='move'&&mode.candidate){const {x,z,support}=mode.candidate;place(x,z,support);}
+      if(pointer.moved&&mode?.type==='move'&&!mode.looking&&mode.candidate){const {x,z,support}=mode.candidate;place(x,z,support);}
       if(stage.hasPointerCapture(e.pointerId))stage.releasePointerCapture(e.pointerId);pointer=null;
     }
     function cancelPointer(){pointer=null;suppress=true;if(mode)cancelMove();}
@@ -146,7 +149,7 @@
       if(e.key==='Escape'){cancelMove();return;}
       const dirs={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'front',ArrowDown:'back'};
       if(!dirs[e.key])return;e.preventDefault();
-      if(mode?.type==='move')nudge(dirs[e.key]);else {if(e.key==='ArrowLeft')camera.yaw-=15;if(e.key==='ArrowRight')camera.yaw+=15;if(e.key==='ArrowUp')camera.pitch+=8;if(e.key==='ArrowDown')camera.pitch-=8;updateCamera();}
+      if(mode?.type==='move'&&!mode.looking)nudge(dirs[e.key]);else {if(e.key==='ArrowLeft')camera.yaw-=15;if(e.key==='ArrowRight')camera.yaw+=15;if(e.key==='ArrowUp')camera.pitch+=8;if(e.key==='ArrowDown')camera.pitch-=8;updateCamera();}
     }
     function nudge(dir){
       if(!mode)return;const p=mode.candidate||M.position(s,mode.id),a=camera.yaw*Math.PI/180,dx=dir==='left'?-25:dir==='right'?25:0,dz=dir==='front'?-25:dir==='back'?25:0;
@@ -170,7 +173,7 @@
       if(a==='menu'){showModal('메뉴',`<p>1차시와 2차시 진행은 따로 저장됩니다.</p><div class="options">${button('계속하기','close-modal','primary')}${button('조작 방법','controls')}${button('생각거리','hint')}${button('2차시 다시 시작','reset-confirm','quiet')}${button('1차시로 돌아가기','back','quiet')}</div>`);return;}
       if(a==='back'){dispose();onBack();return;}
       if(a==='reset-confirm'){showModal('2차시를 다시 시작할까요?',`<p>이 방의 상자 배치와 진행만 초기화합니다. 1차시 진행은 유지됩니다.</p>${button('초기화하고 시작','reset','primary')}`);return;}
-      if(a==='reset'){s=M.fresh();standing=null;mode=null;selection=null;camera={yaw:-48,pitch:-7,zoom:1};robot={x:-120,z:-145};save();render();return;}
+      if(a==='reset'){s=M.fresh();standing=null;mode=null;selection=null;camera={yaw:-48,pitch:-12,zoom:1};robot={x:-120,z:-145};save();render();return;}
       if(a==='controls'){showModal('조작 방법','<p>빈 공간을 끌거나 방향키로 시점을 돌립니다. 물건을 누르면 행동이 나타납니다.</p><p>옮기기를 선택한 뒤 물건을 끌어 놓거나 빈 바닥을 누르세요. 다른 물건 위에 놓을 수도 있습니다. 앞·뒤·왼쪽·오른쪽 버튼으로 위치를 조절하고 놓기를 눌러도 됩니다.</p><p>B-0에게 부탁할 때는 행동을 고르고 대상 물건을 직접 누릅니다. 원위치로는 시점과 배율만 되돌립니다.</p>');return;}
       if(a==='hint'){s.hint=Math.min(4,s.hint+1);save();const hints=['','시선을 위아래로도 움직여 보세요.','발견한 통로에 닿으려면 무엇이 달라져야 할까요?','방 안의 물건으로 올라설 곳을 만들 수 있습니다.','넓은 상자를 창문 가까이 옮기고 작은 상자를 위에 놓으세요. B-0에게 아래 상자를 잡아 달라고 부탁한 뒤 올라서 보세요.'];showModal('생각거리',`<p>${hints[s.hint]}</p>${s.hint<4?button('조금 더 도움받기','hint'):''}`);return;}
       if(a==='help-b0'){if(M.finish(s)){save();ending();}return;}
@@ -178,7 +181,7 @@
       if(a==='record'){const moves=s.logs.filter(l=>l.action==='move').length;showModal('이번 방의 기록',`<p>물건 이동 ${moves}회 · 생각거리 ${s.hint}단계 이용</p><p>${s.ventOpen?'환기 덮개 뒤가 막혀 있는 것을 확인했습니다.':'환기 덮개를 열지 않고 탈출했습니다.'}</p><p>어떤 것을 직접 확인했고, B-0에게는 무엇을 부탁했나요?</p>`);return;}
       if(s.phase!=='room'||busy)return;
       if(a==='dismiss'){speech.hidden=true;return;}
-      if(a==='home'){camera={yaw:-48,pitch:-7,zoom:1};updateCamera();return;}
+      if(a==='home'){camera={yaw:-48,pitch:-12,zoom:1};updateCamera();return;}
       if(a.startsWith('zoom-')){camera.zoom=Math.max(.65,Math.min(1.5,camera.zoom+(a==='zoom-in'?.15:-.15)));updateCamera();return;}
       if(a==='clear'||a==='cancel'){cancelMove();return;}
       if(a==='robot'){robotMenu();return;}
@@ -190,11 +193,12 @@
       if(a==='push-entry'){say('student','움직이지 않아. 다른 곳도 살펴봐야겠어.');return;}
       if(a==='vent'){s.ventOpen=!s.ventOpen;s.logs.push({action:'vent',open:s.ventOpen});update();select('vent');if(s.ventOpen)say('student','뒤가 금속판으로 막혀 있어. 통로처럼 보였는데…….');return;}
       if(a==='cabinet'){s.cabinetOpen=!s.cabinetOpen;update();select('cabinet');if(s.cabinetOpen)say('student','안에는 아무것도 없어.');return;}
+      if(a==='move-view'){if(mode){mode.looking=!mode.looking;moveActions();}return;}
       if(a.startsWith('move-')){beginMove(a.slice(5));return;}
       if(a.startsWith('nudge-')){nudge(a.slice(6));return;}
       if(a==='drop'){if(mode?.candidate){const p=mode.candidate;place(p.x,p.z,p.support);}else say('student','놓을 위치를 먼저 지정해야겠어.');return;}
       if(a==='down'){standing=null;updateCamera();select(selection||'wide');return;}
-      if(a.startsWith('climb-')){const id=a.slice(6);if(s.boxes.small.on===id){say('student','위에 작은 상자가 놓여 있어. 올라설 상자를 다시 골라야겠어.');return;}standing=id;const p=M.position(s,id);camera.yaw=Math.atan2(p.x,-p.z)*180/Math.PI;camera.pitch=-7;updateCamera();select(id);say('student','올라서니 보이는 높이가 달라졌어.');return;}
+      if(a.startsWith('climb-')){const id=a.slice(6);if(s.boxes.small.on===id){say('student','위에 작은 상자가 놓여 있어. 올라설 상자를 다시 골라야겠어.');return;}standing=id;const p=M.position(s,id);camera.yaw=Math.atan2(105-p.x,400+p.z)*180/Math.PI;camera.pitch=8;updateCamera();select(id);say('student','올라서니 보이는 높이가 달라졌어.');return;}
       if(a==='open-window'){if(M.openWindow(s,standing)){update();say('student','열렸어. 너머로 넘어갈 수 있겠어.');select('window');}else reachMessage();return;}
       if(a==='exit'){if(M.exit(s,standing)){save();ending();}else reachMessage();}
     }

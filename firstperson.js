@@ -32,7 +32,7 @@ function enterChapterTwo(){
   roomView?.dispose();roomView=null;chapterTwo?.dispose();
   token++;clearTimeout(timer);clearTimeout(speechTimer);clearTimeout(talkTimer);cancelAnimationFrame(walkFrame);moving=false;suppressClick=false;
   state.chapter=2;save();
-  chapterTwo=window.startChapterTwo({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),onBack:()=>{chapterTwo=null;state.chapter=1;save();boot();}});
+  chapterTwo=window.startChapterTwo({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),onBack:()=>{chapterTwo=null;state.chapter=1;save();const url=new URL(location.href);url.searchParams.delete('chapter');history.replaceState(null,'',url);boot();}});
 }
 const touchPoints=new Map();
 const reduced=()=>window.matchMedia("(prefers-reduced-motion: reduce)").matches;
