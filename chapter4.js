@@ -1,6 +1,6 @@
 (function(){
   'use strict';
-  window.startChapterFour=function({app,portrait,onBack,preview=false}){
+  window.startChapterFour=function({app,portrait,onBack,onHome,preview=false}){
     const SPACE=1.3;
     const M=window.B0Final,storage=preview?sessionStorage:localStorage,key='project-b0-final-v2';
     let s;try{s=M.restore(JSON.parse(storage.getItem(key)));}catch{s=M.fresh();}
@@ -148,12 +148,13 @@
     }
 
     function renderScene(lines,place,type){s.line=Math.min(s.line,lines.length-1);const [who,text]=lines[s.line];const bed=type==='ending';app.innerHTML=`<main class="game c4-story c4-story-${type}"><header><h1>내 위치: ${place}</h1>${b('메뉴','menu','quiet')}</header><section class="c4-story-scene">${bed?`<div class="c4-bedroom"><div class="c4-moon"></div><div class="c4-notebook"><small>나의 풀이</small><p>24 ÷ 3 × 2 = 4 <em>×</em></p><div class="c4-pencil-line ${s.line>=5?'corrected':''}">= 8 × 2 = 16</div></div><div class="c4-home-screen ${s.line>=2?'awake':''}"><i></i><i></i></div><div class="c4-pencil"></div></div>`:`<div class="c4-story-door"></div><div class="c4-story-robot"><div class="robot-sprite live-body ${who==='robot'?'speaking':''}">${portrait()}</div></div>`}<div class="c4-story-dialogue"><div class="speech ${who}"><b>${who==='robot'?'B-0':who==='axiom'?'AXIOM':'나'}</b><p>${esc(text)}</p></div>${b(s.line===lines.length-1?(type==='intro'?'중앙관리실로':type==='farewell'?'함께 바깥으로':'마치기'):'다음','story-next','next')}</div></section></main>`;}
-    function renderComplete(){app.innerHTML=`<main class="game c4-complete"><header><h1>PROJECT B-0</h1>${b('메뉴','menu','quiet')}</header><section><div class="c4-final-eyes"><i></i><i></i></div><h2>함께, 다음 문제로.</h2><p>모르는 건 물어보고.<br>들은 답은 확인하고.<br>선택은 내가.</p>${b('이번 모험 돌아보기','reflection')}${b('중앙관리실 다시 둘러보기','revisit','quiet')}</section></main>`;}
+    function renderComplete(){app.innerHTML=`<main class="game c4-complete"><header><h1>PROJECT B-0</h1>${b('메뉴','menu','quiet')}</header><section><div class="c4-final-eyes"><i></i><i></i></div><h2>함께, 다음 문제로.</h2><p>모르는 건 물어보고.<br>들은 답은 확인하고.<br>선택은 내가.</p>${b('시작 화면으로','campaign-home','primary')}${b('이번 모험 돌아보기','reflection')}${b('중앙관리실 다시 둘러보기','revisit','quiet')}</section></main>`;}
     function act(a){
+      if(a==='campaign-home'){onHome?.();return;}
       if(carryingTransition&&!['menu','close-modal','reset-confirm','reset','back','mute'].includes(a))return;
       if(journey&&!['menu','close-modal','back','reset-confirm','reset','mute'].includes(a))return;
       if(a==='close-modal'){closeModal();return;}
-      if(a==='menu'){modal('메뉴',`<div class="options">${b('계속하기','close-modal','primary')}${b('조작 방법','controls')}${b(mute?'소리 켜기':'소리 끄기','mute')}${b('4차시 다시 시작','reset-confirm','quiet')}${b('3차시로 돌아가기','back','quiet')}</div>`);return;}
+      if(a==='menu'){modal('메뉴',`<div class="options">${b('계속하기','close-modal','primary')}${b('시작 화면으로','campaign-home','secondary')}${b('조작 방법','controls')}${b(mute?'소리 켜기':'소리 끄기','mute')}${b('4차시 다시 시작','reset-confirm','quiet')}${b('3차시로 돌아가기','back','quiet')}</div>`);return;}
       if(a==='mute'){mute=!mute;try{const v=JSON.parse(storage.getItem('project-b0-firstperson-v4'))||{};v.muted=mute;storage.setItem('project-b0-firstperson-v4',JSON.stringify(v));}catch{}closeModal();return;}
       if(a==='controls'){modal('조작 방법','<p>빈 공간을 끌거나 방향키로 둘러보고, 물건을 눌러 가까이 살펴봅니다.</p><p>연결 단자는 옆으로 끌어 분리합니다. 닿을 수 있는 잠금쇠와 문 손잡이를 직접 끌어 조작할 수 있습니다. 각 물건의 조작 버튼도 사용할 수 있습니다.</p><p>B-0에게 부탁한 뒤 대상 물건을 직접 누릅니다. 원위치로는 시점과 배율만 초기화합니다. 진행은 자동 저장됩니다.</p>');return;}
       if(a==='reset-confirm'){modal('4차시를 다시 시작할까요?',`<p>다른 차시의 기록은 유지됩니다.</p>${b('4차시 초기화','reset')}`);return;}

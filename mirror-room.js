@@ -1,6 +1,6 @@
 (function(){
   'use strict';
-  window.startMirrorRoom=function({app,portrait,state,onSave,onBack,onComplete}){
+  window.startMirrorRoom=function({app,portrait,state,onSave,onBack,onComplete,onHome}){
     const SPACE=1.3;
     const M=window.B0Mirror,s=state;
     let stage,world,bar,speech,pointer=null,selection=null,targetMode=false,suppress=false,dead=false,robotBusy=false,camFrame=0,botFrame=0,handFrame=0,pulse=0,timers=[],audio;
@@ -135,8 +135,9 @@
     function cancelPointer(){pointer=null;suppress=true;if(s.phase==='split')M.setOwn(s,0);update();save();}
     function modal(title,body){app.querySelector('.mr-modal')?.remove();const d=document.createElement('dialog');d.className='modal mr-modal';d.innerHTML=`<div class="modal-header"><h2>${esc(title)}</h2>${b('닫기','close-modal','quiet')}</div><div class="modal-body">${body}</div>`;app.append(d);d.addEventListener('close',()=>d.remove());d.showModal();}
     function act(a){
+      if(a==='campaign-home'){onHome?.();return;}
       if(a==='close-modal'){app.querySelector('.mr-modal')?.close();return;}
-      if(a==='menu'){modal('메뉴',`<p>출입 관리실과 관찰실의 진행이 함께 저장됩니다.</p><div class="options">${b('계속하기','close-modal','primary')}${b('조작 방법','controls')}${b('탐색 기록','record')}${b('관찰실 다시 시작','reset-confirm','quiet')}${b('출입 관리실로 돌아가기','back','quiet')}</div>`);return;}
+      if(a==='menu'){modal('메뉴',`<p>출입 관리실과 관찰실의 진행이 함께 저장됩니다.</p><div class="options">${b('계속하기','close-modal','primary')}${b('시작 화면으로','campaign-home','secondary')}${b('조작 방법','controls')}${b('탐색 기록','record')}${b('관찰실 다시 시작','reset-confirm','quiet')}${b('출입 관리실로 돌아가기','back','quiet')}</div>`);return;}
       if(a==='controls'){modal('조작 방법','<p>빈 공간을 끌거나 방향키로 둘러봅니다. 물건을 누르면 조사하거나 행동할 수 있습니다.</p><p>유리 너머 물건도 눌러 B-0에게 부탁할 수 있습니다. 대상과 행동은 직접 골라 주세요.</p><p>자기 쪽 손잡이는 잡은 채 아래로 끌거나, 선택 후 당기기 버튼을 사용합니다. 원위치로는 시점과 배율만 되돌립니다.</p>');return;}
       if(a==='record'){modal('관찰실 탐색 기록',`<p>조사 ${s.logs.filter(x=>x.action==='inspect').length}회 · B-0에게 요청 ${s.logs.filter(x=>x.action==='request').length}회</p><p>어떤 장치가 움직였나요? 처음 부탁한 것에 빠진 조건이 있었나요?</p>`);return;}
       if(a==='reset-confirm'){modal('관찰실을 다시 시작할까요?',`<p>출입 관리실의 진행은 유지됩니다.</p>${b('관찰실만 초기화','reset','primary')}`);return;}

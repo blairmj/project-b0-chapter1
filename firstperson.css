@@ -152,3 +152,8 @@ body{display:flow-root}
 .resume-actions:has(>button:only-child){grid-template-columns:1fr}
 @keyframes corridor-step{from{transform:translateY(-3px) rotate(-.6deg)}to{transform:translateY(3px) rotate(.6deg)}}
 @media(prefers-reduced-motion:reduce){.corridor-b0.walking{animation:none}}
+
+.campaign-home h1{font-size:clamp(30px,7vw,46px);letter-spacing:.04em;color:#d8f3f6}
+.campaign-home .wake-controls{gap:12px;background:linear-gradient(transparent,#091523f5 35%);padding-top:70px}
+.campaign-tagline{font-size:14px;color:#bdd1dc}.campaign-buttons{display:grid;gap:10px;margin-top:8px}
+.campaign-home .muted{font-size:11px;text-align:center}

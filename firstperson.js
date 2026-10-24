@@ -28,26 +28,26 @@ function load() {
 let state = load() || fresh(), target = "", moving = false, token = 0, timer, speechTimer, audio, lastFocus;
 let faceId=0, talkTimer, camera={x:0,y:0}, drag=null, suppressClick=false, roomView, walkFrame, zoom=1, pinch=null;
 let chapterTwo,chapterThree,chapterFour;
-function chapterUrl(number){const url=new URL(location.href);if(number!==3)url.searchParams.delete('room');if(number===1)url.searchParams.delete('chapter');else url.searchParams.set('chapter',String(number));history.replaceState(null,'',url);}
+function chapterUrl(number){if(typeof location==='undefined')return;const url=new URL(location.href);if(number!==3)url.searchParams.delete('room');if(number===1)url.searchParams.delete('chapter');else url.searchParams.set('chapter',String(number));history.replaceState(null,'',url);}
 function enterChapterTwo(){
   chapterFour?.dispose();chapterFour=null;
   roomView?.dispose();roomView=null;chapterTwo?.dispose();chapterThree?.dispose();chapterThree=null;
   token++;clearTimeout(timer);clearTimeout(speechTimer);clearTimeout(talkTimer);cancelAnimationFrame(walkFrame);moving=false;suppressClick=false;
   state.chapter=2;save();chapterUrl(2);
-  chapterTwo=window.startChapterTwo({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),onNext:enterChapterThree,onBack:()=>{chapterTwo=null;state.chapter=1;save();chapterUrl(1);boot();}});
+  chapterTwo=window.startChapterTwo({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),onNext:enterChapterThree,onHome:campaignHome,onBack:()=>{chapterTwo=null;state.chapter=1;save();chapterUrl(1);boot();}});
 }
 function enterChapterThree(){
   chapterFour?.dispose();chapterFour=null;
   roomView?.dispose();roomView=null;chapterTwo?.dispose();chapterTwo=null;chapterThree?.dispose();
   token++;clearTimeout(timer);clearTimeout(speechTimer);clearTimeout(talkTimer);cancelAnimationFrame(walkFrame);moving=false;suppressClick=false;
   state.chapter=3;save();chapterUrl(3);
-  chapterThree=window.startChapterThree({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),onBack:enterChapterTwo,onNext:enterChapterFour});
+  chapterThree=window.startChapterThree({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),onBack:enterChapterTwo,onNext:enterChapterFour,onHome:campaignHome});
 }
 function enterChapterFour(){
   roomView?.dispose();roomView=null;chapterTwo?.dispose();chapterTwo=null;chapterThree?.dispose();chapterThree=null;chapterFour?.dispose();
   token++;clearTimeout(timer);clearTimeout(speechTimer);clearTimeout(talkTimer);cancelAnimationFrame(walkFrame);moving=false;suppressClick=false;
   state.chapter=4;save();chapterUrl(4);
-  chapterFour=window.startChapterFour({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),onBack:enterChapterThree});
+  chapterFour=window.startChapterFour({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),onBack:enterChapterThree,onHome:campaignHome});
 }
 const touchPoints=new Map();
 const reduced=()=>window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -89,18 +89,32 @@ function tone(ok=true) {
 }
 function dialogue(who,text) { return `<div class="speech ${who}"><b>${who==="robot"?"B-0":who==="thought"?"속마음":"나"}</b><p>${esc(text)}</p></div>`; }
 function openingHeader(){return `<header class="opening-header"><span>내 위치: 알 수 없는 곳</span>${btn("← 원위치로","view-home","quiet")}</header>`;}
+const campaignKeys=['project-b0-room2-v1','project-b0-room3-v1','project-b0-final-v1','project-b0-final-v2'];
+function hasAdventure(){
+  if((state.chapter||1)>1||state.phase!=='intro'||state.line>0)return true;
+  try{return campaignKeys.some(key=>progressStore.getItem(key)!==null);}catch{return false;}
+}
+function stopAdventure(){
+  chapterTwo?.dispose();chapterTwo=null;chapterThree?.dispose();chapterThree=null;chapterFour?.dispose();chapterFour=null;
+  roomView?.dispose();roomView=null;token++;clearTimeout(timer);clearTimeout(speechTimer);clearTimeout(talkTimer);cancelAnimationFrame(walkFrame);
+  app.querySelectorAll('dialog').forEach(d=>d.close());moving=false;suppressClick=false;drag=null;pinch=null;touchPoints.clear();
+}
+function campaignHome(){
+  stopAdventure();chapterUrl(1);const saved=hasAdventure(),chapter=Math.max(1,Math.min(4,state.chapter||1));
+  app.innerHTML=`<main class="awakening campaign-home"><div class="face" role="img" aria-label="함께 탈출할 AI 로봇 B-0">${portrait()}</div><div class="wake-controls"><p class="chapter-label">퍼즐 어드벤처 · 연구소 탈출</p><h1>PROJECT B-0</h1><p class="campaign-tagline">모르는 로봇과, 함께 길을 찾는 모험.</p><div class="campaign-buttons">${btn('처음부터 시작','campaign-start','primary')}${saved?btn('이어하기','campaign-continue','secondary'):''}</div>${saved?`<small class="muted">${chapter}차시 진행이 저장되어 있습니다.</small>`:''}</div></main>`;
+}
+function resumeAdventure(chapter=state.chapter||1){
+  if(chapter===4){enterChapterFour();return;}if(chapter===3){enterChapterThree();return;}if(chapter===2){enterChapterTwo();return;}
+  state.chapter=1;save();if(state.phase==='intro')opening();else enterRoom();
+}
+function startAdventure(){
+  const muted=state.muted;stopAdventure();
+  for(const key of campaignKeys)progressStore.removeItem(key);
+  state=fresh();state.chapter=1;state.muted=muted;save();chapterUrl(1);opening();
+}
 function boot() {
   const requested=typeof location!=="undefined"?new URLSearchParams(location.search).get('chapter'):null;
-  const chapter=['1','2','3','4'].includes(requested)?Number(requested):state.chapter;
-  if(chapter===4){enterChapterFour();return;}
-  if(chapter===3){enterChapterThree();return;}
-  if(chapter===2){enterChapterTwo();return;}
-  if(state.phase==="intro") opening();
-  else {
-    app.innerHTML=`<main class="awakening resume"><div class="face" role="img" aria-label="눈앞을 가득 채운 B-0의 얼굴">${portrait()}</div><div class="wake-controls"><p class="chapter-label">PROJECT B-0 · 깨어난 실습실</p>${dialogue("robot","다시 만났네요.")}<div class="resume-actions">${btn(state.phase==="escaped"?"탈출 기록 보기":"이어서 탐색","continue","primary")}</div></div></main>`;
-    app.querySelector(".awakening").insertAdjacentHTML("afterbegin",openingHeader());
-    performSpeech("robot","다시 만났네요.","friendly");
-  }
+  if(['1','2','3','4'].includes(requested))resumeAdventure(Number(requested));else campaignHome();
 }
 function opening() {
   roomView?.dispose();roomView=null;
@@ -303,11 +317,16 @@ function ending(line=0) {
   roomView?.dispose();roomView=null;moving=false;
   const lines=[["student","너도 같이 가는 거지?"],["robot","네. 함께 출구를 찾아보겠습니다."],["robot","복도 끝에 다른 방이 보입니다."],["student","같이 가 보자."]];
   const [who,text]=lines[line];
-  app.innerHTML=`<main class="game corridor-game"><header><h1>내 위치: 연구소 복도</h1><nav aria-label="게임 메뉴">${btn("← 원위치로","view-home","quiet")}${btn("메뉴","menu","quiet")}</nav></header><section class="corridor-scene" aria-label="교육 실습실을 나와 마주한 연구소 복도"><div class="corridor-view" role="img" aria-label="불빛과 여러 출입문이 이어지는 긴 연구소 복도"></div><div class="corridor-b0 walking" role="img" aria-label="함께 복도를 걷는 B-0"><div class="robot-sprite live-body">${portrait()}</div></div><div class="corridor-dialogue">${dialogue(who,text)}${line<3?btn("다음","epilogue-"+(line+1),"next"):btn("복도 끝으로 이동","chapter-two","primary")}</div></section><footer><small>${line===3?"1차시 끝 · 다음 방으로 이어집니다.":"B-0와 함께 실습실을 나왔다."}</small></footer></main>`;
+  app.innerHTML=`<main class="game corridor-game"><header><h1>내 위치: 연구소 복도</h1><nav aria-label="게임 메뉴">${btn("← 원위치로","view-home","quiet")}${btn("메뉴","menu","quiet")}</nav></header><section class="corridor-scene" aria-label="교육 실습실을 나와 마주한 연구소 복도"><div class="corridor-view" role="img" aria-label="불빛과 여러 출입문이 이어지는 긴 연구소 복도"></div><div class="corridor-b0 walking" role="img" aria-label="함께 복도를 걷는 B-0"><div class="robot-sprite live-body">${portrait()}</div></div><div class="corridor-dialogue">${dialogue(who,text)}${line<3?btn("다음","epilogue-"+(line+1),"next"):btn("복도 끝으로 이동","chapter-two","primary")}</div></section><footer><small>${line===3?"복도 끝에서 다음 통로를 찾는다.":"B-0와 함께 실습실을 나왔다."}</small></footer></main>`;
   performSpeech(who,text,"friendly");
 }
-function menu() {modal("메뉴",`<p>진행은 이 기기에 자동 저장됩니다.</p><div class="options">${btn("계속 탐색","close","primary")}${btn(state.muted?"효과음 켜기":"효과음 끄기","sound","secondary")}${btn("막혔을 때 생각거리","hint","secondary")}${btn("수업 안내","teacher","secondary")}${btn("2차시 · 문이 없는 방","chapter-two","secondary")}${btn("3차시 · 출입 관리실","chapter-three","secondary")}${btn("진행 초기화","restart","quiet")}</div>`);}
+function menu() {modal("메뉴",`<p>진행은 이 기기에 자동 저장됩니다.</p><div class="options">${btn("계속 탐색","close","primary")}${btn(state.muted?"효과음 켜기":"효과음 끄기","sound","secondary")}${btn("막혔을 때 생각거리","hint","secondary")}${btn("수업 안내","teacher","secondary")}${btn("시작 화면으로","campaign-home","secondary")}${btn("진행 초기화","restart","quiet")}</div>`);}
 function handle(a) {
+  if(a==='campaign-home'){campaignHome();return;}
+  if(a==='campaign-continue'){resumeAdventure();return;}
+  if(a==='campaign-start'){if(hasAdventure())modal('처음부터 시작할까요?',`<p>1~4차시의 진행을 초기화하고 B-0와 처음 만나는 장면부터 시작합니다.</p><div class="action-row">${btn('취소','close','secondary')}${btn('처음부터 시작','campaign-new','primary')}</div>`);else startAdventure();return;}
+  if(a==='campaign-new'){startAdventure();return;}
+
   if(a==='chapter-two'){app.querySelector('dialog')?.close();enterChapterTwo();return;}
   if(a==='chapter-three'){app.querySelector('dialog')?.close();enterChapterThree();return;}
   if(a==="close"){app.querySelector("dialog")?.close();return;}

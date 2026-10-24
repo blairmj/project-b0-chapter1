@@ -1,6 +1,6 @@
 (function(){
   'use strict';
-  window.startChapterTwo=function({app,portrait,onBack,onNext,preview=false}){
+  window.startChapterTwo=function({app,portrait,onBack,onNext,onHome,preview=false}){
     const SPACE=1.3;
     const M=window.B0RoomTwo,storage=preview?sessionStorage:localStorage,key='project-b0-room2-v1';
     let s;try{s=M.restore(JSON.parse(storage.getItem(key)));}catch{s=M.fresh();}
@@ -293,11 +293,12 @@
     function ending(){
       if(s.phase==='ledge'){enterLedge();return;}
       cancelAnimationFrame(heightFrame);viewHeight=0;standing=null;mode=null;lift=0;const done=s.phase==='complete';
-      app.innerHTML=`<main class="game c2-ending"><header><h1>내 위치: ${done?'연구소 통로':'창문 바깥'}</h1>${button('메뉴','menu','quiet')}</header><section class="c2-outside ${done?'together':''}"><div class="c2-ending-b0">${portrait()}</div><div class="c2-end-dialogue"><div class="speech ${done?'robot':'student'}"><b>${done?'B-0':'나'}</b><p>${done?'문은 없었지만, 함께 나왔습니다.':'이제 너 올라와. 손 줘.'}</p></div>${button(done?'복도 따라가기':'B-0의 손 잡기',done?'chapter-three':'help-b0','primary')+(done?button('이번 방의 기록','summary','quiet'):'')}</div></section><footer><small>${done?'2차시 · 문이 없는 방':'B-0가 아래에서 기다리고 있다.'}</small></footer></main>`;
+      app.innerHTML=`<main class="game c2-ending"><header><h1>내 위치: ${done?'연구소 통로':'창문 바깥'}</h1>${button('메뉴','menu','quiet')}</header><section class="c2-outside ${done?'together':''}"><div class="c2-ending-b0">${portrait()}</div><div class="c2-end-dialogue"><div class="speech ${done?'robot':'student'}"><b>${done?'B-0':'나'}</b><p>${done?'문은 없었지만, 함께 나왔습니다.':'이제 너 올라와. 손 줘.'}</p></div>${button(done?'복도 따라가기':'B-0의 손 잡기',done?'chapter-three':'help-b0','primary')+(done?button('이번 방의 기록','summary','quiet'):'')}</div></section><footer><small>${done?'B-0와 함께 통로에 도착했다.':'B-0가 아래에서 기다리고 있다.'}</small></footer></main>`;
     }
     function act(a){
+      if(a==='campaign-home'){onHome?.();return;}
       if(a==='close-modal'){app.querySelector('.c2-modal')?.close();return;}
-      if(a==='menu'){showModal('메뉴',`<p>1차시와 2차시 진행은 따로 저장됩니다.</p><div class="options">${button('계속하기','close-modal','primary')}${button('조작 방법','controls')}${button('생각거리','hint')}${button('2차시 다시 시작','reset-confirm','quiet')}${button('1차시로 돌아가기','back','quiet')}</div>`);return;}
+      if(a==='menu'){showModal('메뉴',`<p>모험의 진행은 자동 저장됩니다.</p><div class="options">${button('계속하기','close-modal','primary')}${button('시작 화면으로','campaign-home','secondary')}${button('조작 방법','controls')}${button('생각거리','hint')}${button('2차시 다시 시작','reset-confirm','quiet')}${button('1차시로 돌아가기','back','quiet')}</div>`);return;}
       if(a==='back'){dispose();onBack();return;}
       if(a==='reset-confirm'){showModal('2차시를 다시 시작할까요?',`<p>이 방의 상자 배치와 진행만 초기화합니다. 1차시 진행은 유지됩니다.</p>${button('초기화하고 시작','reset','primary')}`);return;}
       if(a==='reset'){cancelAnimationFrame(animation);cancelAnimationFrame(heightFrame);viewX=0;viewZ=0;viewHeight=0;groundView=null;robotLift=0;travelling=false;busy=false;lift=0;s=M.fresh();standing=null;mode=null;selection=null;camera={yaw:-48,pitch:-12,zoom:1};robot={x:-120,z:-145};save();render();return;}
