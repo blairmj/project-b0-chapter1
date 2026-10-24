@@ -1,0 +1,8 @@
+{
+  "tool": "builtin image_gen",
+  "reference": "b0-body-v3.webp",
+  "asset": "b0-walk-back-v1.webp",
+  "frames": 2,
+  "layout": "horizontal",
+  "prompt": "Use case: identity-preserve / game sprite animation. Reference image is the exact existing B-0 robot design, MUST preserve its identity: short cute substantial robot, big rounded worn ivory head with ONE tall fin, black joints and palms, cyan circular ear and joint lights, detailed hand-painted illustrated metal scratches. Create a transparent-background 2-FRAME WALK CYCLE SPRITE SHEET, single horizontal row, two identical-size cells, total canvas landscape 2048x1536 (each cell 1024x1536). SAME robot viewed from the BACK, head facing directly away from camera, full body from fin to feet within each cell. Rear helmet solid ivory metal with cyan ear edges, NO face on back, no new backpack/props. Both cells same scale, same centered x within its cell and feet baseline at same y. Frame 1 left foot steps forward, right foot back, opposite arms swinging gently. Frame 2 right foot forward, left foot back and opposite arm swing. Keep natural modest small steps, not running or dancing. Head size/proportions/materials EXACTLY as reference front robot. Orthographic rear view, no scenery, no text, no borders, no ground rectangle, no contact shadow baked in. True transparent alpha, clean silhouette, generous transparent margins. Game will alternate the cells while physically moving robot through a doorway."
+}

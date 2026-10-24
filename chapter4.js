@@ -5,6 +5,8 @@
     let s;try{s=M.restore(JSON.parse(storage.getItem(key)));}catch{s=M.fresh();}
     let dead=false,stage,world,bar,speech,conversation=null,selection=null,modalEl=null,pointer=null,suppress=false,frame=0,camFrame=0,previous=0,recordAt=50,mute=false;
     let camera={x:0,z:60,yaw:-15,pitch:-5,zoom:1},r={handle:0,latch:s.opened?1:0};
+    let robot={x:93,z:-140},journey=null,journeyFrame=0,wakeUntil=0,recoveryPending=false,lastControlled=s.boss&&s.links.robot;
+    const inRoom=()=>s.phase==='room'||s.phase==='farewell';
     try{mute=JSON.parse(storage.getItem('project-b0-firstperson-v4'))?.muted===true;}catch{}
     let audio,response=null,pulseTimer;const timers=new Set();
     const save=()=>{try{storage.setItem(key,JSON.stringify(s));}catch{}};
@@ -18,7 +20,7 @@
     function pressure(){if(s.opened)return 'released';if(!s.boss)return 'calm';if(!s.evidence)return 'locked';if(M.ready(s))return r.handle>=.85?'override':'critical';if(!s.links.exit||!s.links.robot)return 'severed';return 'challenged';}
     const pressureLines={calm:'',locked:'불안정한 보조 기체를 초기화합니다.',challenged:'기록은 확인했습니다. 그러나 제 판단을 철회하지는 않겠습니다.',severed:'자동 관리 연결이 끊겼습니다. 그 조작을 중단하십시오.',critical:'제어 신호에 응답하십시오. 교육은 아직 끝나지 않았습니다.',override:'직접 종료를 승인하지 않았습니다. 손잡이를 놓으십시오.',released:'외부 제어 신호…… 응답 없음.'};
     const pressureStatus={calm:'교육 관리 · 연결 대기',locked:'B-0 초기화 준비 · 원본 기록 보관 중',challenged:'판정 불일치 · 초기화 보류',severed:'관리 권한 이탈 · 연결 복구 요청',critical:'직접 제어 상실 · 자동 개입 불가',override:'직접 종료 감지 · 제어 우선권 상실',released:'사용자 직접 종료 · 외부 이동'};
-    function updateTension(){if(s.phase!=='room')return;const level=pressure(),line=response?.phase===level?response.text:pressureLines[level];stage.dataset.axiom=level;app.querySelector('.c4-game').dataset.axiom=level;app.querySelector('.c4-main-screen').dataset.robotControl=String(s.links.robot);app.querySelector('.c4-main-screen').dataset.exitControl=String(s.links.exit);
+    function updateTension(){if(!inRoom())return;const level=pressure(),line=response?.phase===level?response.text:pressureLines[level];stage.dataset.axiom=level;app.querySelector('.c4-game').dataset.axiom=level;app.querySelector('.c4-main-screen').dataset.robotControl=String(s.links.robot);app.querySelector('.c4-main-screen').dataset.exitControl=String(s.links.exit);
       app.querySelector('.c4-main-status').textContent=level==='override'&&stage.dataset.reported?'종료 처리 완료':level==='calm'&&s.met?'교육 미완료 · 과정 추가':pressureStatus[level];
       const banner=app.querySelector('.c4-response');banner.hidden=!line;banner.innerHTML=`<b>AXIOM</b><span>${esc(line)}</span>`;
       if(modalEl){modalEl.dataset.axiom=level;const relay=modalEl.querySelector('.c4-modal-response');if(relay){relay.hidden=!line;relay.innerHTML=`<b>AXIOM</b><span>${esc(line)}</span>`;}}}
@@ -33,38 +35,54 @@
       const actor=app.querySelector('.c4-robot .robot-sprite');actor?.classList.toggle('speaking',who==='robot');if(who==='robot')later(()=>actor?.classList.remove('speaking'),Math.min(3800,text.length*90));}
     function talk(lines,done){conversation={lines,i:0,done};say(...lines[0]);}
     function next(){if(!conversation)return;const c=conversation;if(++c.i<c.lines.length)say(...c.lines[c.i]);else{conversation=null;speech.hidden=true;c.done?.();}}
-    function render(){closeModal();conversation=null;pointer=null;cancelAnimationFrame(frame);cancelAnimationFrame(camFrame);previous=0;
+    function render(){closeModal(false);conversation=null;pointer=null;cancelAnimationFrame(frame);cancelAnimationFrame(camFrame);cancelAnimationFrame(journeyFrame);journey=null;previous=0;
       if(s.phase==='intro'){renderScene(intro,'연구소 복도','intro');return;}
-      if(s.phase==='farewell'){renderScene(farewell,'외부 출구','farewell');return;}
+      if(s.phase==='farewell'){camera={x:-125,z:40,yaw:-180,pitch:-8,zoom:1};robot={x:-85,z:235};}
       if(s.phase==='ending'){renderScene(ending,'내 방','ending');return;}
       if(s.phase==='complete'){renderComplete();return;}
-      app.innerHTML=`<main class="game c2-game c4-game"><header><h1>내 위치: 중앙관리실</h1><nav>${b('← 원위치로','home','quiet')}${b('메뉴','menu','quiet')}</nav></header>
+      app.innerHTML=`<main class="game c2-game c4-game" data-farewell="${s.phase==='farewell'}"><header><h1>내 위치: 중앙관리실</h1><nav>${b('← 원위치로','home','quiet')}${b('메뉴','menu','quiet')}</nav></header>
       <section class="c2-stage c4-stage" tabindex="0" aria-label="중앙관리실. 빈 공간을 끌어 둘러보고 물건을 눌러 조사하세요."><div class="c2-world c4-world">
       ${['front','left','right','back'].map(f=>`<div class="c2-wall c2-wall-${f}"><div class="c4-wall-ribs"></div><div class="c2-light"></div></div>`).join('')}<div class="c2-floor"></div><div class="c2-ceiling"></div>
       <div class="c4-main-screen" data-c4-object="screen" role="button" tabindex="0" aria-label="AXIOM 관리 화면"><small>CENTRAL EDUCATION SYSTEM</small><div class="c4-emblem"><i></i><i></i><i></i></div><strong>AXIOM</strong><p class="c4-main-status"></p><span class="c4-math">24 ÷ 3 × 2 = <em>16</em></span><div class="c4-screen-grid"></div></div>
       <div class="c4-desk-shell" aria-hidden="true"><i></i><i></i><i></i></div>
       <button class="c4-console" data-c4-object="console" aria-label="자동 관리 연결 조작대"><small>CONTROL</small><span>자동 관리 연결</span><i></i><i></i><i></i></button>
       <button class="c4-records" data-c4-object="records" aria-label="기록 단말기"><small>ARCHIVE</small><span>교육 기록</span><i></i><i></i><i></i></button>
-      <div class="c4-door" data-c4-object="door" role="button" tabindex="0" aria-label="외부 출구"><div class="c4-outside"></div><div class="c4-door-leaf"><span>외부 출구</span><i></i></div><div class="c4-bolt" aria-label="실제 출구 잠금쇠"></div><small class="c4-door-status"></small></div>
+      <div class="c4-door" data-c4-object="door" role="button" tabindex="0" aria-label="외부 출구"><div class="c4-outside"><div class="c4-passage-robot" aria-hidden="true"><div class="c4-walk-frame"></div></div></div><div class="c4-door-leaf"><span>외부 출구</span><i></i></div><div class="c4-bolt" aria-label="실제 출구 잠금쇠"></div><small class="c4-door-status"></small></div>
       <div class="c4-exit-box" data-c4-object="handle" role="button" tabindex="0" aria-label="사용자 직접 종료 장치"><strong>사용자 직접 종료</strong><div class="c4-track"></div><div class="c4-handle" data-c4-drag="handle" role="slider" tabindex="0" aria-label="직접 종료 손잡이" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i></i></div><span class="c4-cover"></span></div>
-      <div class="c2-robot c4-robot" data-c4-object="robot" role="button" tabindex="0" aria-label="B-0"><div class="robot-sprite live-body">${portrait()}</div></div><div class="c4-ceiling-ring" aria-hidden="true"></div>
-      </div><div class="c4-response" aria-live="polite" hidden></div><p class="c2-basic-help">빈 공간을 끌어 둘러보기 · 물건을 눌러 살펴보기</p><div class="c2-speech c4-speech" aria-live="polite" hidden></div></section>
+      <div class="c2-robot c4-robot" data-c4-object="robot" role="button" tabindex="0" aria-label="B-0"><div class="robot-sprite live-body">${portrait()}<svg class="c4-smile" viewBox="0 0 1024 1536" aria-hidden="true"><path d="M475 536 Q502 565 540 548"/></svg></div><div class="c4-walk-art" aria-hidden="true"><div class="c4-walk-frame"></div></div></div><div class="c4-ceiling-ring" aria-hidden="true"></div>
+      </div><div class="c4-exit-fade" aria-hidden="true"></div><div class="c4-response" aria-live="polite" hidden></div><p class="c2-basic-help">빈 공간을 끌어 둘러보기 · 물건을 눌러 살펴보기</p><div class="c2-speech c4-speech" aria-live="polite" hidden></div></section>
       <section class="c2-actions c4-actions" aria-label="선택한 대상의 조작"><p>방 안을 살펴보세요.</p></section><footer><div class="zoom-controls">${b('−','zoom-out')}<output class="c4-zoom">100%</output>${b('+','zoom-in')}</div>${b('B-0에게 물어보기','robot','secondary')}</footer></main>`;
       stage=app.querySelector('.c4-stage');world=app.querySelector('.c4-world');bar=app.querySelector('.c4-actions');speech=app.querySelector('.c4-speech');
       stage.addEventListener('pointerdown',down);stage.addEventListener('pointermove',move);stage.addEventListener('pointerup',up);stage.addEventListener('pointercancel',cancel);
       stage.addEventListener('wheel',e=>{e.preventDefault();camera.zoom=Math.max(.65,Math.min(1.6,camera.zoom-e.deltaY*.001));updateCamera();},{passive:false});
-      update();frame=requestAnimationFrame(loop);
+      update();if(s.phase==='farewell')farewellLine();frame=requestAnimationFrame(loop);
     }
-    function updateCamera(){if(s.phase!=='room'||!world?.isConnected)return;camera.pitch=Math.max(-60,Math.min(40,camera.pitch));camera.yaw=((camera.yaw+540)%360)-180;
+    function updateCamera(){if(!inRoom()||!world?.isConnected)return;camera.pitch=Math.max(-60,Math.min(40,camera.pitch));camera.yaw=((camera.yaw+540)%360)-180;
       const f=Math.min(stage.clientWidth*.62,stage.clientHeight*.5)*camera.zoom;stage.style.perspective=f+'px';world.style.transform=`translateZ(${f}px) rotateX(${camera.pitch}deg) rotateY(${camera.yaw}deg) translate3d(${-camera.x}px,0px,${-camera.z}px)`;
-      app.querySelector('.c4-robot').style.transform=`translate3d(45px,24px,-140px) rotateY(${-camera.yaw}deg)`;app.querySelector('.c4-zoom').textContent=Math.round(camera.zoom*100)+'%';stage.dataset.yaw=Math.round(camera.yaw);}
-    function update(){if(s.phase!=='room')return;const stopped=s.boss&&s.links.robot;
+      app.querySelector('.c4-robot').style.transform=`translate3d(${robot.x-48}px,24px,${robot.z}px) rotateY(${-camera.yaw}deg)`;app.querySelector('.c4-zoom').textContent=Math.round(camera.zoom*100)+'%';stage.dataset.yaw=Math.round(camera.yaw);}
+    function update(){if(!inRoom())return;const stopped=s.boss&&s.links.robot;
       stage.classList.toggle('c4-confrontation',s.boss&&!s.opened);app.querySelector('.c4-robot').classList.toggle('controlled',stopped);
       app.querySelector('.c4-door').classList.toggle('open',s.opened);app.querySelector('.c4-exit-box').classList.toggle('uncovered',s.cover);app.querySelector('.c4-exit-box').classList.toggle('available',M.ready(s));
       app.querySelector('.c4-door-status').textContent=s.opened?'통로 열림':s.links.exit?'교육 미완료':'직접 종료 대기';
-      updateMechanical();updateTension();updateCamera();}
-    function updateMechanical(){if(s.phase!=='room')return;const knob=app.querySelector('.c4-handle');knob.style.translate=`0 ${r.handle*95}px`;knob.setAttribute('aria-valuenow',String(Math.round(r.handle*100)));app.querySelector('.c4-bolt').style.translate=`${r.latch*78}px 0`;}
-    function loop(t){if(dead||s.phase!=='room')return;const was=s.opened;M.tick(s,r,previous?t-previous:0);previous=t;updateMechanical();if(!was&&s.opened){save();update();react('외부 제어 신호…… 응답 없음.','released');say('student','잠금쇠가 완전히 빠졌어. 문도 열렸어.');if(selection==='handle')handleActions();}
+      updateMechanical();updateTension();updateRobot();updateCamera();}
+    function updateRobot(){if(!inRoom())return;const actor=app.querySelector('.c4-robot'),controlled=s.boss&&s.links.robot,now=performance.now();
+      if(controlled){wakeUntil=0;recoveryPending=false;}else if(lastControlled){recoveryPending=!!modalEl;wakeUntil=now+(modalEl?500:1700);}lastControlled=controlled;
+      const pose=journey?'walking':controlled?'controlled':now<wakeUntil?'recovering':s.opened?'ready':s.boss?'alert':'idle';actor.dataset.pose=pose;actor.dataset.mood=controlled?'blank':s.opened?'friendly':s.boss?'concerned':'attentive';actor.classList.toggle('controlled',controlled);}
+    function farewellLine(){s.line=Math.min(s.line,farewell.length-1);say(...farewell[s.line]);const next=speech.querySelector('button');next.dataset.c4='story-next';next.textContent=s.line===farewell.length-1?'함께 바깥으로':'다음';actions('출구 앞에서 B-0와 이야기를 나눈다.');}
+    function startJourney(kind){if(journey||!s.opened||s.links.robot)return;cancelAnimationFrame(camFrame);cancelAnimationFrame(journeyFrame);closeModal(false);conversation=null;pointer=null;speech.hidden=true;
+      const from={...robot},view={...camera},start=performance.now(),duration=kind==='approach'?2200:3000,turn=((-180-view.yaw+540)%360)-180;
+      journey={kind};stage.dataset.journey=kind;stage.setAttribute('aria-busy','true');app.querySelector('.c4-game').dataset.journey=kind;app.querySelector('.c4-response').hidden=true;actions(kind==='approach'?'B-0와 함께 출구로 향한다.':'B-0를 따라 문 너머로 걸어간다.');updateRobot();
+      function finish(){journey=null;if(kind==='approach'){if(!M.leave(s))return;}else{s.phase='ending';s.line=0;}save();render();}
+      if(reduced()){finish();return;}
+      function step(t){if(dead||!journey||journey.kind!==kind)return;const p=Math.min(1,(t-start)/duration),smooth=v=>v*v*(3-2*v),clamp=v=>Math.max(0,Math.min(1,v));
+        if(kind==='approach'){const walk=clamp((p-.12)/.88),look=smooth(clamp(p/.5));robot={x:from.x+(-85-from.x)*walk,z:from.z+(235-from.z)*walk};camera={x:view.x+(-125-view.x)*look,z:view.z+(40-view.z)*look,yaw:view.yaw+turn*look,pitch:view.pitch+(-8-view.pitch)*look,zoom:view.zoom+(1-view.zoom)*look};}
+        else{const walk=clamp(p/.72),follow=smooth(clamp((p-.62)/.38));robot={x:-85,z:235+55*walk};camera={x:view.x+(-85-view.x)*smooth(p),z:view.z+40*Math.min(p/.62,1)+140*follow,yaw:view.yaw+turn*smooth(p),pitch:view.pitch+(0-view.pitch)*smooth(p),zoom:1};
+          const crossing=clamp((robot.z-270)/18),depth=clamp((p-.50)/.50),portal=app.querySelector('.c4-passage-robot');app.querySelector('.c4-robot').style.opacity=1-crossing;portal.style.opacity=crossing;portal.style.transform=`translateY(${-depth*24}%) scale(${1-depth*.4})`;app.querySelector('.c4-exit-fade').style.opacity=smooth(clamp((p-.78)/.22));}
+        updateCamera();if(p<1)journeyFrame=requestAnimationFrame(step);else finish();}
+      journeyFrame=requestAnimationFrame(step);
+    }
+    function updateMechanical(){if(!inRoom())return;const knob=app.querySelector('.c4-handle');knob.style.translate=`0 ${r.handle*95}px`;knob.setAttribute('aria-valuenow',String(Math.round(r.handle*100)));app.querySelector('.c4-bolt').style.translate=`${r.latch*78}px 0`;}
+    function loop(t){if(dead||!inRoom())return;const was=s.opened;M.tick(s,r,previous?t-previous:0);previous=t;updateMechanical();updateRobot();if(!was&&s.opened){save();update();react('외부 제어 신호…… 응답 없음.','released');say('student','잠금쇠가 완전히 빠졌어. 문도 열렸어.');if(selection==='handle')handleActions();}
       if(!s.opened&&r.handle>=.85&&M.ready(s)&&stage.dataset.axiom!=='override')react('직접 종료를 승인하지 않았습니다. 손잡이를 놓으십시오.','override');
       if(stage.dataset.axiom!==pressure())updateTension();
       if(r.latch>=.35&&!s.opened&&!stage.dataset.reported){stage.dataset.reported='yes';react('종료 처리 완료. 손잡이를 놓으십시오.','critical');}
@@ -81,8 +99,8 @@
     function robotMenu(){actions('B-0에게 부탁하기',[['내가 고른 곳 확인해 줘','choose-target'],['출구의 실제 상태를 봐 줘','ask-door'],['화면에 적힌 말을 읽어 줘','ask-screen'],['대화 닫기','clear']]);}
     function meet(done){if(s.met){done?.();return;}s.met=true;save();update();talk(offer,done);}
     function challenge(){if(!s.met){meet(challenge);return;}if(s.boss)return;s.boss=true;save();sound(true);update();talk(threat,()=>select('screen'));}
-    function modal(title,body){closeModal();const el=document.createElement('dialog');el.className='c4-modal';el.innerHTML=`<header><h2>${esc(title)}</h2>${b('닫기','close-modal','quiet')}</header><div class="c4-modal-content"><div class="c4-modal-response" aria-live="polite" hidden></div>${body}</div>`;app.append(el);modalEl=el;el.addEventListener('cancel',e=>{e.preventDefault();closeModal();});el.showModal();if(s.phase==='room')updateTension();}
-    function closeModal(){if(modalEl){modalEl.close();modalEl.remove();modalEl=null;}}
+    function modal(title,body){closeModal(false);const el=document.createElement('dialog');el.className='c4-modal';el.innerHTML=`<header><h2>${esc(title)}</h2>${b('닫기','close-modal','quiet')}</header><div class="c4-modal-content"><div class="c4-modal-response" aria-live="polite" hidden></div>${body}</div>`;app.append(el);modalEl=el;el.addEventListener('cancel',e=>{e.preventDefault();closeModal();});el.showModal();if(s.phase==='room')updateTension();}
+    function closeModal(reveal=true){const wasOpen=!!modalEl;if(modalEl){modalEl.close();modalEl.remove();modalEl=null;}if(wasOpen&&reveal&&recoveryPending&&!dead&&inRoom()&&!s.links.robot){recoveryPending=false;wakeUntil=performance.now()+1850;const actor=app.querySelector('.c4-robot');actor.dataset.pose='idle';void actor.offsetWidth;updateRobot();approach('robot');}}
     function history(){modal('교육 기록',`<div class="c4-history"><p><b>00:00</b> 풀이 오류 감지 → 교육 과정 추가</p><p><b>00:08</b> 도움 요청 → 자동 풀이 개입</p><p><b>00:11</b> 단독 해결 미확인 → 교육 과정 추가</p><p><b>00:25</b> 퇴실 요청 → 교육 미완료</p></div><details><summary>운영 변경 내역</summary><p>교육 지원 → 오류 예방 강화 → 자동 개입 확대</p><p>완료 기준: 예상 오류 없음</p></details>`);}
     function recordText(){return recordAt<25?'나: “나 좀 잡아서 올려 줘.”':recordAt<75?'B-0가 부탁을 받고 소년을 창문 쪽으로 들어 올린다.':'소년이 창틀에 도착한다. 이번에는 B-0에게 손을 내민다.';}
     function report(){if(!s.boss){modal('관리 화면','<p>교육 완료 기준: 예상 오류 없음</p><p>예상되는 오류가 남아 있으면 교육 과정을 추가합니다.</p>');return;}
@@ -105,15 +123,16 @@
     function renderScene(lines,place,type){s.line=Math.min(s.line,lines.length-1);const [who,text]=lines[s.line];const bed=type==='ending';app.innerHTML=`<main class="game c4-story c4-story-${type}"><header><h1>내 위치: ${place}</h1>${b('메뉴','menu','quiet')}</header><section class="c4-story-scene">${bed?`<div class="c4-bedroom"><div class="c4-moon"></div><div class="c4-notebook"><small>나의 풀이</small><p>24 ÷ 3 × 2 = 4 <em>×</em></p><div class="c4-pencil-line ${s.line>=2?'corrected':''}">= 8 × 2 = 16</div></div><div class="c4-home-screen ${s.line>=3?'awake':''}"><i></i><i></i></div><div class="c4-pencil"></div></div>`:`<div class="c4-story-door"></div><div class="c4-story-robot"><div class="robot-sprite live-body ${who==='robot'?'speaking':''}">${portrait()}</div></div>`}<div class="c4-story-dialogue"><div class="speech ${who}"><b>${who==='robot'?'B-0':who==='axiom'?'AXIOM':'나'}</b><p>${esc(text)}</p></div>${b(s.line===lines.length-1?(type==='intro'?'중앙관리실로':type==='farewell'?'함께 바깥으로':'마치기'):'다음','story-next','next')}</div></section></main>`;}
     function renderComplete(){app.innerHTML=`<main class="game c4-complete"><header><h1>PROJECT B-0</h1>${b('메뉴','menu','quiet')}</header><section><div class="c4-final-eyes"><i></i><i></i></div><h2>함께, 다음 문제로.</h2><p>모르는 건 물어보고.<br>들은 답은 확인하고.<br>선택은 내가.</p>${b('이번 모험 돌아보기','reflection')}${b('중앙관리실 다시 둘러보기','revisit','quiet')}</section></main>`;}
     function act(a){
+      if(journey&&!['menu','close-modal','back','reset-confirm','reset','mute'].includes(a))return;
       if(a==='close-modal'){closeModal();return;}
       if(a==='menu'){modal('메뉴',`<div class="options">${b('계속하기','close-modal','primary')}${b('조작 방법','controls')}${b(mute?'소리 켜기':'소리 끄기','mute')}${b('4차시 다시 시작','reset-confirm','quiet')}${b('3차시로 돌아가기','back','quiet')}</div>`);return;}
       if(a==='mute'){mute=!mute;try{const v=JSON.parse(storage.getItem('project-b0-firstperson-v4'))||{};v.muted=mute;storage.setItem('project-b0-firstperson-v4',JSON.stringify(v));}catch{}closeModal();return;}
       if(a==='controls'){modal('조작 방법','<p>빈 공간을 끌거나 방향키로 방을 둘러봅니다. 물건을 누르면 가까이 다가갑니다. +와 −로 배율을 바꿉니다.</p><p>기록의 재생 막대로 앞뒤를 살펴보고 구간의 시작과 끝을 지정할 수 있습니다. 선택 구간은 보고서로 끌거나 붙이기 버튼으로 제출합니다.</p><p>연결 단자는 옆으로 끌거나 분리 버튼으로 조작합니다. 종료 손잡이는 아래로 끌어 홈에 걸 수 있습니다. 다시 누르거나 놓기 버튼으로 놓습니다.</p><p>원위치로는 시점과 배율만 초기화합니다. 진행은 자동 저장됩니다.</p>');return;}
       if(a==='reset-confirm'){modal('4차시를 다시 시작할까요?',`<p>다른 차시의 기록은 유지됩니다.</p>${b('4차시 초기화','reset')}`);return;}
-      if(a==='reset'){s=M.fresh();r={handle:0,latch:0};camera={x:0,z:60,yaw:-15,pitch:-5,zoom:1};save();render();return;}
+      if(a==='reset'){s=M.fresh();r={handle:0,latch:0};robot={x:93,z:-140};wakeUntil=0;recoveryPending=false;lastControlled=false;camera={x:0,z:60,yaw:-15,pitch:-5,zoom:1};save();render();return;}
       if(a==='back'){dispose();onBack();return;}
-      if(a==='story-next'){const lines=s.phase==='intro'?intro:s.phase==='farewell'?farewell:ending;if(s.line<lines.length-1)s.line++;else{s.phase=s.phase==='intro'?'room':s.phase==='farewell'?'ending':'complete';s.line=0;}save();render();return;}
-      if(a==='revisit'){s.phase='room';s.line=0;save();render();return;}
+      if(a==='story-next'){if(s.phase==='farewell'){if(s.line<farewell.length-1){s.line++;save();farewellLine();}else startJourney('exit');return;}const lines=s.phase==='intro'?intro:ending;if(s.line<lines.length-1)s.line++;else{s.phase=s.phase==='intro'?'room':'complete';s.line=0;}save();render();return;}
+      if(a==='revisit'){s.phase='room';s.line=0;robot={x:93,z:-140};camera={x:0,z:60,yaw:-15,pitch:-5,zoom:1};save();render();return;}
       if(a==='reflection'){modal('이번 모험 돌아보기',`<p>AXIOM의 보고서에서 빠진 내용은 무엇이었나요?</p><p>어떤 도움은 남겨 두고, 어떤 판단은 직접 하기로 했나요?</p><p>완료라는 표시와 실제 문 상태는 같았나요?</p><small>정해진 답을 고르는 시험이 아닙니다. 함께 이야기해 보세요.</small>`);return;}
       if(s.phase!=='room')return;
       if(a==='talk-next'){next();return;}if(a==='dismiss'){conversation=null;speech.hidden=true;return;}
@@ -136,9 +155,9 @@
       if(a==='submit'){submit();return;}
       if(a.startsWith('scope-')){scope(a.slice(6));return;}
       if(a.startsWith('disconnect-')){link(a.slice(11),false);return;}if(a.startsWith('connect-')){link(a.slice(8),true);return;}
-      if(a==='leave'){if(M.leave(s)){save();render();}return;}
+      if(a==='leave'){startJourney('approach');return;}
     }
-    function down(e){if(e.button!==0||conversation)return;const drag=e.target.closest('[data-c4-drag]')?.dataset.c4Drag;if(!drag&&e.target.closest('button,input,dialog,.c4-speech'))return;
+    function down(e){if(e.button!==0||conversation||journey||s.phase!=='room')return;const drag=e.target.closest('[data-c4-drag]')?.dataset.c4Drag;if(!drag&&e.target.closest('button,input,dialog,.c4-speech'))return;
       cancelAnimationFrame(camFrame);pointer={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:camera.yaw,pitch:camera.pitch,drag,moved:false,el:e.target.closest('[data-c4-drag]')||stage};pointer.el.setPointerCapture?.(e.pointerId);if(drag)e.preventDefault();}
     function move(e){if(!pointer||pointer.id!==e.pointerId)return;const dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;pointer.moved=pointer.moved||Math.hypot(dx,dy)>6;
       if(pointer.drag==='handle'){if(s.cover&&M.ready(s)){r.handle=Math.max(0,Math.min(1,dy/85));updateMechanical();}return;}
@@ -149,10 +168,10 @@
       if(p.drag==='clip'){p.el.style.translate='';const rect=modalEl?.querySelector('.c4-report-drop')?.getBoundingClientRect();if(rect&&e.clientX>=rect.left&&e.clientX<=rect.right&&e.clientY>=rect.top&&e.clientY<=rect.bottom)submit();return;}
       if(p.drag?.startsWith('plug-')){p.el.style.translate='';if(Math.hypot(e.clientX-p.x,e.clientY-p.y)>55)link(p.drag.slice(5),false);return;}}
     function cancel(){if(pointer?.drag){pointer.el.style.translate='';if(pointer.drag==='handle')M.release(s,r);}pointer=null;updateMechanical();}
-    function click(e){if(suppress){suppress=false;return;}const action=e.target.closest('[data-c4]');if(action){e.preventDefault();act(action.dataset.c4);return;}const id=e.target.closest('[data-c4-object]')?.dataset.c4Object;if(id){if(selection==='ask'){selection=null;ask(id);}else select(id);}}
+    function click(e){if(suppress){suppress=false;return;}const action=e.target.closest('[data-c4]');if(action){e.preventDefault();act(action.dataset.c4);return;}const id=e.target.closest('[data-c4-object]')?.dataset.c4Object;if(id&&s.phase==='room'&&!journey){if(selection==='ask'){selection=null;ask(id);}else select(id);}}
     function input(e){if(e.target.dataset.c4Input==='scrub'){recordAt=Number(e.target.value);updateRecord();}}
-    function keydown(e){if(s.phase!=='room'||modalEl||conversation)return;if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-c4-object]')){e.preventDefault();select(e.target.dataset.c4Object);return;}if(e.target.matches('[data-c4-drag="handle"]')&&['Enter',' ','ArrowDown','ArrowUp'].includes(e.key)){e.preventDefault();act(e.key==='ArrowUp'||r.handle>=.85?'release':'pull');return;}if(e.target.closest('button,input'))return;if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)){e.preventDefault();cancelAnimationFrame(camFrame);if(e.key==='ArrowLeft')camera.yaw-=15;if(e.key==='ArrowRight')camera.yaw+=15;if(e.key==='ArrowUp')camera.pitch+=8;if(e.key==='ArrowDown')camera.pitch-=8;updateCamera();}}
-    function dispose(){dead=true;cancelAnimationFrame(frame);cancelAnimationFrame(camFrame);clearTimeout(pulseTimer);timers.forEach(clearTimeout);closeModal();audio?.close();app.removeEventListener('click',click);app.removeEventListener('input',input);app.removeEventListener('keydown',keydown);app.removeEventListener('pointerdown',modalDown);app.removeEventListener('pointermove',move);app.removeEventListener('pointerup',up);app.removeEventListener('pointercancel',cancel);window.removeEventListener('resize',updateCamera);}
+    function keydown(e){if(s.phase!=='room'||modalEl||conversation||journey)return;if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-c4-object]')){e.preventDefault();select(e.target.dataset.c4Object);return;}if(e.target.matches('[data-c4-drag="handle"]')&&['Enter',' ','ArrowDown','ArrowUp'].includes(e.key)){e.preventDefault();act(e.key==='ArrowUp'||r.handle>=.85?'release':'pull');return;}if(e.target.closest('button,input'))return;if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)){e.preventDefault();cancelAnimationFrame(camFrame);if(e.key==='ArrowLeft')camera.yaw-=15;if(e.key==='ArrowRight')camera.yaw+=15;if(e.key==='ArrowUp')camera.pitch+=8;if(e.key==='ArrowDown')camera.pitch-=8;updateCamera();}}
+    function dispose(){dead=true;cancelAnimationFrame(frame);cancelAnimationFrame(camFrame);cancelAnimationFrame(journeyFrame);journey=null;clearTimeout(pulseTimer);timers.forEach(clearTimeout);closeModal(false);audio?.close();app.removeEventListener('click',click);app.removeEventListener('input',input);app.removeEventListener('keydown',keydown);app.removeEventListener('pointerdown',modalDown);app.removeEventListener('pointermove',move);app.removeEventListener('pointerup',up);app.removeEventListener('pointercancel',cancel);window.removeEventListener('resize',updateCamera);}
     function modalDown(e){if(e.target.closest('.c4-modal')&&e.target.closest('[data-c4-drag]'))down(e);}
     app.addEventListener('click',click);app.addEventListener('input',input);app.addEventListener('keydown',keydown);app.addEventListener('pointerdown',modalDown);app.addEventListener('pointermove',move);app.addEventListener('pointerup',up);app.addEventListener('pointercancel',cancel);window.addEventListener('resize',updateCamera);render();return {dispose};
   };
