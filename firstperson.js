@@ -166,7 +166,7 @@ function panTo(x,y) {
   const scene=app.querySelector(".scene"),rig=app.querySelector(".room-rig");if(!scene||!rig)return;
   // The spherical background and object planes share one camera.
   camera={x:((x+180)%360+360)%360-180,y:Math.max(-18,Math.min(18,y))};
-  const focal=Math.min(scene.clientHeight*.58,scene.clientWidth*.9)*zoom;
+  const focal=Math.min(scene.clientHeight*.58,scene.clientWidth*.9)*.82*zoom;
   scene.style.perspective=focal+"px";
   rig.style.transform=`translateZ(${focal}px) rotateX(${camera.y}deg) rotateY(${camera.x}deg)`;
   scene.dataset.yaw=String(camera.x);scene.dataset.pitch=String(camera.y);

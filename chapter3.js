@@ -1,6 +1,7 @@
 (function(){
   'use strict';
   window.startChapterThree=function({app,portrait,onBack,onNext,preview=false}){
+    const SPACE=1.3;
     const M=window.B0RoomThree,storage=preview?sessionStorage:localStorage,key='project-b0-room3-v1';
     let s;try{s=M.restore(JSON.parse(storage.getItem(key)));}catch{s=M.fresh();}
     let camera={x:0,z:30,yaw:-12,pitch:-8,zoom:1},stage,world,bar,speech,selection=null,pointer=null,suppress=false,dead=false,busy=false,cameraMoving=false,frame=0,mode=null,conversation=null;
@@ -58,9 +59,10 @@
       if(s.phase!=='room'||!stage?.isConnected)return;
       camera.yaw=((camera.yaw+180)%360+360)%360-180;camera.pitch=Math.max(-65,Math.min(45,camera.pitch));
       const f=Math.min(stage.clientWidth*.62,stage.clientHeight*.5)*camera.zoom;stage.style.perspective=f+'px';
-      world.style.transform=`translateZ(${f}px) rotateX(${camera.pitch}deg) rotateY(${camera.yaw}deg) translate3d(${-camera.x}px,0px,${-camera.z}px)`;
+      world.style.transform=`translateZ(${f}px) rotateX(${camera.pitch}deg) rotateY(${camera.yaw}deg) translate3d(${-camera.x*SPACE}px,0px,${-camera.z*SPACE}px)`;
       stage.dataset.yaw=camera.yaw;stage.dataset.pitch=camera.pitch;
       app.querySelector('.c3-robot').style.transform=`translate3d(${robot.x-48}px,24px,${robot.z}px) rotateY(${-camera.yaw}deg)`;
+      window.B0RoomSpace?.sync(world);
       app.querySelector('.c3-zoom').textContent=Math.round(camera.zoom*100)+'%';
     }
     function update(){
@@ -109,7 +111,7 @@
       const r=stage.getBoundingClientRect(),f=Math.min(stage.clientWidth*.62,stage.clientHeight*.5)*camera.zoom;
       const sx=(x-r.left-r.width/2)/f,sy=(y-r.top-r.height/2)/f,a=camera.yaw*Math.PI/180,p=camera.pitch*Math.PI/180;
       const zz=-Math.sin(p)*sy-Math.cos(p),xx=Math.cos(a)*sx-Math.sin(a)*zz,z=Math.sin(a)*sx+Math.cos(a)*zz;
-      if(Math.abs(xx)<.02)return null;const t=(-245-camera.x)/xx;return t>0?camera.z+z*t:null;
+      if(Math.abs(xx)<.02)return null;const t=(-245-camera.x)*SPACE/xx;return t>0?camera.z+z*t/SPACE:null;
     }
     function down(e){if(busy||e.button!==0||e.isPrimary===false||e.target.closest('[data-c3]'))return;const id=e.target.closest('[data-object]')?.dataset.object;pointer={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:camera.yaw,pitch:camera.pitch,object:id,shelfZ:s.shelfZ,hit:shelfRay(e.clientX,e.clientY),moved:false};suppress=false;}
     function move(e){

@@ -68,8 +68,8 @@ console.log('PASS: shared transparent body source; no rectangular portrait layer
 run('state.phase="room";enterRoom();setZoom(999)');assert.equal(run('zoom'),1.8);
 run('setZoom(-999)');assert.equal(run('zoom'),.55);
 run('panTo(60,10);handle("view-home")');assert.equal(run('zoom'),1);assert.equal(run('camera.x'),0);assert.equal(run('camera.y'),-5);assert.equal(run('state.phase'),'room');
-assert.equal(el('.scene').style.perspective,'348px');
-run('setZoom(1.5)');assert.equal(el('.scene').style.perspective,'522px');
+assert.ok(Math.abs(parseFloat(el('.scene').style.perspective)-285.36)<.01,'wider default view');
+run('setZoom(1.5)');assert.ok(Math.abs(parseFloat(el('.scene').style.perspective)-428.04)<.01,'zoom retains the wider shared projection');
 const touch=(id,x)=>({...pointer(x,100),pointerId:id,pointerType:'touch',isPrimary:id===1});
 run('setZoom(1);bindCamera()');scene.handlers.pointerdown(touch(1,100));scene.handlers.pointerdown(touch(2,200));scene.handlers.pointermove(touch(2,250));assert.equal(run('zoom'),1.5);
 scene.handlers.pointerup(touch(1,100));scene.handlers.pointerup(touch(2,250));assert.equal(run('pinch'),null);assert.equal(run('touchPoints.size'),0);assert.equal(run('suppressClick'),true);

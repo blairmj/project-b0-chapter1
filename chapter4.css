@@ -91,3 +91,19 @@
 @keyframes c4-recover-eyes{0%,20%{transform:scaleY(.22);opacity:.45}40%{transform:scaleY(1.08);opacity:1}60%{transform:scaleY(.5);opacity:1}100%{transform:scaleY(1);opacity:1}}
 @keyframes c4-walk-cycle{0%,49.99%{background-position:0 0;translate:-2px 0}50%,100%{background-position:100% 0;translate:3px -1px}}
 @media(prefers-reduced-motion:reduce){.c4-robot>.robot-sprite{transition:none}.c4-robot[data-pose="recovering"]>.robot-sprite,.c4-robot[data-pose="recovering"] .eye,.c4-walk-frame{animation:none}}
+/* The same textured props, now with physical upper and lower locks. */
+.c4-high{position:absolute;left:-175px;top:-215px;width:155px;height:50px;transform:rotateY(180deg) translateZ(-286px);border:6px solid #8d805e;background:linear-gradient(#495957,#172e36),url('./assets/chapter2-metal-v1.webp') center/140px;transform-style:preserve-3d;cursor:pointer}
+.c4-high>small{position:absolute;top:-29px;width:100%;font-size:10px;text-align:center;background:#1c3039;color:#d5c89d;padding:3px}
+.c4-high-track{position:absolute;top:14px;left:9px;right:8px;height:10px;background:#081922;border:2px solid #8a977e}
+.c4-high-knob{position:absolute;left:5px;top:5px;width:47px;height:31px;background:linear-gradient(#e2d4ae,#63766a 52%,#b6b38d);border:3px solid #374c44;transform:translateZ(8px);cursor:grab;touch-action:none}
+.c4-bolt-upper{position:absolute;left:96px;top:-145px;width:80px;height:19px;background:linear-gradient(#d4caaa,#777b67 45%,#364b43 50%,#adae8c);border:3px solid #35473f;transform:translateZ(12px);pointer-events:none;transition:translate .5s}
+.c4-bolt-lower{top:95px}.c4-door-leaf>i{touch-action:none;cursor:grab;transform-origin:50% 10%;min-width:18px}
+.c4-recovery-light{display:none;position:absolute;left:46%;top:47%;width:12px;height:12px;border-radius:50%;background:#ed6a44;box-shadow:0 0 13px #ec502c;pointer-events:none}
+.c4-robot.controlled .c4-recovery-light{display:block}
+.c4-hold-art{display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none}
+.c4-robot[data-pose=holding] .robot-sprite{visibility:hidden}.c4-robot[data-pose=holding] .c4-hold-art{display:block}
+.c4-robot[data-pose=lifting] .robot-sprite{transform:rotate(-4deg) translateY(-5px)}
+.c4-high-knob:focus-visible,.c4-door-leaf>i:focus-visible{outline:3px solid #d4e5bd;outline-offset:4px}
+@media(prefers-reduced-motion:reduce){.c4-bolt-upper{transition:none}}
+
+.c4-hold-art{transform:scaleX(-1)}

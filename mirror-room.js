@@ -1,6 +1,7 @@
 (function(){
   'use strict';
   window.startMirrorRoom=function({app,portrait,state,onSave,onBack,onComplete}){
+    const SPACE=1.3;
     const M=window.B0Mirror,s=state;
     let stage,world,bar,speech,pointer=null,selection=null,targetMode=false,suppress=false,dead=false,robotBusy=false,camFrame=0,botFrame=0,handFrame=0,pulse=0,timers=[],audio;
     let camera={x:-150,z:35,yaw:58,pitch:-8,zoom:1};
@@ -46,9 +47,9 @@
     }
     function updateCamera(){
       if(dead||!stage?.isConnected)return;camera.yaw=((camera.yaw+180)%360+360)%360-180;camera.pitch=Math.max(-58,Math.min(40,camera.pitch));camera.x=Math.min(-38,camera.x);
-      const f=Math.min(stage.clientWidth*.62,stage.clientHeight*.5)*camera.zoom;stage.style.perspective=f+'px';world.style.transform=`translateZ(${f}px) rotateX(${camera.pitch}deg) rotateY(${camera.yaw}deg) translate3d(${-camera.x}px,0px,${-camera.z}px)`;
+      const f=Math.min(stage.clientWidth*.62,stage.clientHeight*.5)*camera.zoom;stage.style.perspective=f+'px';world.style.transform=`translateZ(${f}px) rotateX(${camera.pitch}deg) rotateY(${camera.yaw}deg) translate3d(${-camera.x*SPACE}px,0px,${-camera.z*SPACE}px)`;
       stage.dataset.yaw=camera.yaw;stage.dataset.pitch=camera.pitch;stage.dataset.cameraX=camera.x;app.querySelector('.mr-zoom').textContent=Math.round(camera.zoom*100)+'%';
-      app.querySelector('.mr-robot').style.transform=`translate3d(${robot.x-48}px,24px,${robot.z}px) rotateY(${-camera.yaw}deg)`;
+      app.querySelector('.mr-robot').style.transform=`translate3d(${robot.x-48}px,24px,${robot.z}px) rotateY(${-camera.yaw}deg)`;window.B0RoomSpace?.sync(world);
     }
     function update(){
       if(dead||!stage?.isConnected)return;const solved=M.solved(s),up=s.phase==='approach'&&s.line<2||solved;

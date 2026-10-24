@@ -1,6 +1,7 @@
 (function(){
   'use strict';
   window.startChapterTwo=function({app,portrait,onBack,onNext,preview=false}){
+    const SPACE=1.3;
     const M=window.B0RoomTwo,storage=preview?sessionStorage:localStorage,key='project-b0-room2-v1';
     let s;try{s=M.restore(JSON.parse(storage.getItem(key)));}catch{s=M.fresh();}
     let camera={yaw:-48,pitch:-12,zoom:1},standing=null,selection=null,mode=null,pointer=null,suppress=false,dead=false;
@@ -48,10 +49,11 @@
       stage.style.perspective=focal+'px';
       // Only the observer moves. Every prop keeps its saved world coordinates.
       const elevation=viewHeight+lift;
-      world.style.transform=`translateZ(${focal}px) rotateX(${camera.pitch}deg) rotateY(${camera.yaw}deg) translate3d(${-viewX}px,${elevation}px,${-viewZ}px)`;
+      world.style.transform=`translateZ(${focal}px) rotateX(${camera.pitch}deg) rotateY(${camera.yaw}deg) translate3d(${-viewX*SPACE}px,${elevation}px,${-viewZ*SPACE}px)`;
       stage.dataset.yaw=camera.yaw;stage.dataset.pitch=camera.pitch;
       stage.dataset.eyeX=viewX;stage.dataset.eyeZ=viewZ;stage.dataset.eyeHeight=elevation;
       const r=app.querySelector('.c2-robot');r.style.transform=`translate3d(${robot.x-48}px,${24-robotLift}px,${robot.z}px) rotateY(${-camera.yaw}deg)${s.phase==='ledge'?` rotateX(${-camera.pitch}deg)`:''}`;
+      window.B0RoomSpace?.sync(world);
       const zoom=app.querySelector('.c2-zoom'),down=app.querySelector('.c2-descend');if(zoom)zoom.textContent=Math.round(camera.zoom*100)+'%';if(down)down.hidden=!standing||s.phase!=='room';
     }
     const view=()=>({x:viewX,z:viewZ,height:viewHeight,yaw:camera.yaw,pitch:camera.pitch,zoom:camera.zoom});
@@ -134,7 +136,7 @@
       const yy=Math.cos(p)*y-Math.sin(p),zz=-Math.sin(p)*y-Math.cos(p);
       const xx=Math.cos(a)*x-Math.sin(a)*zz,z=Math.sin(a)*x+Math.cos(a)*zz;
       const floor=180+viewHeight+lift;if(yy<=.04)return null;const t=floor/yy;
-      return {x:viewX+xx*t,z:viewZ+z*t};
+      return {x:viewX+xx*t/SPACE,z:viewZ+z*t/SPACE};
     }
     function previewDrop(x,z,support=null){
       if(!mode)return;const d=M.destination(s,mode.id,x,z,support);mode.candidate={x,z,support};
@@ -241,7 +243,7 @@
       stage.setAttribute('aria-label','창틀에서 방 안의 B-0를 내려다보는 장면');
       speech.hidden=true;helpText.hidden=true;actions('창틀을 넘어 몸을 돌리는 중…',[]);
       const x=105,z=-286,height=200,dx=robot.x-x,dz=robot.z-z;
-      const yaw=direction(dx,dz),pitch=-Math.atan2(height+90,Math.hypot(dx,dz))*180/Math.PI;
+      const yaw=direction(dx,dz),pitch=-Math.atan2(height+90,Math.hypot(dx,dz)*SPACE)*180/Math.PI;
       travel([{x,z,height,pitch:-5,ms:650},{yaw,pitch,zoom:1.35,ms:750}],()=>{
         app.querySelector('.c2-sill').hidden=false;actions('아래에 있는 B-0에게 손 내밀기',[['B-0의 손 잡기','help-b0']]);say('student','이제 너 올라와. 손 줘.');
       },animate);
@@ -257,7 +259,7 @@
       // The robot faces the camera, so its local palm offset projects directly
       // onto the screen. Both key poses share this registered hand position.
       const a=camera.yaw*Math.PI/180,p=camera.pitch*Math.PI/180;
-      const dx=robot.x-viewX,dz=robot.z-viewZ,dy=102-robotLift+viewHeight+lift;
+      const dx=(robot.x-viewX)*SPACE,dz=(robot.z-viewZ)*SPACE,dy=102-robotLift+viewHeight+lift;
       const x=Math.cos(a)*dx+Math.sin(a)*dz,z=-Math.sin(a)*dx+Math.cos(a)*dz;
       const y=Math.cos(p)*dy-Math.sin(p)*z,depth=Math.sin(p)*dy+Math.cos(p)*z;
       const scale=-focal/Math.min(-10,depth),u=.29+(.225-.29)*blend,v=.13+(.12-.13)*blend;
@@ -283,7 +285,7 @@
       function step(t){if(dead)return;const v=reduced()?1:Math.min(1,(t-t0)/3400),pose=rescuePose(v);
         robot={x:from.x+(viewX-from.x)*pose.approach,z:from.z+(viewZ+80-from.z)*pose.approach};robotLift=pose.lift;
         actor.style.setProperty('--rescue-climb',String(pose.blend));actor.classList.toggle('hand-held',pose.contact);stage.style.setProperty('--rescue-fade',String(pose.fade));stage.dataset.rescueStage=pose.phase;
-        camera.yaw=direction(robot.x-viewX,robot.z-viewZ);camera.pitch=-Math.atan2(viewHeight+94-robotLift-50*pose.approach,Math.hypot(robot.x-viewX,robot.z-viewZ))*180/Math.PI;updateCamera();updatePlayerGrip(pose);
+        camera.yaw=direction(robot.x-viewX,robot.z-viewZ);camera.pitch=-Math.atan2(viewHeight+94-robotLift-50*pose.approach,Math.hypot(robot.x-viewX,robot.z-viewZ)*SPACE)*180/Math.PI;updateCamera();updatePlayerGrip(pose);
         if(v<1)animation=requestAnimationFrame(step);else{busy=false;if(M.finish(s)){save();ending();}}
       }
       animation=requestAnimationFrame(step);

@@ -1,0 +1,12 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const prop=(left,width,tx,tz)=>({style:{transform:JSON.stringify({x:tx,z:tz})},css:{left:String(left),width:String(width),transform:'none'},matches:()=>false});
+const crate=prop(-234,118,0,-60),robot=prop(0,96,45,-140),door=prop(-160,150,0,290);
+const world={children:[crate,robot,door],dataset:{}};
+const c={window:{},getComputedStyle:e=>e.css,DOMMatrixReadOnly:class{constructor(s){const p=s?JSON.parse(s):{};this.m41=p.x||0;this.m43=p.z||0;}}};
+vm.runInNewContext(fs.readFileSync(require.resolve('../room-space.js'),'utf8'),c);c.window.B0RoomSpace.sync(world);
+const offset=e=>e.style.translate.split(' ').map(parseFloat);
+assert.equal(world.dataset.roomWidth,'780');assert.ok(Math.abs(offset(crate)[0]+52.5)<.01);assert.ok(Math.abs(offset(crate)[2]+18)<.01);
+assert.equal(crate.css.width,'118','room expansion does not inflate furniture');
+const before=offset(crate);crate.style.transform=JSON.stringify({x:75,z:-120});c.window.B0RoomSpace.sync(world);assert.ok(Math.abs(offset(crate)[0]-before[0]-22.5)<.01,'dynamic drags update world offsets, not only initial placement');
+const hold=robot.style.translate;c.window.B0RoomSpace.sync(world);assert.equal(robot.style.translate,hold,'camera-only update does not accumulate offsets');
+console.log('PASS: expanded room footprint, original prop size, dynamic object positioning, stable repeated projection');
