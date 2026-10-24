@@ -27,19 +27,27 @@ function load() {
 }
 let state = load() || fresh(), target = "", moving = false, token = 0, timer, speechTimer, audio, lastFocus;
 let faceId=0, talkTimer, camera={x:0,y:0}, drag=null, suppressClick=false, roomView, walkFrame, zoom=1, pinch=null;
-let chapterTwo,chapterThree;
+let chapterTwo,chapterThree,chapterFour;
 function chapterUrl(number){const url=new URL(location.href);if(number!==3)url.searchParams.delete('room');if(number===1)url.searchParams.delete('chapter');else url.searchParams.set('chapter',String(number));history.replaceState(null,'',url);}
 function enterChapterTwo(){
+  chapterFour?.dispose();chapterFour=null;
   roomView?.dispose();roomView=null;chapterTwo?.dispose();chapterThree?.dispose();chapterThree=null;
   token++;clearTimeout(timer);clearTimeout(speechTimer);clearTimeout(talkTimer);cancelAnimationFrame(walkFrame);moving=false;suppressClick=false;
   state.chapter=2;save();chapterUrl(2);
   chapterTwo=window.startChapterTwo({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),onNext:enterChapterThree,onBack:()=>{chapterTwo=null;state.chapter=1;save();chapterUrl(1);boot();}});
 }
 function enterChapterThree(){
+  chapterFour?.dispose();chapterFour=null;
   roomView?.dispose();roomView=null;chapterTwo?.dispose();chapterTwo=null;chapterThree?.dispose();
   token++;clearTimeout(timer);clearTimeout(speechTimer);clearTimeout(talkTimer);cancelAnimationFrame(walkFrame);moving=false;suppressClick=false;
   state.chapter=3;save();chapterUrl(3);
-  chapterThree=window.startChapterThree({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),onBack:enterChapterTwo});
+  chapterThree=window.startChapterThree({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),onBack:enterChapterTwo,onNext:enterChapterFour});
+}
+function enterChapterFour(){
+  roomView?.dispose();roomView=null;chapterTwo?.dispose();chapterTwo=null;chapterThree?.dispose();chapterThree=null;chapterFour?.dispose();
+  token++;clearTimeout(timer);clearTimeout(speechTimer);clearTimeout(talkTimer);cancelAnimationFrame(walkFrame);moving=false;suppressClick=false;
+  state.chapter=4;save();chapterUrl(4);
+  chapterFour=window.startChapterFour({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),onBack:enterChapterThree});
 }
 const touchPoints=new Map();
 const reduced=()=>window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -83,7 +91,8 @@ function dialogue(who,text) { return `<div class="speech ${who}"><b>${who==="rob
 function openingHeader(){return `<header class="opening-header"><span>내 위치: 알 수 없는 곳</span>${btn("← 원위치로","view-home","quiet")}</header>`;}
 function boot() {
   const requested=typeof location!=="undefined"?new URLSearchParams(location.search).get('chapter'):null;
-  const chapter=['1','2','3'].includes(requested)?Number(requested):state.chapter;
+  const chapter=['1','2','3','4'].includes(requested)?Number(requested):state.chapter;
+  if(chapter===4){enterChapterFour();return;}
   if(chapter===3){enterChapterThree();return;}
   if(chapter===2){enterChapterTwo();return;}
   if(state.phase==="intro") opening();

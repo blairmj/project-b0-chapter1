@@ -1,0 +1,16 @@
+const assert=require('node:assert/strict'),M=require('../chapter4-model.js');
+const s=M.fresh(),r={handle:1,latch:0};s.phase='room';
+assert.equal(M.connect(s,'robot',false),false,'cannot bypass an active initialization verdict');
+s.met=s.boss=true;
+assert.equal(M.submit(s),false,'cropped lift image is insufficient');
+s.range=[0,55];assert.equal(M.submit(s),false,'request alone does not show the outcome');
+s.range=[0,100];assert.equal(M.submit(s),true);
+M.connect(s,'exit',false);assert.equal(M.ready(s),false,'cannot abandon immobilized B-0');
+M.connect(s,'robot',false);assert.equal(M.ready(s),true);assert.equal(s.links.support,true,'AI help may remain connected');
+for(let i=0;i<25;i++)M.tick(s,r,100);assert.ok(r.latch>.35&&r.latch<1);assert.equal(s.opened,false,'screen completion is not physical opening');
+M.release(s,r);assert.equal(r.latch,0);assert.equal(s.evidence,true,'release error retains evidence and permission progress');
+r.handle=1;for(let i=0;i<53;i++)M.tick(s,r,100);assert.equal(s.opened,true);M.release(s,r);assert.equal(r.latch,1,'open door stays latched');
+const resumed=M.restore(JSON.parse(JSON.stringify(s)));assert.equal(resumed.opened,true);assert.equal(M.leave(resumed),true);assert.equal(resumed.phase,'farewell');
+const interrupted=M.restore({...s,opened:false,phase:'room'});assert.equal(interrupted.evidence,true);assert.equal(interrupted.links.robot,false);
+assert.equal(M.restore({...s,links:{support:true,exit:true,robot:true}}).opened,false,'cannot restore an open door with active control');
+console.log('PASS: original context, permission boundaries, optional AI help, real mechanical confirmation, recoverable mistakes, reunion and save recovery');

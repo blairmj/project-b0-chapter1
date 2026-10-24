@@ -1,6 +1,6 @@
 (function(){
   'use strict';
-  window.startChapterThree=function({app,portrait,onBack,preview=false}){
+  window.startChapterThree=function({app,portrait,onBack,onNext,preview=false}){
     const M=window.B0RoomThree,storage=preview?sessionStorage:localStorage,key='project-b0-room3-v1';
     let s;try{s=M.restore(JSON.parse(storage.getItem(key)));}catch{s=M.fresh();}
     let camera={x:0,z:30,yaw:-12,pitch:-8,zoom:1},stage,world,bar,speech,selection=null,pointer=null,suppress=false,dead=false,busy=false,cameraMoving=false,frame=0,mode=null,conversation=null;
@@ -138,13 +138,14 @@
       actions('외부 출입구',s.approval==='rejected'?[['중앙관리실로 가기','go-central'],['방으로 돌아가기','return-room']]:[['문 살펴보기','inspect-gate'],['B-0에게 승인 요청 부탁','request-approval'],['방으로 돌아가기','return-room']]);
     }
     function renderEnd(){
-      app.innerHTML=`<main class="game c3-end"><header><h1>내 위치: 중앙관리실 앞</h1>${b('메뉴','menu','quiet')}</header><section class="c3-central-scene"><div class="c3-central-door"><i></i><span>중앙관리실</span></div><div class="c3-central-dialogue"><div class="speech student"><b>나</b><p>출구까지 찾았는데, 누가 못 나가게 하는 거야?</p></div><div class="speech robot"><b>B-0</b><p>이 안에서 출입을 관리하고 있습니다.</p></div><div class="speech student"><b>나</b><p>그럼 직접 만나 보자.</p></div></div></section><footer>${b('이번 방의 기록','record')}${b('거울 관찰실 둘러보기','visit-mirror','quiet')}<small>3차시 끝 · 4차시로 이어집니다.</small></footer></main>`;
+      app.innerHTML=`<main class="game c3-end"><header><h1>내 위치: 중앙관리실 앞</h1>${b('메뉴','menu','quiet')}</header><section class="c3-central-scene"><div class="c3-central-door"><i></i><span>중앙관리실</span></div><div class="c3-central-dialogue"><div class="speech student"><b>나</b><p>출구까지 찾았는데, 누가 못 나가게 하는 거야?</p></div><div class="speech robot"><b>B-0</b><p>이 안에서 출입을 관리하고 있습니다.</p></div><div class="speech student"><b>나</b><p>그럼 직접 만나 보자.</p></div></div></section><footer>${b('중앙관리실로 들어가기','chapter-four','primary')}${b('이번 방의 기록','record')}${b('거울 관찰실 둘러보기','visit-mirror','quiet')}<small>3차시 끝 · 4차시로 이어집니다.</small></footer></main>`;
     }
     function leaveRoom(){
       if(!M.leave(s))return;cancelAnimationFrame(frame);cameraMoving=false;save();busy=true;
       talk([['robot','제 지도에는 이 문이 없었습니다.'],['student',s.seen.wall?'너는 지도 봤고, 나는 방을 봤잖아. 같이 찾은 거지.':'지도에 없어도 실제로는 있었네. 직접 보길 잘했어.'],['robot','지금 확인한 위치로 지도를 수정하겠습니다.']],()=>{busy=false;render();});
     }
     function act(a){
+      if(a==='chapter-four'&&s.phase==='complete'){dispose();onNext?.();return;}
       if(a==='close-modal'){app.querySelector('.c3-modal')?.close();return;}
       if(a==='menu'){modal('메뉴',`<p>차시별 진행은 따로 저장됩니다.</p><div class="options">${b('계속하기','close-modal','primary')}${b('조작 방법','controls')}${b('탐색 기록','record')}${b('3차시 다시 시작','reset-confirm','quiet')}${b('2차시로 돌아가기','back','quiet')}</div>`);return;}
       if(a==='back'){dispose();onBack();return;}

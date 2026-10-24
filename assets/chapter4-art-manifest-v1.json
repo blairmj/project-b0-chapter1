@@ -1,0 +1,12 @@
+{
+  "tool": "builtin image_gen",
+  "asset": "chapter4-navy-wall-v1.webp",
+  "reference": "chapter3-office-wall-v2.webp",
+  "prompt": "Use case: stylized-concept. Asset type: game environment wall texture for PROJECT B-0 final central control room. Reference image is style/material reference only: maintain its detailed hand-painted, slightly realistic illustrated industrial-game rendering, weathering, chipped edges, fine bolts, dust and tactile materials. Create a NEW flat straight-on orthographic seamless architectural wall surface, landscape 1536x1024. Change palette and architecture substantially: deep midnight navy enamel panels with aged bronze/copper vertical ribs, narrow amber warm inset light strips, sophisticated retro-futurist educational AI control center, restrained large panels and dark observation glazing occupying upper central area. No perspective, no floor or ceiling, no objects or furniture in foreground, no robots, no characters, no doors, no readable text, no logos. Surface only, evenly visible not black. Not flat vector or clean low-poly. Must tile acceptably horizontally. This becomes walls behind separately interactive screens and devices.",
+  "ending": {
+    "asset": "chapter4-bedroom-v1.webp",
+    "tool": "builtin image_gen",
+    "reference": "../PROJECT_B0_오프닝/달빛_아래_수학_공부하는_밤.png",
+    "prompt": "Use case: illustration-story. Asset type: PROJECT B-0 ending background, portrait 1024x1536. Reference image is visual continuity reference of the boy's bedroom and detailed illustrated/anime material rendering. NEW FIRST PERSON viewpoint: boy has just woken at the same wooden study desk at late night, looking slightly down at desk with an open math workbook, warm desk lamp at upper left, moonlit window upper left behind desk, science/sports posters and books behind, realistic paper wood and soft illustrated shadows. No boy or full human figure visible. Large open workbook occupies lower middle (approximately x8%-72%, y48%-78%) with sparse indistinct pencil working but no readable text. A modest tablet/monitor sits on right upper desk (x73%-95%, y32%-48%), completely dark blank rectangular display facing viewer. We will overlay legible math and robot's eyes in code. Atmosphere quiet hopeful, warm gold lamp balanced deep cool blue moonlight. Keep high detail and painterly polished Korean animated film style matching reference. No speech bubbles, no captions, no logo, no text, no robot. Compose with room for dialogue at bottom 20%."
+  }
+}
