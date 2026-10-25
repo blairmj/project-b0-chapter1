@@ -21,7 +21,7 @@ g.state().s.links.robot=false;step(100);assert.equal(node('.c4-robot').dataset.p
 g.act('request-lift');g.select('records');assert.equal(g.state().r.lifted,false,'wrong request target does not solve puzzle');
 g.act('request-lift');g.select('high');step(200);assert.equal(g.state().camera.height,145);
 const yaw=g.state().camera.yaw;g.down(event(200,200,'high'));g.move(event(280,200,'high'));g.up(event(280,200,'high'));assert.equal(g.state().s.upper,true);assert.equal(g.state().camera.yaw,yaw,'latch drag does not orbit');
-g.act('lower');step(300);const viewYaw=g.state().camera.yaw;g.act('robot');step(310);assert.equal(g.state().camera.yaw,viewYaw,'asking B-0 from the footer must not turn away from the current puzzle');assert.equal(g.state().camera.height,0);assert.equal(g.state().s.upper,true);
+g.act('lower');step(300);assert.ok(Math.hypot(g.state().robot.x-g.state().camera.x,g.state().robot.z-g.state().camera.z)*3.9>190,'B-0 steps aside after lowering the student instead of covering the exit');const viewYaw=g.state().camera.yaw;g.act('robot');step(310);assert.equal(g.state().camera.yaw,viewYaw,'asking B-0 from the footer must not turn away from the current puzzle');assert.equal(g.state().camera.height,0);assert.equal(g.state().s.upper,true);
 g.act('request-hold');g.select('handle');assert.equal(g.state().s.holding,true);assert.equal(node('.c4-robot').dataset.pose,'holding');
 g.down(event(200,200,'grip'));g.move(event(200,265,'grip'));g.up(event(200,265,'grip'));assert.equal(g.state().r.handle,1);
 for(let t=400;t<=2400;t+=100)step(t);assert.equal(node('.c4-stage').dataset.reported,'yes');assert.equal(g.state().s.opened,false);g.act('ask-door');assert.match(node('.c4-speech').innerHTML,/아직 문에 걸려/);

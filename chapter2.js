@@ -1,7 +1,7 @@
 (function(){
   'use strict';
   window.startChapterTwo=function({app,portrait,onBack,onNext,onHome,preview=false}){
-    const SPACE=1.3;
+    const SPACE=1.95;
     const M=window.B0RoomTwo,storage=preview?sessionStorage:localStorage,key='project-b0-room2-v1';
     let s;try{s=M.restore(JSON.parse(storage.getItem(key)));}catch{s=M.fresh();}
     let camera={yaw:-48,pitch:-12,zoom:1},standing=null,selection=null,mode=null,pointer=null,suppress=false,dead=false;

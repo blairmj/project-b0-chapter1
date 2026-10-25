@@ -1,8 +1,8 @@
 /* Expand horizontal distances without scaling characters or props.
  * Puzzle/save positions remain in their original logical room coordinates. */
 (function(){
-  const scale=1.3,cache=new WeakMap();
-  const scaleFor=world=>world?.matches?.('.c4-world')?2.6:scale;
+  const scale=1.95,cache=new WeakMap();
+  const scaleFor=world=>world?.matches?.('.c4-world')?3.9:scale;
   function sync(world){
     if(!world)return;
     const roomScale=scaleFor(world);

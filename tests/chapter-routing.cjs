@@ -6,7 +6,7 @@ const rooms=new Map([['unrelated-user-data','keep']]);
 const context=vm.createContext({document:{querySelector:()=>app},location,URL,URLSearchParams,
  history:{replaceState(a,b,url){location.href=String(url);location.search=new URL(url).search;}},
  sessionStorage:{getItem:k=>k==='project-b0-firstperson-v4'?stored:rooms.get(k)??null,setItem(k,v){if(k==='project-b0-firstperson-v4')stored=v;else rooms.set(k,v);},removeItem:k=>rooms.delete(k)},setTimeout:()=>0,clearTimeout(){},cancelAnimationFrame(){},
- window:{B0LabNavigation:M,addEventListener(){},startLabNavigation(options){hall=options;return {dispose(){disposed++;}};},startChapterTwo(options){two=options;return {dispose(){disposed++;}};},startChapterThree(options){three=options;return {dispose(){disposed++;}};},startChapterFour(options){four=options;return {dispose(){disposed++;}};}}});
+ window:{B0LabNavigation:M,addEventListener(){},startLabNavigation(options){hall=options;return {dispose(){disposed++;}};},startChapterTwo(options){two=options;return {dispose(){disposed++;},jumpToEnd(){rooms.set('reviewed-chapter','2');}};},startChapterThree(options){three=options;return {dispose(){disposed++;}};},startChapterFour(options){four=options;return {dispose(){disposed++;}};}}});
 const run=s=>vm.runInContext(s,context);
 run(fs.readFileSync(require.resolve('../firstperson.js'),'utf8').replace(/boot\(\);\s*$/,''));
 run('boot()');assert.ok(two,'explicit Chapter 2 URL enters the saved room');assert.equal(two.preview,true);
@@ -23,3 +23,7 @@ for(const key of ['project-b0-room2-v1','project-b0-room3-v1','project-b0-final-
 assert.equal(JSON.parse(rooms.get('project-b0-lab-navigation-v1')).stairsUnlocked,false);assert.equal(rooms.get('unrelated-user-data'),'keep');
 run('state.phase="escaped";handle("chapter-two")');assert.equal(hall.state.cleared.practice,true);assert.equal(hall.state.floor,1);
 console.log('PASS: exits lead to an explorable hall, map room selection, office-to-mirror route, key/stair/floor gate, continued hall checkpoint, cleanup, and full restart');
+
+run('state.chapter=2;jumpLessonEnd()');assert.equal(rooms.get("reviewed-chapter"),"2","temporary end control in a corridor keeps the current lesson");
+run("showHall();reviewLesson(1)");assert.equal(JSON.parse(rooms.get("project-b0-lab-navigation-v1")).mode,"room","review start must resume the selected room after refresh");
+console.log("PASS: temporary lesson controls preserve corridor lesson and room resume mode");

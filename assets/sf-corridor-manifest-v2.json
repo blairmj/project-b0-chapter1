@@ -1,0 +1,7 @@
+{
+  "tool": "built-in image_gen",
+  "reference": "sf-access-wall-v1.webp",
+  "output": "sf-corridor-wall-v2.webp",
+  "purpose": "Orthographic tile for actual three dimensional corridor walls, with separate doors and stairs.",
+  "prompt": "Create a production game texture asset, a single square seamless horizontally tileable front orthographic elevation of an abandoned science fiction educational research laboratory corridor wall. The reference is STYLE MATERIAL REFERENCE ONLY: keep its detailed hand-painted realistic stylized 3D adventure game surface rendering, gently aged edges and crafted industrial architecture. New corridor design: ivory ceramic upper panels with broad restrained planar forms, desaturated dark petrol teal lower metal wainscoting, brushed champagne aluminum seams and restrained dark structural frames, faint scratches and dusty wear suggesting a closed facility. Warm white and cyan accent light slots near upper edges, shallow vertical recessed strips, no busy repeated little rivets everywhere. This is a FLAT WALL MATERIAL TILE, absolutely no perspective corridor image, no vanishing point, no floor, no ceiling, no room depth, no doors, no windows, no signs or text, no robots, no characters, no furniture. Straight-on, even diffuse lighting, high material detail, graceful substantial big panel proportions, horizontal left and right boundaries must tile seamlessly. 1536x1536 or square. This will be mapped on actual 3D hallway walls with separately implemented doors."
+}

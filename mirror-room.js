@@ -1,7 +1,7 @@
 (function(){
   'use strict';
   window.startMirrorRoom=function({app,portrait,state,onSave,onBack,onComplete,onHome}){
-    const SPACE=1.3;
+    const SPACE=1.95;
     const M=window.B0Mirror,s=state;
     let stage,world,bar,speech,pointer=null,selection=null,targetMode=false,suppress=false,dead=false,robotBusy=false,camFrame=0,botFrame=0,handFrame=0,pulse=0,timers=[],audio;
     let camera={x:-150,z:35,yaw:58,pitch:-8,zoom:1};
@@ -70,8 +70,8 @@
       botFrame=requestAnimationFrame(step);
     }
     function introLine(){
-      const lines=[['student','이 관찰실을 지나면 중앙관리실이 나오는 거네.'],['robot','먼저 들어가 보겠습니다.'],['student','야, 너 혼자 먼저 가면 어떡해!'],['robot','먼저 가라고 하셨습니다.'],['student','그건 아까 창문에서 한 말이잖아!'],['student','일단 각자 살펴보자.']];
-      say(...lines[s.line],true);if(s.line===5)speech.querySelector('button').textContent='주변 살펴보기';actions('중앙관리실로 향하는 관찰실');
+      const lines=[['student','이 관찰실을 지나면 계단 쪽 복도로 이어지는 거네.'],['robot','먼저 들어가 보겠습니다.'],['student','야, 너 혼자 먼저 가면 어떡해!'],['robot','먼저 가라고 하셨습니다.'],['student','그건 아까 창문에서 한 말이잖아!'],['student','일단 각자 살펴보자.']];
+      say(...lines[s.line],true);if(s.line===5)speech.querySelector('button').textContent='주변 살펴보기';actions('계단 쪽으로 이어지는 관찰실');
     }
     function nextIntro(){
       if(s.phase!=='approach'||robotBusy)return;
@@ -144,7 +144,7 @@
       if(a==='reset'){cancelAnimationFrame(camFrame);cancelAnimationFrame(botFrame);cancelAnimationFrame(handFrame);timers.forEach(clearTimeout);clearTimeout(pulse);robotBusy=false;pointer=null;selection=null;targetMode=false;suppress=false;Object.assign(s,M.fresh());camera={x:-150,z:35,yaw:58,pitch:-8,zoom:1};robot=robotPosition();save();app.querySelector('.mr-modal')?.remove();render();return;}
       if(a==='back'){onBack();return;}
       if(a==='intro-next'){nextIntro();return;}if(a==='dismiss'){speech.hidden=true;return;}
-      if(a==='home'){selection=null;targetMode=false;actions(s.phase==='approach'?'중앙관리실로 향하는 관찰실':'방 안을 자유롭게 살펴보세요.');cameraTo({x:-150,z:35,yaw:58,pitch:-8,zoom:1});return;}
+      if(a==='home'){selection=null;targetMode=false;actions(s.phase==='approach'?'계단 쪽으로 이어지는 관찰실':'방 안을 자유롭게 살펴보세요.');cameraTo({x:-150,z:35,yaw:58,pitch:-8,zoom:1});return;}
       if(a.startsWith('zoom-')){camera.zoom=Math.max(.7,Math.min(1.65,camera.zoom+(a==='zoom-in'?.15:-.15)));updateCamera();return;}
       if(s.phase==='approach')return;
       if(a==='clear'){selection=null;targetMode=false;speech.hidden=true;actions('방 안을 자유롭게 살펴보세요.');return;}

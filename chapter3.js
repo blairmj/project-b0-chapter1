@@ -1,15 +1,16 @@
 (function(){
   'use strict';
-  window.startChapterThree=function({app,portrait,onBack,onNext,onCorridor,onHome,preview=false}){
-    const SPACE=1.3;
+  window.startChapterThree=function({app,portrait,onBack,onNext,onCorridor,onHome,showCompleted=false,preview=false}){
+    const SPACE=1.95;
     const M=window.B0RoomThree,storage=preview?sessionStorage:localStorage,key='project-b0-room3-v1';
     let s;try{s=M.restore(JSON.parse(storage.getItem(key)));}catch{s=M.fresh();}
     let camera={x:0,z:30,yaw:-12,pitch:-8,zoom:1},stage,world,bar,speech,selection=null,pointer=null,suppress=false,dead=false,busy=false,cameraMoving=false,frame=0,mode=null,conversation=null;
     const helperPosition=()=>({x:-195,z:s.shelfZ+(s.shelfZ>=0?-90:90)});
     let robot=s.helper?helperPosition():{x:120,z:-190},timers=[],mirrorView=null;
     if(typeof location!=='undefined'&&new URLSearchParams(location.search).get('room')==='mirror')s.phase='mirror';
+    else if(onCorridor&&!showCompleted&&['gate','complete'].includes(s.phase))s.phase='room';
     function mirrorUrl(active){if(typeof location==='undefined')return;const url=new URL(location.href);if(active)url.searchParams.set('room','mirror');else url.searchParams.delete('room');history.replaceState(null,'',url);}
-    const intro=[['student','생각보다 무겁네, 너.'],['robot','저도 같은 생각을 했습니다.'],['student','뭐?'],['robot','아까 들어 올릴 때요.'],['student','……다음에는 네가 먼저 올라가.'],['robot','제 지도에 외부 통로와 연결된 출입 관리실이 있습니다. 함께 가 보겠습니다.']];
+    const intro=[['student','생각보다 무겁네, 너.'],['robot','저도 같은 생각을 했습니다.'],['student','뭐?'],['robot','아까 들어 올릴 때요.'],['student','……다음에는 네가 먼저 올라가.'],['robot','이 문이 제 지도에 있는 출입 관리실입니다. 실제 상태는 함께 확인해 보겠습니다.']];
     const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const b=(label,action,cls='')=>`<button type="button" data-c3="${action}" class="${cls}">${label}</button>`;
     const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -132,7 +133,7 @@
     }
     function renderIntro(){
       s.line=Math.min(intro.length-1,s.line);const [who,text]=intro[s.line];
-      app.innerHTML=`<main class="game c3-intro"><header><h1>내 위치: 연구소 복도</h1>${window.B0LessonJumpButton?.()||''}${b('메뉴','menu','quiet')}</header><section class="corridor-scene"><div class="corridor-view"></div><div class="corridor-b0 walking"><div class="robot-sprite live-body ${who==='robot'?'speaking':''}">${portrait()}</div></div><div class="corridor-dialogue"><div class="speech ${who}"><b>${who==='robot'?'B-0':'나'}</b><p>${esc(text)}</p></div>${b(s.line===intro.length-1?'출입 관리실로':'다음','intro-next','next')}</div></section><footer><small>함께 창문을 넘어, 복도 끝까지 걸어왔다.</small></footer></main>`;
+      app.innerHTML=`<main class="game c3-intro"><header><h1>내 위치: 출입 관리실 앞</h1>${window.B0LessonJumpButton?.()||''}${b('메뉴','menu','quiet')}</header><section class="corridor-scene"><div class="corridor-view"></div><div class="corridor-b0 walking"><div class="robot-sprite live-body ${who==='robot'?'speaking':''}">${portrait()}</div></div><div class="corridor-dialogue"><div class="speech ${who}"><b>${who==='robot'?'B-0':'나'}</b><p>${esc(text)}</p></div>${b(s.line===intro.length-1?'출입 관리실로':'다음','intro-next','next')}</div></section><footer><small>출입 관리실 문 앞에서 B-0와 잠시 숨을 돌린다.</small></footer></main>`;
     }
     function renderGate(){
       app.innerHTML=`<main class="game c3-gate-game"><header><h1>내 위치: 외부 출입구</h1>${window.B0LessonJumpButton?.()||''}${b('메뉴','menu','quiet')}</header><section class="c3-gate-scene"><div class="c3-gate-door"><span>외부 출입구</span><i></i></div><div class="c3-gate-terminal"><small>출입 관리</small><p>${s.approval==='rejected'?'외부 이동 보류':'외부 이동에는 중앙관리실의 승인이 필요합니다.'}</p>${s.approval==='rejected'?'<small>중앙관리실에서 직접 확인</small>':''}</div><div class="c3-gate-b0"><div class="robot-sprite live-body">${portrait()}</div></div><div class="c2-speech c3-speech" hidden></div></section><section class="c2-actions c3-actions"></section><footer><small>문 너머로는 바깥 불빛이 보인다.</small></footer></main>`;
@@ -140,7 +141,7 @@
       actions('외부 출입구',s.approval==='rejected'?[['관찰실 통로로 가기','go-central'],['방으로 돌아가기','return-room']]:[['문 살펴보기','inspect-gate'],['B-0에게 승인 요청 부탁','request-approval'],['방으로 돌아가기','return-room']]);
     }
     function renderEnd(){
-      app.innerHTML=`<main class="game c3-end"><header><h1>내 위치: 거울 관찰실 밖 통로</h1>${window.B0LessonJumpButton?.()||''}${b('메뉴','menu','quiet')}</header><section class="c3-central-scene">${onCorridor?'<div class="corridor-view"></div>':'<div class="c3-central-door"><i></i><span>중앙관리실</span></div>'}<div class="c3-central-dialogue"><div class="speech student"><b>나</b><p>출구까지 찾았는데, 누가 못 나가게 하는 거야?</p></div><div class="speech robot"><b>B-0</b><p>지도에는 중앙관리실이 2층으로 표시되어 있습니다.</p></div><div class="speech student"><b>나</b><p>그럼 계단부터 찾아보자.</p></div></div></section><footer>${b(onCorridor?'복도로 나가기':'중앙관리실 앞으로 가기','chapter-four','primary')}${b('이번 방의 기록','record')}${b('거울 관찰실 둘러보기','visit-mirror','quiet')}<small>유리 관찰실의 반대쪽 복도로 나왔다.</small></footer></main>`;
+      app.innerHTML=`<main class="game c3-end"><header><h1>내 위치: 거울 관찰실 밖 통로</h1>${window.B0LessonJumpButton?.()||''}${b('메뉴','menu','quiet')}</header><section class="c3-central-scene">${onCorridor?'<div class="corridor-view"></div>':'<div class="c3-central-door"><i></i><span>중앙관리실</span></div>'}<div class="c3-central-dialogue"><div class="speech student"><b>나</b><p>좋아, 다시 같이 나왔네.</p></div><div class="speech robot"><b>B-0</b><p>지도에는 중앙관리실이 2층으로 표시되어 있습니다.</p></div><div class="speech student"><b>나</b><p>그럼 계단부터 찾아보자.</p></div></div></section><footer>${b(onCorridor?'복도로 나가기':'중앙관리실 앞으로 가기','chapter-four','primary')}${b('이번 방의 기록','record')}${b('거울 관찰실 둘러보기','visit-mirror','quiet')}<small>유리 관찰실의 반대쪽 복도로 나왔다.</small></footer></main>`;
     }
     function leaveRoom(){
       if(!M.leave(s))return;cancelAnimationFrame(frame);cameraMoving=false;save();busy=true;

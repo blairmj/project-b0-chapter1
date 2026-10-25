@@ -11,3 +11,10 @@ assert.equal(M.floor(restored,1),true);assert.equal(restored.stairsUnlocked,true
 const invalid=M.restore({version:1,floor:2,camera:{z:-2400},stairsUnlocked:false});assert.equal(invalid.floor,1);assert.equal(invalid.camera.z,-510);
 assert.equal(M.doors.central.floor,2);for(const id of ['practice','storage','access','mirror'])assert.equal(M.doors[id].floor,1);
 console.log('PASS: hallway barriers, discovered routes, accessible key, key-only stair unlock, physical floor transition, saved location, safe recovery, and central room alone upstairs');
+
+assert.equal(M.bound(s,999,-2300).x,180);
+const npc=M.companionSpot(999,-9999,2);assert.equal(npc.x,175);assert.equal(npc.z,-2440);
+const savedNpc=M.restore({...s,floor:2,companion:{x:90,z:-2290,floor:2}});assert.equal(savedNpc.companion.z,-2290);
+assert.equal(M.groundAt(-1700),0);assert.equal(M.groundAt(-2300),360);
+assert.equal(M.restore({version:1,camera:{z:-320}}).barrierTriggered,true);
+console.log("PASS: wider corridor bounds, persisted world-space companion, stair grounding and barrier migration");

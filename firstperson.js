@@ -71,7 +71,7 @@ function enterChapterThree(view='access'){
   roomView?.dispose();roomView=null;chapterTwo?.dispose();chapterTwo=null;chapterThree?.dispose();
   token++;clearTimeout(timer);clearTimeout(speechTimer);clearTimeout(talkTimer);cancelAnimationFrame(walkFrame);moving=false;suppressClick=false;
   state.chapter=3;save();chapterUrl(3);
-  chapterThree=window.startChapterThree({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),onBack:()=>showHall('storage'),onNext:()=>showHall('mirror'),onCorridor:()=>showHall('access'),onHome:campaignHome});
+  chapterThree=window.startChapterThree({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),onBack:()=>showHall('storage'),onNext:()=>showHall('mirror'),onCorridor:()=>showHall('access'),showCompleted:view==='summary',onHome:campaignHome});
 }
 function enterChapterFour(){
   if(!navigation.stairsUnlocked){navigation.floor=1;navigation.camera={x:0,z:window.B0LabNavigation.bound(navigation,0,-1665).z,yaw:0,pitch:-4};showHall();return;}
@@ -121,10 +121,22 @@ function tone(ok=true) {
 }
 function dialogue(who,text) { return `<div class="speech ${who}"><b>${who==="robot"?"B-0":who==="thought"?"속마음":"나"}</b><p>${esc(text)}</p></div>`; }
 // Temporary review control; remove this helper and header calls after lesson review.
-window.B0LessonJumpButton=()=>btn('차시 끝으로 (임시)','jump-lesson-end','quiet lesson-jump','title="현재 차시의 마무리 장면으로 이동"');
+window.B0LessonJumpButton=()=>`<span class="lesson-review-controls">${btn('차시 이동 (임시)','jump-lesson-menu','quiet lesson-jump')}${btn('차시 끝으로 (임시)','jump-lesson-end','quiet lesson-jump','title="현재 차시의 마무리 장면으로 이동"')}</span>`;
+function reviewLesson(number){
+  stopAdventure();navigation.mode='room';saveNavigation();
+  if(number===1){const muted=state.muted;state={...fresh(),muted,chapter:1};save();chapterUrl(1);opening();return;}
+  state.phase='escaped';navigation.cleared.practice=true;
+  if(number>=3)navigation.cleared.storage=true;
+  if(number===4){navigation.cleared.access=navigation.cleared.mirror=true;navigation.keyTaken=navigation.stairsUnlocked=true;navigation.floor=2;}
+  progressStore.removeItem(number===2?'project-b0-room2-v1':number===3?'project-b0-room3-v1':'project-b0-final-v2');
+  navigation.mode='room';saveNavigation();save('임시 이동',number+'차시 시작으로 이동');
+  if(number===2)enterChapterTwo();else if(number===3)enterChapterThree();else enterChapterFour();
+}
+
 function jumpLessonEnd(){
+  if(hallView){const chapter=state.chapter||1;if(chapter===2)enterChapterTwo();else if(chapter===3)enterChapterThree();else if(chapter===4){if(!navigation.stairsUnlocked)reviewLesson(4);else enterChapterFour();}}
   if(chapterFour){chapterFour.jumpToEnd();enterChapterFour();return;}
-  if(chapterThree){chapterThree.jumpToEnd();enterChapterThree();return;}
+  if(chapterThree){chapterThree.jumpToEnd();enterChapterThree('summary');return;}
   if(chapterTwo){chapterTwo.jumpToEnd();enterChapterTwo();return;}
   stopAdventure();state.chapter=1;state.phase='escaped';state.unlocked=true;
   save('임시 이동','1차시 마무리로 이동');ending(3);
@@ -224,7 +236,7 @@ function panTo(x,y) {
   const scene=app.querySelector(".scene"),rig=app.querySelector(".room-rig");if(!scene||!rig)return;
   // The spherical background and object planes share one camera.
   camera={x:((x+180)%360+360)%360-180,y:Math.max(-18,Math.min(18,y))};
-  const focal=Math.min(scene.clientHeight*.58,scene.clientWidth*.9)*.82*zoom;
+  const focal=Math.min(scene.clientHeight*.58,scene.clientWidth*.9)*(.82/1.5)*zoom;
   scene.style.perspective=focal+"px";
   rig.style.transform=`translateZ(${focal}px) rotateX(${camera.y}deg) rotateY(${camera.x}deg)`;
   scene.dataset.yaw=String(camera.x);scene.dataset.pitch=String(camera.y);
@@ -407,6 +419,9 @@ function handle(a) {
   if(a==="teacher"){modal("1차시 · 첫 만남",'<p>초등 고학년용 탐색 도입. AI도 확인하지 않은 정보는 모를 수 있으며, 사람과 함께 정보를 찾아 문제를 해결한다는 경험.</p><p>플레이: 출입문·안내도 탐색 → B-0의 보관함 확인 → 쪽지 획득 → 도어락 입력 → 탈출. 순서 강제 없음.</p><p>수업 대화: B-0는 쪽지를 갖고 있었는데 왜 몰랐을까요? 모른다고 했을 때 함께 무엇을 확인했나요?</p><small>정해진 게임 규칙으로 동작하며 실제 AI나 얼굴 인식은 사용하지 않습니다. 기록은 이 기기에만 저장됩니다.</small>');}
 }
 app.addEventListener("click",e=>{
+  const review=e.target.closest('button[data-action]')?.dataset.action;
+  if(review==='jump-lesson-menu'){e.preventDefault();modal('차시 이동 · 임시 검토용',`<p>원위치로는 시점만 초기화합니다. 아래 버튼은 해당 차시를 처음부터 다시 시작합니다.</p><div class="options">${[1,2,3,4].map(n=>btn(n+'차시 시작','review-lesson-'+n,'secondary')).join('')}</div>`);return;}
+  if(review?.startsWith('review-lesson-')){e.preventDefault();reviewLesson(Number(review.slice(14)));return;}
   const jump=e.target.closest('button[data-action="jump-lesson-end"]');
   if(jump&&!jump.disabled){e.preventDefault();jumpLessonEnd();return;}
   if(suppressClick&&e.detail!==0){suppressClick=false;e.preventDefault();return;}
