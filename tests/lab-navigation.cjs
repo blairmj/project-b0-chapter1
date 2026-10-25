@@ -1,14 +1,14 @@
 const assert=require('node:assert/strict'),M=require('../lab-navigation-model.js');
 const s=M.fresh();assert.equal(M.unlock(s),false);assert.equal(M.floor(s,2),false);assert.equal(M.takeKey(s),false);
-assert.equal(M.bound(s,0,-1700).z,-510);M.returned(s,'storage');assert.equal(M.bound(s,0,-1700).z,-1460);
-assert.equal(M.canEnter(s,'mirror'),false);M.returned(s,'access');assert.equal(M.canEnter(s,'mirror'),true);
+assert.equal(M.bound(s,0,-1700).z,-1460);M.returned(s,'storage');assert.equal(M.bound(s,0,-1700).z,-1460);
+for(const id of ['practice','storage','access','mirror'])assert.equal(M.canEnter(M.fresh(),id),true,'all first-floor rooms allow free exploration');M.returned(s,'access');assert.equal(M.canEnter(s,'mirror'),true);
 assert.equal(M.takeKey(s),false);M.returned(s,'mirror');assert.equal(s.camera.z,-1610);assert.equal(M.bound(s,0,-1700).z,-1700);
 assert.equal(M.takeKey(s),false);s.keyboxOpen=true;assert.equal(M.takeKey(s),true);assert.equal(M.takeKey(s),false);
 assert.equal(M.canEnter(s,'central'),false,'a key alone does not put the player upstairs');assert.equal(M.unlock(s),true);assert.equal(M.canEnter(s,'central'),false);
 assert.equal(M.floor(s,2),true);assert.equal(M.canEnter(s,'central'),true);s.mode='hall';
 const restored=M.restore(JSON.parse(JSON.stringify(s)));assert.equal(restored.floor,2);assert.equal(restored.keyTaken,true);assert.equal(restored.stairsUnlocked,true);assert.equal(restored.mode,'hall');
 assert.equal(M.floor(restored,1),true);assert.equal(restored.stairsUnlocked,true);
-const invalid=M.restore({version:1,floor:2,camera:{z:-2400},stairsUnlocked:false});assert.equal(invalid.floor,1);assert.equal(invalid.camera.z,-510);
+const invalid=M.restore({version:1,floor:2,camera:{z:-2400},stairsUnlocked:false});assert.equal(invalid.floor,1);assert.equal(invalid.camera.z,-1460);
 assert.equal(M.doors.central.floor,2);for(const id of ['practice','storage','access','mirror'])assert.equal(M.doors[id].floor,1);
 console.log('PASS: hallway barriers, discovered routes, accessible key, key-only stair unlock, physical floor transition, saved location, safe recovery, and central room alone upstairs');
 

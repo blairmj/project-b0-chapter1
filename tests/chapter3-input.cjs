@@ -5,6 +5,7 @@ let saved,back=0;const storage={getItem(){return null;},setItem(k,v){saved=v;}};
 const app={querySelector:s=>['.c3-modal','.mr-modal'].includes(s)?null:node(s),addEventListener(){},removeEventListener(){}};
 let serial=0;const frames=new Map();const context={window:{B0RoomThree:M,B0Mirror:require('../mirror-model.js'),addEventListener(){},removeEventListener(){}},sessionStorage:storage,localStorage:storage,matchMedia:()=>({matches:true}),performance:{now:()=>0},requestAnimationFrame(fn){frames.set(++serial,fn);return serial;},cancelAnimationFrame(n){frames.delete(n);},setTimeout:()=>0,clearTimeout(){}};
 const source=fs.readFileSync(require.resolve('../chapter3.js'),'utf8').replace('return {dispose,jumpToEnd};','return {jumpToEnd,act,select,down,move,up,mirror:()=>mirrorView,state:()=>({s,camera,busy,mode})};');
+context.document={addEventListener(){}};vm.runInNewContext(fs.readFileSync(require.resolve('../ui-common.js'),'utf8'),context);
 vm.runInNewContext(fs.readFileSync(require.resolve('../mirror-room.js'),'utf8').replace('return {dispose};','return {act,dispose};'),context);
 vm.runInNewContext(source,context);const game=context.window.startChapterThree({app,portrait:()=>'',onBack(){back++;},preview:true});
 const flush=()=>{while(frames.size){const [id,f]=frames.entries().next().value;frames.delete(id);f(1000);}};

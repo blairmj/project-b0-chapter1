@@ -18,7 +18,7 @@
     }
     function render(){
       if(s.phase==='complete'){ending();return;}
-      app.innerHTML=`<main class="game c2-game"><header><h1>내 위치: 폐쇄 보관실</h1><nav>${button('← 원위치로','home','quiet')}${window.B0LessonJumpButton?.()||''}${button('메뉴','menu','quiet')}</nav></header>
+      app.innerHTML=`<main class="game c2-game">${window.B0UI?.header({place:`폐쇄 보관실`,namespace:"c2",reset:"home",zoomClass:"c2-zoom",active:true})||""}
       <section class="c2-stage" tabindex="0" aria-label="폐쇄 보관실. 빈 공간을 끌거나 방향키로 둘러보세요. 물건을 누르면 조사할 수 있습니다.">
       <div class="c2-world sf-cargo-world">
         <div class="c2-wall c2-wall-front"><div class="c2-light"></div></div><div class="c2-wall c2-wall-left"><div class="c2-light"></div></div><div class="c2-wall c2-wall-right"><div class="c2-light"></div></div><div class="c2-wall c2-wall-back"><div class="c2-light"></div></div><div class="c2-floor"></div><div class="c2-ceiling"></div><div class="sf-cargo-gantry" aria-hidden="true"><i></i><i></i><span></span></div>
@@ -32,7 +32,7 @@
         <div class="c2-robot" data-object="robot" role="button" tabindex="0" aria-label="B-0"><div class="robot-sprite live-body">${portrait()}</div><div class="c2-support-arm" hidden></div></div>
       </div><div class="c2-sill" hidden></div><div class="c2-player-grip" aria-hidden="true" hidden><div class="c2-player-arm"></div></div><p class="c2-basic-help">상자를 끌어 옮기기 · 빈 공간을 끌어 둘러보기</p><div class="c2-speech" aria-live="polite" hidden></div>
       </section><section class="c2-actions" aria-label="선택한 물체의 행동"><p>주변을 살펴보세요.</p></section>
-      <footer><div class="zoom-controls">${button('−','zoom-out') }<output class="c2-zoom">100%</output>${button('+','zoom-in')}</div><button type="button" data-c2="down" class="c2-descend" hidden>내려가기</button>${button('B-0에게 부탁','robot','secondary')}</footer></main>`;
+      <footer><button type="button" data-c2="down" class="c2-descend" hidden>내려가기</button>${button('B-0에게 말하기','robot','secondary')}${window.B0UI?.inventoryButton()||''}</footer></main>`;
       room=app.querySelector('.c2-game');stage=app.querySelector('.c2-stage');world=app.querySelector('.c2-world');actionbar=app.querySelector('.c2-actions');speech=app.querySelector('.c2-speech');helpText=app.querySelector('.c2-basic-help');
       stage.addEventListener('pointerdown',pointerDown);stage.addEventListener('pointermove',pointerMove);stage.addEventListener('pointerup',pointerUp);stage.addEventListener('pointercancel',cancelPointer);
       stage.addEventListener('click',e=>{if(suppress){suppress=false;return;}if(busy||travelling||mode?.looking)return;const el=e.target.closest('[data-object]');if(s.phase==='ledge'){if(el?.dataset.object==='robot')act('help-b0');return;}if(el){if(!mode&&el.dataset.object==='vent'&&s.ventOpen&&e.target.closest('.c2-vent-lid'))act('vent');else select(el.dataset.object);}else if(mode?.type==='move'){const p=floorPoint(e.clientX,e.clientY);if(p)place(p.x,p.z);}});
@@ -245,7 +245,7 @@
       const actor=app.querySelector('.c2-robot');actor.classList.remove('boosting','walking','hand-held');actor.classList.add('reaching');actor.querySelector('.c2-support-arm').hidden=true;
       app.querySelector('.c2-player-grip').hidden=true;
       actor.style.setProperty('--rescue-climb','0');stage.style.setProperty('--rescue-fade','0');stage.dataset.rescueStage='reach';
-      room.classList.add('c2-ledge-game');app.querySelector('header h1').textContent='내 위치: 창틀 위';
+      room.classList.add('c2-ledge-game');app.querySelector('header h1').textContent='창틀 위';
       app.querySelector('[data-c2="home"]').hidden=true;app.querySelector('footer').innerHTML='<small>창틀에 앉아 방 안을 내려다보고 있다.</small>';
       stage.setAttribute('aria-label','창틀에서 방 안의 B-0를 내려다보는 장면');
       speech.hidden=true;helpText.hidden=true;actions('창틀을 넘어 몸을 돌리는 중…',[]);
@@ -300,16 +300,16 @@
     function ending(){
       if(s.phase==='ledge'){enterLedge();return;}
       cancelAnimationFrame(heightFrame);viewHeight=0;standing=null;mode=null;lift=0;const done=s.phase==='complete';
-      app.innerHTML=`<main class="game c2-ending"><header><h1>내 위치: ${done?'연구소 통로':'창문 바깥'}</h1>${window.B0LessonJumpButton?.()||''}${button('메뉴','menu','quiet')}</header><section class="c2-outside ${done?'together':''}"><div class="c2-ending-b0">${portrait()}</div><div class="c2-end-dialogue"><div class="speech ${done?'robot':'student'}"><b>${done?'B-0':'나'}</b><p>${done?'문은 없었지만, 함께 나왔습니다.':'이제 너 올라와. 손 줘.'}</p></div>${button(done?'복도 따라가기':'B-0의 손 잡기',done?'chapter-three':'help-b0','primary')+(done?button('이번 방의 기록','summary','quiet'):'')}</div></section><footer><small>${done?'B-0와 함께 통로에 도착했다.':'B-0가 아래에서 기다리고 있다.'}</small></footer></main>`;
+      app.innerHTML=`<main class="game c2-ending">${window.B0UI?.header({place:`${done?'연구소 통로':'창문 바깥'}`,namespace:"c2",reset:"home",zoomClass:"c2-zoom",active:false})||""}<section class="c2-outside ${done?'together':''}"><div class="c2-ending-b0">${portrait()}</div><div class="c2-end-dialogue"><div class="speech ${done?'robot':'student'}"><b>${done?'B-0':'나'}</b><p>${done?'문은 없었지만, 함께 나왔습니다.':'이제 너 올라와. 손 줘.'}</p></div>${button(done?'복도 따라가기':'B-0의 손 잡기',done?'chapter-three':'help-b0','primary')}</div></section><footer><small>${done?'B-0와 함께 통로에 도착했다.':'B-0가 아래에서 기다리고 있다.'}</small></footer></main>`;
     }
     function act(a){
       if(a==='campaign-home'){onHome?.();return;}
       if(a==='close-modal'){app.querySelector('.c2-modal')?.close();return;}
-      if(a==='menu'){showModal('메뉴',`<p>모험의 진행은 자동 저장됩니다.</p><div class="options">${button('계속하기','close-modal','primary')}${button('시작 화면으로','campaign-home','secondary')}${button('조작 방법','controls')}${button('생각거리','hint')}${button('2차시 다시 시작','reset-confirm','quiet')}${button('1차시로 돌아가기','back','quiet')}</div>`);return;}
+      if(a==='menu'){showModal('메뉴',window.B0UI.menuContent({namespace:'c2',close:'close-modal',home:'campaign-home',record:'record',extras:`${button('생각거리','hint')}${button('현재 공간 다시 시작','reset-confirm')}${button('복도로 나가기','back')}`}));return;}
       if(a==='back'){dispose();onBack();return;}
       if(a==='reset-confirm'){showModal('2차시를 다시 시작할까요?',`<p>이 방의 상자 배치와 진행만 초기화합니다. 1차시 진행은 유지됩니다.</p>${button('초기화하고 시작','reset','primary')}`);return;}
       if(a==='reset'){cancelAnimationFrame(animation);cancelAnimationFrame(heightFrame);viewX=0;viewZ=0;viewHeight=0;groundView=null;robotLift=0;travelling=false;busy=false;lift=0;s=M.fresh();standing=null;mode=null;selection=null;camera={yaw:-48,pitch:-12,zoom:1};robot={x:-120,z:-145};save();render();return;}
-      if(a==='controls'){showModal('조작 방법','<p>상자를 누른 채 끌면 바로 옮길 수 있습니다. 빈 공간을 끌면 방을 둘러봅니다. 짧게 누르면 물건의 행동이 나타납니다.</p><p>상자는 다른 상자 위에도 놓을 수 있습니다. 옮기기를 누르면 앞·뒤·왼쪽·오른쪽 버튼과 시점 돌리기 버튼을 사용할 수 있습니다. 위치를 조절한 뒤 놓기를 누르세요.</p><p>상자 위에서는 화면 아래의 내려가기를 누르세요. B-0에게 부탁할 때는 행동을 고르고 대상 물건을 누릅니다. 원위치로는 시점과 배율을 되돌립니다.</p>');return;}
+      if(a==='controls'){showModal('사용법','<p>상자를 누른 채 끌면 바로 옮길 수 있습니다. 빈 공간을 끌면 방을 둘러봅니다. 짧게 누르면 물건의 행동이 나타납니다.</p><p>상자는 다른 상자 위에도 놓을 수 있습니다. 옮기기를 누르면 앞·뒤·왼쪽·오른쪽 버튼과 시점 돌리기 버튼을 사용할 수 있습니다. 위치를 조절한 뒤 놓기를 누르세요.</p><p>상자 위에서는 화면 아래의 내려가기를 누르세요. B-0에게 부탁할 때는 행동을 고르고 대상 물건을 누릅니다. 처음 위치로는 시점과 배율을 되돌립니다.</p>');return;}
       if(a==='hint'){s.hint=Math.min(4,s.hint+1);save();const hints=['','시선을 위아래로도 움직여 보세요.','창문처럼 보여도 정말 통로인지 확인해 보세요.','방 안의 물건으로 올라설 곳을 만들 수 있습니다.','통로가 보이는 창문 가까이에 넓은 상자를 놓고 작은 상자를 위에 쌓으세요. 올라선 뒤 B-0에게 나를 들어 올려 달라고 부탁해 보세요.'];showModal('생각거리',`<p>${hints[s.hint]}</p>${s.hint<4?button('조금 더 도움받기','hint'):''}`);return;}
       if(a==='help-b0'){pullCompanion();return;}
       if(a==='chapter-three'){if(s.phase==='complete'&&onNext){dispose();onNext();}return;}

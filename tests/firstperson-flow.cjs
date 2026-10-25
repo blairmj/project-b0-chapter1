@@ -3,8 +3,9 @@ const elements=new Map();
 function el(k){if(!elements.has(k))elements.set(k,{innerHTML:'',textContent:'',value:'',hidden:false,style:{},dataset:{},offsetWidth:600,offsetHeight:700,clientWidth:400,clientHeight:600,handlers:{},addEventListener(k,f){this.handlers[k]=f},setPointerCapture(){},hasPointerCapture(){return false},querySelector(){return null},getBoundingClientRect(){return {left:0,top:0,width:600,height:900}},cloneNode(){return null},classList:{add(){},remove(){},contains(){return false}},insertAdjacentHTML(){},select(){}});return elements.get(k);}
 const app={innerHTML:'',querySelector:k=>k==='dialog'?null:el(k),addEventListener(){},querySelectorAll:()=>[]};
 let storage=null;const extraStorage=new Map();
-const ctx=vm.createContext({createRoomPanorama:()=>({view(){},setDoorOpen(){},openDoor(){},dispose(){}}),document:{querySelector:()=>app},localStorage:{getItem:k=>k==='project-b0-firstperson-v4'?storage:extraStorage.get(k)??null,setItem:(k,v)=>{if(k==='project-b0-firstperson-v4')storage=v;else extraStorage.set(k,v);},removeItem(k){extraStorage.delete(k);}},setTimeout:f=>{f();return 1},clearTimeout(){},cancelAnimationFrame(){},window:{B0LabNavigation:require('../lab-navigation-model.js'),addEventListener(){},matchMedia:()=>({matches:true})}});
+const ctx=vm.createContext({createRoomPanorama:()=>({view(){},setDoorOpen(){},openDoor(){},dispose(){}}),document:{querySelector:()=>app,addEventListener(){}},localStorage:{getItem:k=>k==='project-b0-firstperson-v4'?storage:extraStorage.get(k)??null,setItem:(k,v)=>{if(k==='project-b0-firstperson-v4')storage=v;else extraStorage.set(k,v);},removeItem(k){extraStorage.delete(k);}},setTimeout:f=>{f();return 1},clearTimeout(){},cancelAnimationFrame(){},window:{B0LabNavigation:require('../lab-navigation-model.js'),addEventListener(){},matchMedia:()=>({matches:true})}});
 const run=s=>vm.runInContext(s,ctx);
+run(fs.readFileSync(path.join(__dirname,'../ui-common.js'),'utf8'));
 run(fs.readFileSync(path.join(__dirname,'../firstperson.js'),'utf8').replace(/boot\(\);\s*$/,''));
 run('tone=()=>{};modal=(title,content)=>{globalThis.panel={title,content}};');
 run('boot();');
@@ -43,7 +44,7 @@ console.log('PASS: face-first intro, no student avatar, guide mission, B-0 compa
 run('panTo(380,-9999)');assert.equal(run('camera.x'),20);assert.equal(run('camera.y'),-18);
 run('panTo(-380,9999)');assert.equal(run('camera.x'),-20);assert.equal(run('camera.y'),18);
 assert.match(el('.room-rig').style.transform,/rotateY\(-20deg\)/);
-assert.match(app.innerHTML,/내 위치: 교육 실습실/);assert.match(app.innerHTML,/원위치로/);assert.doesNotMatch(app.innerHTML,/view-direction|room-goal/);
+assert.match(app.innerHTML,/교육 실습실/);assert.match(app.innerHTML,/처음 위치로/);assert.doesNotMatch(app.innerHTML,/view-direction|room-goal/);
 for(const wall of ['wall-left','wall-right'])assert.ok(app.innerHTML.includes(wall));
 assert.doesNotMatch(app.innerHTML,/방 전체 보기/);
 console.log('PASS: bounded camera and removal of full-room navigation button');

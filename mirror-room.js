@@ -24,7 +24,7 @@
     function say(who,text,next=false){speech.hidden=false;speech.innerHTML=`<div class="speech ${who}"><b>${who==='robot'?'B-0':'나'}</b><p>${esc(text)}</p></div>${b(next?'다음':'대화 닫기',next?'intro-next':'dismiss','quiet')}`;const el=app.querySelector('.mr-robot');el.classList.toggle('speaking',who==='robot');later(()=>el.classList.remove('speaking'),Math.min(4500,text.length*80));}
     function render(){
       const approaching=s.phase==='approach',glassUp=approaching&&s.line<2||M.solved(s);
-      app.innerHTML=`<main class="game c2-game mr-game"><header><h1>내 위치: 거울 관찰실</h1><nav>${b('← 원위치로','home','quiet')}${window.B0LessonJumpButton?.()||''}${b('메뉴','menu','quiet')}</nav></header>
+      app.innerHTML=`<main class="game c2-game mr-game">${window.B0UI?.header({place:`거울 관찰실`,namespace:"mr",reset:"home",zoomClass:"mr-zoom",active:true})||""}
       <section class="c2-stage mr-stage" tabindex="0" aria-label="유리벽으로 나뉜 관찰실. 빈 공간을 끌어 둘러보고 물건을 눌러 살펴보세요."><div class="c2-world mr-world">
       ${['front','left','right','back'].map(f=>`<div class="c2-wall c2-wall-${f}"><div class="c3-conduit"></div><div class="c2-light"></div></div>`).join('')}<div class="c2-floor"></div><div class="c2-ceiling"></div><div class="sf-optical-apparatus" aria-hidden="true"></div>
       <div class="mr-room-sign" aria-hidden="true"><small>VISUAL PERCEPTION LAB</small><strong>시각 인식 관찰실</strong></div>
@@ -36,7 +36,7 @@
       <div class="mr-entry" data-mr-object="entry" role="button" tabindex="0" aria-label="지나온 통로의 문"><i></i><i></i></div>
       <div class="c2-robot mr-robot" data-mr-object="robot" role="button" tabindex="0" aria-label="유리 너머 B-0"><div class="robot-sprite live-body">${portrait()}</div></div>
       </div><p class="c2-basic-help">빈 공간을 끌어 둘러보기 · 물건을 눌러 살펴보기</p><div class="c2-speech mr-speech" aria-live="polite" hidden></div></section>
-      <section class="c2-actions mr-actions" aria-label="선택한 물건의 행동"></section><footer><div class="zoom-controls">${b('−','zoom-out')}<output class="mr-zoom">100%</output>${b('+','zoom-in')}</div>${b('B-0에게 말하기','robot','secondary')}</footer></main>`;
+      <section class="c2-actions mr-actions" aria-label="선택한 물건의 행동"></section><footer>${b('B-0에게 말하기','robot','secondary')}${window.B0UI?.inventoryButton()||''}</footer></main>`;
       stage=app.querySelector('.mr-stage');world=app.querySelector('.mr-world');bar=app.querySelector('.mr-actions');speech=app.querySelector('.mr-speech');
       stage.addEventListener('pointerdown',down);stage.addEventListener('pointermove',move);stage.addEventListener('pointerup',up);stage.addEventListener('pointercancel',cancelPointer);
       stage.addEventListener('click',e=>{if(suppress){suppress=false;return;}if(e.target.closest('[data-mr]'))return;const id=e.target.closest('[data-mr-object]')?.dataset.mrObject;if(id)select(id);});
@@ -137,8 +137,8 @@
     function act(a){
       if(a==='campaign-home'){onHome?.();return;}
       if(a==='close-modal'){app.querySelector('.mr-modal')?.close();return;}
-      if(a==='menu'){modal('메뉴',`<p>출입 관리실과 관찰실의 진행이 함께 저장됩니다.</p><div class="options">${b('계속하기','close-modal','primary')}${b('시작 화면으로','campaign-home','secondary')}${b('조작 방법','controls')}${b('탐색 기록','record')}${b('관찰실 다시 시작','reset-confirm','quiet')}${b('출입 관리실로 돌아가기','back','quiet')}</div>`);return;}
-      if(a==='controls'){modal('조작 방법','<p>빈 공간을 끌거나 방향키로 둘러봅니다. 물건을 누르면 조사하거나 행동할 수 있습니다.</p><p>유리 너머 물건도 눌러 B-0에게 부탁할 수 있습니다. 대상과 행동은 직접 골라 주세요.</p><p>자기 쪽 손잡이는 잡은 채 아래로 끌거나, 선택 후 당기기 버튼을 사용합니다. 원위치로는 시점과 배율만 되돌립니다.</p>');return;}
+      if(a==='menu'){modal('메뉴',window.B0UI.menuContent({namespace:'mr',close:'close-modal',home:'campaign-home',record:'record',extras:`${b('현재 공간 다시 시작','reset-confirm')}${b('복도로 나가기','back')}`}));return;}
+      if(a==='controls'){modal('사용법','<p>빈 공간을 끌거나 방향키로 둘러봅니다. 물건을 누르면 조사하거나 행동할 수 있습니다.</p><p>유리 너머 물건도 눌러 B-0에게 부탁할 수 있습니다. 대상과 행동은 직접 골라 주세요.</p><p>자기 쪽 손잡이는 잡은 채 아래로 끌거나, 선택 후 당기기 버튼을 사용합니다. 처음 위치로는 시점과 배율만 되돌립니다.</p>');return;}
       if(a==='record'){modal('관찰실 탐색 기록',`<p>조사 ${s.logs.filter(x=>x.action==='inspect').length}회 · B-0에게 요청 ${s.logs.filter(x=>x.action==='request').length}회</p><p>어떤 장치가 움직였나요? 처음 부탁한 것에 빠진 조건이 있었나요?</p>`);return;}
       if(a==='reset-confirm'){modal('관찰실을 다시 시작할까요?',`<p>출입 관리실의 진행은 유지됩니다.</p>${b('관찰실만 초기화','reset','primary')}`);return;}
       if(a==='reset'){cancelAnimationFrame(camFrame);cancelAnimationFrame(botFrame);cancelAnimationFrame(handFrame);timers.forEach(clearTimeout);clearTimeout(pulse);robotBusy=false;pointer=null;selection=null;targetMode=false;suppress=false;Object.assign(s,M.fresh());camera={x:-150,z:35,yaw:58,pitch:-8,zoom:1};robot=robotPosition();save();app.querySelector('.mr-modal')?.remove();render();return;}

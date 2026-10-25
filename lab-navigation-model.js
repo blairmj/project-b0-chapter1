@@ -27,10 +27,10 @@
   function bound(s,x,z){
     x=Math.max(-180,Math.min(180,x));
     if(s.floor===2)return {x,z:Math.max(-2435,Math.min(-2150,z))};
-    const min=!s.cleared.storage?-510:!s.cleared.mirror?-1460:-1700;
+    const min=!s.cleared.mirror?-1460:-1700;
     return {x,z:Math.max(min,Math.min(160,z))};
   }
-  function canEnter(s,id){if(id==='practice')return s.cleared.practice;if(id==='storage')return true;if(id==='access')return s.cleared.storage;if(id==='mirror')return s.cleared.storage&&s.cleared.access;if(id==='central')return s.floor===2&&s.stairsUnlocked;return false;}
+  function canEnter(s,id){if(['practice','storage','access','mirror'].includes(id))return true;if(id==='central')return s.floor===2&&s.stairsUnlocked;return false;}
   function returned(s,from){
     s.mode='hall';s.floor=1;s.companion=null;s.camera={x:0,z:80,yaw:0,pitch:-4};
     if(from==='storage'){s.cleared.storage=true;s.camera.z=-790;}
