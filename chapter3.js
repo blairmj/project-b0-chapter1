@@ -1,6 +1,6 @@
 (function(){
   'use strict';
-  window.startChapterThree=function({app,portrait,onBack,onNext,onHome,preview=false}){
+  window.startChapterThree=function({app,portrait,onBack,onNext,onCorridor,onHome,preview=false}){
     const SPACE=1.3;
     const M=window.B0RoomThree,storage=preview?sessionStorage:localStorage,key='project-b0-room3-v1';
     let s;try{s=M.restore(JSON.parse(storage.getItem(key)));}catch{s=M.fresh();}
@@ -140,11 +140,11 @@
       actions('외부 출입구',s.approval==='rejected'?[['관찰실 통로로 가기','go-central'],['방으로 돌아가기','return-room']]:[['문 살펴보기','inspect-gate'],['B-0에게 승인 요청 부탁','request-approval'],['방으로 돌아가기','return-room']]);
     }
     function renderEnd(){
-      app.innerHTML=`<main class="game c3-end"><header><h1>내 위치: 거울 관찰실 밖 통로</h1>${window.B0LessonJumpButton?.()||''}${b('메뉴','menu','quiet')}</header><section class="c3-central-scene"><div class="c3-central-door"><i></i><span>중앙관리실</span></div><div class="c3-central-dialogue"><div class="speech student"><b>나</b><p>출구까지 찾았는데, 누가 못 나가게 하는 거야?</p></div><div class="speech robot"><b>B-0</b><p>이 안에서 출입을 관리하고 있습니다.</p></div><div class="speech student"><b>나</b><p>그럼 직접 만나 보자.</p></div></div></section><footer>${b('중앙관리실 앞으로 가기','chapter-four','primary')}${b('이번 방의 기록','record')}${b('거울 관찰실 둘러보기','visit-mirror','quiet')}<small>통로 끝에 중앙관리실 문이 보인다.</small></footer></main>`;
+      app.innerHTML=`<main class="game c3-end"><header><h1>내 위치: 거울 관찰실 밖 통로</h1>${window.B0LessonJumpButton?.()||''}${b('메뉴','menu','quiet')}</header><section class="c3-central-scene">${onCorridor?'<div class="corridor-view"></div>':'<div class="c3-central-door"><i></i><span>중앙관리실</span></div>'}<div class="c3-central-dialogue"><div class="speech student"><b>나</b><p>출구까지 찾았는데, 누가 못 나가게 하는 거야?</p></div><div class="speech robot"><b>B-0</b><p>지도에는 중앙관리실이 2층으로 표시되어 있습니다.</p></div><div class="speech student"><b>나</b><p>그럼 계단부터 찾아보자.</p></div></div></section><footer>${b(onCorridor?'복도로 나가기':'중앙관리실 앞으로 가기','chapter-four','primary')}${b('이번 방의 기록','record')}${b('거울 관찰실 둘러보기','visit-mirror','quiet')}<small>유리 관찰실의 반대쪽 복도로 나왔다.</small></footer></main>`;
     }
     function leaveRoom(){
       if(!M.leave(s))return;cancelAnimationFrame(frame);cameraMoving=false;save();busy=true;
-      talk([['robot','제 지도에는 이 문이 없었습니다.'],['student',s.seen.wall?'너는 지도 봤고, 나는 방을 봤잖아. 같이 찾은 거지.':'지도에 없어도 실제로는 있었네. 직접 보길 잘했어.'],['robot','지금 확인한 위치로 지도를 수정하겠습니다.']],()=>{busy=false;render();});
+      talk([['robot','제 지도에는 이 문이 없었습니다.'],['student',s.seen.wall?'너는 지도 봤고, 나는 방을 봤잖아. 같이 찾은 거지.':'지도에 없어도 실제로는 있었네. 직접 보길 잘했어.'],['robot','지금 확인한 위치로 지도를 수정하겠습니다.']],()=>{busy=false;if(onCorridor)onCorridor();else render();});
     }
     function act(a){
       if(a==='campaign-home'){onHome?.();return;}
@@ -161,6 +161,7 @@
       if(a==='return-room'){s.phase='room';save();render();return;}
       if(a==='inspect-gate'){say('student','바깥 불빛이 보이는데 문이 안 열려. 옆 화면에 승인 안내가 있어.');return;}
       if(a==='request-approval'){if(M.request(s)){save();renderGate();talk([['robot','외부 이동이 보류되었습니다. 중앙관리실에서 직접 확인하라고 나옵니다. 그쪽으로 가려면 옆 관찰실을 지나야 합니다.'],['student','여기까지 왔는데 왜 못 나가게 하는 거야?']]);}return;}
+      if(a==='go-central'&&onCorridor){onCorridor();return;}
       if(a==='go-central'||a==='visit-mirror'){if(M.beginMirror(s)){save();render();}return;}
       if(s.phase!=='room'||(busy&&!cameraMoving))return;
       if(a==='home'){selection=null;mode=null;conversation=null;speech.hidden=true;actions('방 안을 자유롭게 살펴보세요.');animateCamera({x:0,z:30,yaw:-12,pitch:-8,zoom:1});return;}

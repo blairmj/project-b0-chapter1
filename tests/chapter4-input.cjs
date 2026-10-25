@@ -33,7 +33,7 @@ ctx.matchMedia=()=>({matches:false});initial.opened=initial.upper=true;initial.l
 const a=ctx.window.startChapterFour({app,portrait:()=>'',onBack(){}});a.act('leave');step(1100);assert.equal(node('.c4-robot').dataset.pose,'walking');step(2300);assert.equal(a.state().s.phase,'farewell');for(let i=0;i<6;i++)a.act('story-next');step(3900);assert.ok(Number(node('.c4-passage-robot').style.opacity)>0);step(5400);assert.equal(a.state().s.phase,'ending');a.dispose();assert.equal(frames.size,0);
 console.log('PASS: target selection, lift and descent, physical drags, real bolt check, release/reset, held robot cannot be abandoned, walking ending, cleanup');
 
-Object.assign(initial,M.fresh());const introGame=ctx.window.startChapterFour({app,portrait:()=>'',onBack(){}});assert.match(app.innerHTML,/내 위치: 중앙관리실 앞/);for(let i=0;i<4;i++)introGame.act('story-next');assert.match(app.innerHTML,/문 열고 들어가기/);assert.doesNotMatch(app.innerHTML,/저쪽에 출구/);introGame.dispose();
+Object.assign(initial,M.fresh());const introGame=ctx.window.startChapterFour({app,portrait:()=>'',onBack(){}});assert.match(app.innerHTML,/내 위치: 2층 중앙관리실 앞/);for(let i=0;i<4;i++)introGame.act('story-next');assert.match(app.innerHTML,/문 열고 들어가기/);assert.doesNotMatch(app.innerHTML,/저쪽에 출구/);introGame.dispose();
 console.log('PASS: world-object tap target retained, drag slop and capture, visitor bolt clearance, conversation keeps view, one central-room entry');
 
 const skipGame=ctx.window.startChapterFour({app,portrait:()=>'',onBack(){}});skipGame.jumpToEnd();

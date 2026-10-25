@@ -27,27 +27,59 @@ function load() {
 }
 let state = load() || fresh(), target = "", moving = false, token = 0, timer, speechTimer, audio, lastFocus;
 let faceId=0, talkTimer, camera={x:0,y:0}, drag=null, suppressClick=false, roomView, walkFrame, zoom=1, pinch=null;
-let chapterTwo,chapterThree,chapterFour;
-function chapterUrl(number){if(typeof location==='undefined')return;const url=new URL(location.href);if(number!==3)url.searchParams.delete('room');if(number===1)url.searchParams.delete('chapter');else url.searchParams.set('chapter',String(number));history.replaceState(null,'',url);}
+let chapterTwo,chapterThree,chapterFour,hallView;
+const NAV_KEY='project-b0-lab-navigation-v1';
+function readProgress(key){try{return JSON.parse(progressStore.getItem(key));}catch{return null;}}
+function roomProgress(){const two=readProgress('project-b0-room2-v1'),three=readProgress('project-b0-room3-v1');return {practice:state.phase==='escaped',storage:two?.phase==='complete',access:['gate','mirror','complete'].includes(three?.phase),mirror:three?.phase==='complete'||three?.mirror?.phase==='complete'};}
+function loadNavigation(){
+  const raw=readProgress(NAV_KEY),n=window.B0LabNavigation.restore(raw);window.B0LabNavigation.merge(n,roomProgress());
+  // Existing players already in the final room keep their checkpoint after the map update.
+  if(!raw&&readProgress('project-b0-final-v2')?.version===2){for(const id of Object.keys(n.cleared))n.cleared[id]=true;n.keyTaken=n.stairsUnlocked=true;n.floor=2;n.camera={x:0,z:-2350,yaw:0,pitch:-4};n.mode='room';}
+  return n;
+}
+let navigation=loadNavigation();
+function saveNavigation(){try{progressStore.setItem(NAV_KEY,JSON.stringify(navigation));}catch{}}
+function markRoom(){hallView?.dispose();hallView=null;navigation.mode='room';saveNavigation();}
+function showHall(from){
+  stopAdventure();window.B0LabNavigation.merge(navigation,roomProgress());
+  if(from)window.B0LabNavigation.returned(navigation,from);
+  navigation.mode='hall';saveNavigation();
+  if(typeof location!=='undefined'){const url=new URL(location.href);url.searchParams.set('area','hall');url.searchParams.delete('room');url.searchParams.set('chapter',String(state.chapter||1));history.replaceState(null,'',url);}
+  hallView=window.startLabNavigation({app,portrait,state:navigation,onSave:saveNavigation,onEnter:enterFromHall,onHome:campaignHome,muted:state.muted});
+}
+function enterFromHall(id){
+  if(!window.B0LabNavigation.canEnter(navigation,id))return;
+  if(id==='practice'){stopAdventure();markRoom();state.chapter=1;save();chapterUrl(1);enterRoom(false,true);return;}
+  if(id==='storage'){enterChapterTwo();return;}
+  if(id==='access'){enterChapterThree();return;}
+  if(id==='mirror'){enterChapterThree('mirror');return;}
+  if(id==='central')enterChapterFour();
+}
+function chapterUrl(number){if(typeof location==='undefined')return;const url=new URL(location.href);url.searchParams.delete('area');if(number!==3)url.searchParams.delete('room');if(number===1)url.searchParams.delete('chapter');else url.searchParams.set('chapter',String(number));history.replaceState(null,'',url);}
 function enterChapterTwo(){
+  markRoom();
   chapterFour?.dispose();chapterFour=null;
   roomView?.dispose();roomView=null;chapterTwo?.dispose();chapterThree?.dispose();chapterThree=null;
   token++;clearTimeout(timer);clearTimeout(speechTimer);clearTimeout(talkTimer);cancelAnimationFrame(walkFrame);moving=false;suppressClick=false;
   state.chapter=2;save();chapterUrl(2);
-  chapterTwo=window.startChapterTwo({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),onNext:enterChapterThree,onHome:campaignHome,onBack:()=>{chapterTwo=null;state.chapter=1;save();chapterUrl(1);boot();}});
+  chapterTwo=window.startChapterTwo({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),onNext:()=>showHall('storage'),onHome:campaignHome,onBack:()=>showHall('practice')});
 }
-function enterChapterThree(){
+function enterChapterThree(view='access'){
+  markRoom();
+  if(typeof location!=='undefined'){const url=new URL(location.href);if(view==='mirror')url.searchParams.set('room','mirror');else url.searchParams.delete('room');history.replaceState(null,'',url);}
   chapterFour?.dispose();chapterFour=null;
   roomView?.dispose();roomView=null;chapterTwo?.dispose();chapterTwo=null;chapterThree?.dispose();
   token++;clearTimeout(timer);clearTimeout(speechTimer);clearTimeout(talkTimer);cancelAnimationFrame(walkFrame);moving=false;suppressClick=false;
   state.chapter=3;save();chapterUrl(3);
-  chapterThree=window.startChapterThree({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),onBack:enterChapterTwo,onNext:enterChapterFour,onHome:campaignHome});
+  chapterThree=window.startChapterThree({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),onBack:()=>showHall('storage'),onNext:()=>showHall('mirror'),onCorridor:()=>showHall('access'),onHome:campaignHome});
 }
 function enterChapterFour(){
+  if(!navigation.stairsUnlocked){navigation.floor=1;navigation.camera={x:0,z:window.B0LabNavigation.bound(navigation,0,-1665).z,yaw:0,pitch:-4};showHall();return;}
+  markRoom();
   roomView?.dispose();roomView=null;chapterTwo?.dispose();chapterTwo=null;chapterThree?.dispose();chapterThree=null;chapterFour?.dispose();
   token++;clearTimeout(timer);clearTimeout(speechTimer);clearTimeout(talkTimer);cancelAnimationFrame(walkFrame);moving=false;suppressClick=false;
   state.chapter=4;save();chapterUrl(4);
-  chapterFour=window.startChapterFour({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),onBack:enterChapterThree,onHome:campaignHome});
+  chapterFour=window.startChapterFour({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),onBack:()=>showHall('central'),onHome:campaignHome});
 }
 const touchPoints=new Map();
 const reduced=()=>window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -98,12 +130,13 @@ function jumpLessonEnd(){
   save('임시 이동','1차시 마무리로 이동');ending(3);
 }
 function openingHeader(){return `<header class="opening-header"><span>내 위치: 알 수 없는 곳</span><nav>${btn("← 원위치로","view-home","quiet")}${window.B0LessonJumpButton()}</nav></header>`;}
-const campaignKeys=['project-b0-room2-v1','project-b0-room3-v1','project-b0-final-v1','project-b0-final-v2'];
+const campaignKeys=[NAV_KEY,'project-b0-room2-v1','project-b0-room3-v1','project-b0-final-v1','project-b0-final-v2'];
 function hasAdventure(){
   if((state.chapter||1)>1||state.phase!=='intro'||state.line>0)return true;
   try{return campaignKeys.some(key=>progressStore.getItem(key)!==null);}catch{return false;}
 }
 function stopAdventure(){
+  hallView?.dispose();hallView=null;
   chapterTwo?.dispose();chapterTwo=null;chapterThree?.dispose();chapterThree=null;chapterFour?.dispose();chapterFour=null;
   roomView?.dispose();roomView=null;token++;clearTimeout(timer);clearTimeout(speechTimer);clearTimeout(talkTimer);cancelAnimationFrame(walkFrame);
   app.querySelectorAll('dialog').forEach(d=>d.close());moving=false;suppressClick=false;drag=null;pinch=null;touchPoints.clear();
@@ -113,17 +146,19 @@ function campaignHome(){
   app.innerHTML=`<main class="awakening campaign-home"><div class="face" role="img" aria-label="함께 탈출할 AI 로봇 B-0">${portrait()}</div><div class="wake-controls"><p class="chapter-label">퍼즐 어드벤처 · 연구소 탈출</p><h1>PROJECT B-0</h1><p class="campaign-tagline">모르는 로봇과, 함께 길을 찾는 모험.</p><div class="campaign-buttons">${btn('처음부터 시작','campaign-start','primary')}${saved?btn('이어하기','campaign-continue','secondary'):''}</div>${saved?`<small class="muted">${chapter}차시 진행이 저장되어 있습니다.</small>`:''}</div></main>`;
 }
 function resumeAdventure(chapter=state.chapter||1){
+  if(navigation.mode==='hall'&&navigation.cleared.practice){showHall();return;}
   if(chapter===4){enterChapterFour();return;}if(chapter===3){enterChapterThree();return;}if(chapter===2){enterChapterTwo();return;}
   state.chapter=1;save();if(state.phase==='intro')opening();else enterRoom();
 }
 function startAdventure(){
   const muted=state.muted;stopAdventure();
   for(const key of campaignKeys)progressStore.removeItem(key);
-  state=fresh();state.chapter=1;state.muted=muted;save();chapterUrl(1);opening();
+  state=fresh();state.chapter=1;state.muted=muted;navigation=window.B0LabNavigation.fresh();navigation.mode='room';saveNavigation();save();chapterUrl(1);opening();
 }
 function boot() {
   const requested=typeof location!=="undefined"?new URLSearchParams(location.search).get('chapter'):null;
-  if(['1','2','3','4'].includes(requested))resumeAdventure(Number(requested));else campaignHome();
+  if(typeof location!=='undefined'&&new URLSearchParams(location.search).get('area')==='hall'&&navigation.cleared.practice){showHall();return;}
+  if(['1','2','3','4'].includes(requested)){navigation.mode='room';resumeAdventure(Number(requested));}else campaignHome();
 }
 function opening() {
   roomView?.dispose();roomView=null;
@@ -150,9 +185,9 @@ function enterRoom(reveal=false,restoreView=false) {
   roomView?.dispose();roomView=null;
   token++;clearTimeout(timer);clearTimeout(speechTimer);target="";moving=false;
   camera={x:0,y:-5};zoom=1;drag=null;pinch=null;touchPoints.clear();suppressClick=false;
-  app.innerHTML=`<main class="game${reveal?" revealing":""}"><header><div class="location"><h1>내 위치: 교육 실습실</h1></div><nav aria-label="게임 메뉴">${btn("← 원위치로","view-home","quiet")}${window.B0LessonJumpButton()}${btn("메뉴","menu","quiet")}</nav></header><section class="scene" tabindex="0" aria-label="교육 실습실. 드래그하거나 방향키로 시선을 돌려 네 벽과 구석을 살펴보세요."><canvas class="panorama-canvas" role="img" aria-label="벽과 바닥이 하나로 이어진 교육 실습실"></canvas><p class="render-error" hidden role="alert"></p><div class="room-rig"><div class="room-wall world${state.unlocked?" unlocked":""}" data-yaw="0">
+  app.innerHTML=`<main class="game${reveal?" revealing":""}"><header><div class="location"><h1>내 위치: 교육 실습실</h1></div><nav aria-label="게임 메뉴">${btn("← 원위치로","view-home","quiet")}${window.B0LessonJumpButton()}${state.phase==="escaped"?btn("복도로","hall-return","quiet"):""}${btn("메뉴","menu","quiet")}</nav></header><section class="scene" tabindex="0" aria-label="교육 실습실. 드래그하거나 방향키로 시선을 돌려 네 벽과 구석을 살펴보세요."><canvas class="panorama-canvas" role="img" aria-label="벽과 바닥이 하나로 이어진 교육 실습실"></canvas><p class="render-error" hidden role="alert"></p><div class="room-rig"><div class="room-wall world${state.unlocked?" unlocked":""}" data-yaw="0">
     <div class="door-art" aria-hidden="true"><div class="device door-left"></div><div class="device door-right"></div></div><span class="lock-led" aria-hidden="true"></span>
-    <div class="device terminal-art" aria-hidden="true"></div><div class="map-board" aria-hidden="true"><small>연구소 안내</small><strong>연구소 전체 지도</strong><div class="map-placeholder"><span>지도 준비 중</span></div><small>비상 출입 안내</small></div><div class="device light-art" aria-hidden="true"></div>
+    <div class="device terminal-art" aria-hidden="true"></div><div class="map-board" aria-hidden="true"><small>연구소 안내</small><strong>연구소 전체 지도</strong>${window.B0LabNavigation.mapMarkup?.({current:"교육 실습실"})||""}<small>비상 출입 안내</small></div><div class="device light-art" aria-hidden="true"></div>
     <div class="targets">${Object.keys(places).filter(id=>places[id].wall===0&&id!=="robot").map(wallTarget).join("")}</div></div>${otherWalls()}<div class="robot-anchor"><div class="robot-sprite live-body" role="img" aria-label="함께 있는 AI 로봇 B-0">${portrait()}</div>${wallTarget("robot")}</div></div>
     <p class="look-hint">끌어서 둘러보기 · 휠/두 손가락으로 확대·축소</p><div class="room-speech" aria-live="polite" hidden></div><div class="arrival sr-only" role="status"></div>
     </section><footer><div class="zoom-controls" role="group" aria-label="시야 확대 및 축소">${btn("−","zoom-out","zoom-button",'aria-label="축소: 더 넓게 보기"')}<output class="zoom-value" aria-label="확대 비율">100%</output>${btn("+","zoom-in","zoom-button",'aria-label="확대: 가까이 보기"')}${btn("↺","zoom-reset","zoom-button",'aria-label="기본 시야"')}</div>${btn("소지품 <span class=\"item-count\">"+(state.noteTaken?"1":"0")+"</span>","inventory","secondary")}</footer></main>`;
@@ -269,7 +304,7 @@ function door(tried=false) {
 }
 function guide() {
   state.guide=true;save("발견","벽면 안내도의 비상 출입 지침");
-  modal("벽면 안내도",`<section class="map-preview"><h3>연구소 전체 지도</h3><div class="map-placeholder"><span>지도 준비 중</span><small>전체 지도는 추후 추가됩니다.</small></div></section><div class="notice-paper"><h3>비상 출입 안내</h3><p>출입 시스템 정지 시<br>관리용 쪽지의 비밀번호를 사용하십시오.</p></div>${dialogue("student","비밀번호가 적힌 쪽지가 있다는 거네.")}${btn("방으로 돌아가기","close","primary wide")}`);
+  modal("벽면 안내도",`<section class="map-preview"><h3>연구소 전체 지도</h3>${window.B0LabNavigation.mapMarkup?.({current:"교육 실습실"})||""}</section><div class="notice-paper"><h3>비상 출입 안내</h3><p>출입 시스템 정지 시<br>관리용 쪽지의 비밀번호를 사용하십시오.</p></div>${dialogue("student","비밀번호가 적힌 쪽지가 있다는 거네.")}${btn("방으로 돌아가기","close","primary wide")}`);
 }
 const robotQuestions={identity:"넌 어떤 로봇이야?",where:"여기는 어떤 곳이야?",exit:"여기서 어떻게 나가?",password:"비밀번호 쪽지를 알아?",limits:"AI인데 왜 모르는 게 있어?",belongings:"네가 갖고 있는 건 뭐야?"};
 function robotAnswer(topic){
@@ -326,7 +361,7 @@ function ending(line=0) {
   roomView?.dispose();roomView=null;moving=false;
   const lines=[["student","너도 같이 가는 거지?"],["robot","네. 함께 출구를 찾아보겠습니다."],["robot","복도 끝에 다른 방이 보입니다."],["student","같이 가 보자."]];
   const [who,text]=lines[line];
-  app.innerHTML=`<main class="game corridor-game"><header><h1>내 위치: 연구소 복도</h1><nav aria-label="게임 메뉴">${btn("← 원위치로","view-home","quiet")}${window.B0LessonJumpButton()}${btn("메뉴","menu","quiet")}</nav></header><section class="corridor-scene" aria-label="교육 실습실을 나와 마주한 연구소 복도"><div class="corridor-view" role="img" aria-label="불빛과 여러 출입문이 이어지는 긴 연구소 복도"></div><div class="corridor-b0 walking" role="img" aria-label="함께 복도를 걷는 B-0"><div class="robot-sprite live-body">${portrait()}</div></div><div class="corridor-dialogue">${dialogue(who,text)}${line<3?btn("다음","epilogue-"+(line+1),"next"):btn("복도 끝으로 이동","chapter-two","primary")}</div></section><footer><small>${line===3?"복도 끝에서 다음 통로를 찾는다.":"B-0와 함께 실습실을 나왔다."}</small></footer></main>`;
+  app.innerHTML=`<main class="game corridor-game"><header><h1>내 위치: 연구소 복도</h1><nav aria-label="게임 메뉴">${btn("← 원위치로","view-home","quiet")}${window.B0LessonJumpButton()}${btn("메뉴","menu","quiet")}</nav></header><section class="corridor-scene" aria-label="교육 실습실을 나와 마주한 연구소 복도"><div class="corridor-view" role="img" aria-label="불빛과 여러 출입문이 이어지는 긴 연구소 복도"></div><div class="corridor-b0 walking" role="img" aria-label="함께 복도를 걷는 B-0"><div class="robot-sprite live-body">${portrait()}</div></div><div class="corridor-dialogue">${dialogue(who,text)}${line<3?btn("다음","epilogue-"+(line+1),"next"):btn("복도 둘러보기","chapter-two","primary")}</div></section><footer><small>${line===3?"지도를 보며 다른 방과 출구를 찾아본다.":"B-0와 함께 실습실을 나왔다."}</small></footer></main>`;
   performSpeech(who,text,"friendly");
 }
 function menu() {modal("메뉴",`<p>진행은 이 기기에 자동 저장됩니다.</p><div class="options">${btn("계속 탐색","close","primary")}${btn(state.muted?"효과음 켜기":"효과음 끄기","sound","secondary")}${btn("막혔을 때 생각거리","hint","secondary")}${btn("수업 안내","teacher","secondary")}${btn("시작 화면으로","campaign-home","secondary")}${btn("진행 초기화","restart","quiet")}</div>`);}
@@ -336,8 +371,8 @@ function handle(a) {
   if(a==='campaign-start'){if(hasAdventure())modal('처음부터 시작할까요?',`<p>1~4차시의 진행을 초기화하고 B-0와 처음 만나는 장면부터 시작합니다.</p><div class="action-row">${btn('취소','close','secondary')}${btn('처음부터 시작','campaign-new','primary')}</div>`);else startAdventure();return;}
   if(a==='campaign-new'){startAdventure();return;}
 
-  if(a==='chapter-two'){app.querySelector('dialog')?.close();enterChapterTwo();return;}
-  if(a==='chapter-three'){app.querySelector('dialog')?.close();enterChapterThree();return;}
+  if(a==='chapter-two'||a==='hall-return'){app.querySelector('dialog')?.close();showHall('practice');return;}
+  if(a==='chapter-three'){app.querySelector('dialog')?.close();showHall('storage');return;}
   if(a==="close"){app.querySelector("dialog")?.close();return;}
   if(a==="next"){if(state.line<intro.length-1){state.line++;renderIntro();}else{state.phase="room";save("도입","B-0와 만나 탐색 시작");revealRoom();}return;}
   if(a==="continue"){if(state.phase==="escaped")enterRoom();else revealRoom();return;}

@@ -10,3 +10,7 @@ assert.equal(crate.css.width,'118','room expansion does not inflate furniture');
 const before=offset(crate);crate.style.transform=JSON.stringify({x:75,z:-120});c.window.B0RoomSpace.sync(world);assert.ok(Math.abs(offset(crate)[0]-before[0]-22.5)<.01,'dynamic drags update world offsets, not only initial placement');
 const hold=robot.style.translate;c.window.B0RoomSpace.sync(world);assert.equal(robot.style.translate,hold,'camera-only update does not accumulate offsets');
 console.log('PASS: expanded room footprint, original prop size, dynamic object positioning, stable repeated projection');
+const finalRobot=prop(0,96,45,-140),finalWorld={children:[finalRobot],dataset:{},matches:s=>s==='.c4-world'};
+c.window.B0RoomSpace.sync(finalWorld);assert.equal(finalWorld.dataset.roomWidth,'1560');assert.equal(finalRobot.css.width,'96');
+assert.ok(Math.abs(offset(finalRobot)[2]-(-140*1.6))<.01);assert.equal(c.window.B0RoomSpace.scaleFor(finalWorld),2.6);
+console.log('PASS: central hall doubles width and depth while preserving B-0 and prop dimensions');
