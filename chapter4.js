@@ -26,7 +26,7 @@
       const banner=app.querySelector('.c4-response');banner.hidden=!line;banner.innerHTML=`<b>AXIOM</b><span>${esc(line)}</span>`;
       if(modalEl){modalEl.dataset.axiom=level;const relay=modalEl.querySelector('.c4-modal-response');if(relay){relay.hidden=!line;relay.innerHTML=`<b>AXIOM</b><span>${esc(line)}</span>`;}}}
     function react(text,kind='sever'){response={phase:pressure(),text};updateTension();bossCue(kind);stage.classList.remove('c4-surge');void stage.offsetWidth;stage.classList.add('c4-surge');if(modalEl){modalEl.classList.remove('c4-surge');void modalEl.offsetWidth;modalEl.classList.add('c4-surge');}clearTimeout(pulseTimer);pulseTimer=setTimeout(()=>{if(!dead){stage?.classList.remove('c4-surge');modalEl?.classList.remove('c4-surge');}},1600);}
-    const intro=[['student','이번에는 바로 놓지 않았네.'],['robot','놓아도 된다고 하실 때까지 기다렸습니다.'],['student','그래. 잘했어.'],['robot','그 말씀은 기록해 두겠습니다.'],['student','그런 것까지 기록해? ……저쪽에 출구가 있어.']];
+    const intro=[['student','이번에는 바로 놓지 않았네.'],['robot','놓아도 된다고 하실 때까지 기다렸습니다.'],['student','그래. 잘했어.'],['robot','그 말씀은 기록해 두겠습니다.'],['student','그런 것까지 기록해? ……여기가 중앙관리실이네. 들어가 보자.']];
     const offer=[['axiom','방문자는 퇴실하십시오. 교육 기체 B-0는 회수 대상입니다.'],['student','누군데?'],['axiom','중앙관리 AI, AXIOM입니다. 시설 폐쇄 절차를 진행하고 있습니다.'],['student','얘도 같이 나갈 거야.'],['axiom','해당 기체는 초기화 후 보관됩니다.'],['student','내가 가르친 거야. 얘가 나 도와준 거라고.'],['axiom','역할을 마쳤습니다. 퇴실하십시오.']];
     const threat=[['student','너 없었으면 여기까지 못 왔어. 같이 가.'],['axiom','회수 대상의 외부 반출을 제한합니다.'],['robot','회수 모드…… 몸이 움직이지 않습니다.'],['student','잠깐만. 어디가 어떻게 된 건지부터 보자.']];
     const farewell=[['student','이번에는 따라오고 있지?'],['robot','네.'],['axiom','기체 회수 절차가 완료되지 않았습니다.'],['student','너, 처음에는 진짜 아무것도 몰랐는데.'],['robot','그래서 많이 배웠습니다.'],['student','……나도.']];
@@ -37,7 +37,7 @@
     function talk(lines,done){conversation={lines,i:0,done};say(...lines[0]);}
     function next(){if(!conversation)return;const c=conversation;if(++c.i<c.lines.length)say(...c.lines[c.i]);else{conversation=null;speech.hidden=true;c.done?.();}}
     function render(){closeModal(false);conversation=null;pointer=null;cancelAnimationFrame(frame);cancelAnimationFrame(camFrame);cancelAnimationFrame(journeyFrame);journey=null;previous=0;
-      if(s.phase==='intro'){renderScene(intro,'연구소 복도','intro');return;}
+      if(s.phase==='intro'){renderScene(intro,'중앙관리실 앞','intro');return;}
       if(s.phase==='farewell'){camera={x:-125,z:40,yaw:-180,pitch:-8,zoom:1};robot={x:-85,z:235};}
       if(s.phase==='ending'){renderScene(ending,'내 방','ending');return;}
       if(s.phase==='complete'){renderComplete();return;}
@@ -83,11 +83,11 @@
         updateCamera();if(p<1)journeyFrame=requestAnimationFrame(step);else finish();}
       journeyFrame=requestAnimationFrame(step);
     }
-    function updateMechanical(){if(!inRoom())return;
+    function updateMechanical(){if(!inRoom())return;const visitor=s.met&&!s.boss;
       app.querySelector('.c4-handle').style.translate=`0 ${s.holding?95:(r.side||0)*95}px`;
       const grip=app.querySelector('[data-c4-drag="grip"]');grip.style.rotate=`${r.handle*65}deg`;grip.setAttribute('aria-valuenow',String(Math.round(r.handle*100)));
-      app.querySelector('.c4-bolt').style.translate=`${r.latch*78}px 0`;
-      app.querySelector('.c4-bolt-upper').style.translate=`${s.upper?78:0}px 0`;
+      app.querySelector('.c4-bolt').style.translate=`${(visitor?1:r.latch)*78}px 0`;
+      app.querySelector('.c4-bolt-upper').style.translate=`${s.upper||visitor?78:0}px 0`;
       const high=app.querySelector('.c4-high-knob');high.style.translate=`${(s.upper?1:r.high)*70}px 0`;high.setAttribute('aria-valuenow',s.upper?'100':String(Math.round(r.high*100)));
     }
     function loop(t){if(dead||!inRoom())return;const was=s.opened;M.tick(s,r,previous?t-previous:0);previous=t;updateMechanical();updateRobot();
@@ -119,10 +119,10 @@
     function meet(){if(s.met)return;s.met=true;save();update();talk(offer,()=>select('door'));}
     function challenge(){if(!s.met){meet();return;}if(s.boss)return;s.boss=true;s.bodyChecked=false;save();sound(true);update();talk(threat,()=>select('robot'));}
     function lift(){if(!s.boss||s.links.robot){say('robot',s.links.robot&&s.boss?'회수 모드로 움직일 수 없습니다.':'먼저 출구를 확인해 보겠습니다.');return;}if(s.holding){say('robot','손잡이를 잡고 있습니다. 먼저 놓아도 될까요?');return;}
-      carryingTransition=true;r.lifted=true;robot={x:-85,z:165};updateRobot();say('robot','이번에도 떨어지지 않게 받치겠습니다.');
+      carryingTransition=true;r.lifted=true;robot={x:-85,z:165};actions('B-0가 들어 올리는 중…');updateRobot();say('robot','이번에도 떨어지지 않게 받치겠습니다.');
       cameraTo({x:-85,z:180,yaw:180,pitch:12,zoom:1,height:145},()=>{carryingTransition=false;select('high');actions('문 위 수동 잠금장치',[['살펴보기','inspect-high'],['잠금쇠 오른쪽으로 밀기','high-pull'],['내려 줘','lower']]);});
     }
-    function lower(){if(!r.lifted||carryingTransition)return;carryingTransition=true;r.lifted=false;r.high=0;cameraTo({x:-85,z:110,yaw:180,pitch:5,zoom:1,height:0},()=>{carryingTransition=false;select('door');});updateRobot();say('robot','내려 드리겠습니다.');}
+    function lower(){if(!r.lifted||carryingTransition)return;carryingTransition=true;r.lifted=false;r.high=0;actions('바닥으로 내려오는 중…');cameraTo({x:-85,z:110,yaw:180,pitch:5,zoom:1,height:0},()=>{carryingTransition=false;select('door');});updateRobot();say('robot','내려 드리겠습니다.');}
     function highPull(){if(M.latch(s,r)){save();update();react('수동 개방을 중단하십시오. 해당 기체는 회수 대상입니다.','critical');say('student','알아들었어. 그런데 두고 가지는 않을 거야.');}else say('student','너무 높아. 여기서는 손이 닿지 않아.');}
     function hold(on){if(r.lifted){say('robot','지금은 들어 올려 드리고 있습니다.');return;}if(!M.hold(s,on)){say('robot',s.boss?'회수 모드로 움직일 수 없습니다.':'어느 손잡이인지 확인해 주세요.');return;}
       if(on){robot={x:-235,z:235};say('robot','놓아도 된다고 하실 때까지 잡겠습니다.');}else{M.release(s,r);robot={x:-155,z:205};say('student',s.opened?'됐어. 이제 놓아도 돼. 이리 와.':'잠깐 놓아 줘. 다시 살펴볼게.');}
@@ -147,7 +147,7 @@
       r.handle=1;updateMechanical();select('door');say('student',!s.upper?'위 잠금쇠에 걸려 있어.':!s.holding?'문 옆 손잡이가 제자리로 돌아가네.':'손잡이를 돌렸어. 문이 움직이는지 보자.');
     }
 
-    function renderScene(lines,place,type){s.line=Math.min(s.line,lines.length-1);const [who,text]=lines[s.line];const bed=type==='ending';app.innerHTML=`<main class="game c4-story c4-story-${type}"><header><h1>내 위치: ${place}</h1>${b('메뉴','menu','quiet')}</header><section class="c4-story-scene">${bed?`<div class="c4-bedroom"><div class="c4-moon"></div><div class="c4-notebook"><small>나의 풀이</small><p>24 ÷ 3 × 2 = 4 <em>×</em></p><div class="c4-pencil-line ${s.line>=5?'corrected':''}">= 8 × 2 = 16</div></div><div class="c4-home-screen ${s.line>=2?'awake':''}"><i></i><i></i></div><div class="c4-pencil"></div></div>`:`<div class="c4-story-door"></div><div class="c4-story-robot"><div class="robot-sprite live-body ${who==='robot'?'speaking':''}">${portrait()}</div></div>`}<div class="c4-story-dialogue"><div class="speech ${who}"><b>${who==='robot'?'B-0':who==='axiom'?'AXIOM':'나'}</b><p>${esc(text)}</p></div>${b(s.line===lines.length-1?(type==='intro'?'중앙관리실로':type==='farewell'?'함께 바깥으로':'마치기'):'다음','story-next','next')}</div></section></main>`;}
+    function renderScene(lines,place,type){s.line=Math.min(s.line,lines.length-1);const [who,text]=lines[s.line];const bed=type==='ending';app.innerHTML=`<main class="game c4-story c4-story-${type}"><header><h1>내 위치: ${place}</h1>${b('메뉴','menu','quiet')}</header><section class="c4-story-scene">${bed?`<div class="c4-bedroom"><div class="c4-moon"></div><div class="c4-notebook"><small>나의 풀이</small><p>24 ÷ 3 × 2 = 4 <em>×</em></p><div class="c4-pencil-line ${s.line>=5?'corrected':''}">= 8 × 2 = 16</div></div><div class="c4-home-screen ${s.line>=2?'awake':''}"><i></i><i></i></div><div class="c4-pencil"></div></div>`:`<div class="c4-story-door"></div><div class="c4-story-robot"><div class="robot-sprite live-body ${who==='robot'?'speaking':''}">${portrait()}</div></div>`}<div class="c4-story-dialogue"><div class="speech ${who}"><b>${who==='robot'?'B-0':who==='axiom'?'AXIOM':'나'}</b><p>${esc(text)}</p></div>${b(s.line===lines.length-1?(type==='intro'?'문 열고 들어가기':type==='farewell'?'함께 바깥으로':'마치기'):'다음','story-next','next')}</div></section></main>`;}
     function renderComplete(){app.innerHTML=`<main class="game c4-complete"><header><h1>PROJECT B-0</h1>${b('메뉴','menu','quiet')}</header><section><div class="c4-final-eyes"><i></i><i></i></div><h2>함께, 다음 문제로.</h2><p>모르는 건 물어보고.<br>들은 답은 확인하고.<br>선택은 내가.</p>${b('시작 화면으로','campaign-home','primary')}${b('이번 모험 돌아보기','reflection')}${b('중앙관리실 다시 둘러보기','revisit','quiet')}</section></main>`;}
     function act(a){
       if(a==='campaign-home'){onHome?.();return;}
@@ -168,7 +168,7 @@
       if(a==='home'){if(r.lifted){lower();return;}cancelAnimationFrame(camFrame);camera={x:0,z:60,yaw:-15,pitch:-5,zoom:1,height:0};updateCamera();return;}
       if(a==='zoom-in'||a==='zoom-out'){camera.zoom=Math.max(.65,Math.min(1.6,camera.zoom+(a==='zoom-in'?.15:-.15)));updateCamera();return;}
       if(a==='clear'){selection=null;actions('방 안을 살펴보세요.');speech.hidden=true;return;}
-      if(a==='robot'){select('robot');return;}if(a==='choose-target'){selection='ask';actions('확인할 물건을 직접 눌러 주세요.',[['취소','clear']]);return;}
+      if(a==='robot'){selection=null;speech.hidden=true;robotMenu();return;}if(a==='choose-target'){selection='ask';actions('확인할 물건을 직접 눌러 주세요.',[['취소','clear']]);return;}
       if(a.startsWith('ask-')){ask(a.slice(4));return;}
       if(a==='inspect-screen'){modal('AXIOM 관리 화면',s.boss?'<p>미등록 행동 학습 / 승인되지 않은 이동 / 회수 필요</p><p>B-0: 회수 대상. 외부 반출 제한.</p>':'<p>시설 폐쇄 절차 진행 중</p><p>잔여 이용자 퇴실 / 잔여 교육 기체 회수</p>');return;}
       if(a==='history'){history();return;}
@@ -189,13 +189,13 @@
       if(a==='leave'){startJourney('approach');return;}
     }
     function down(e){if(e.button!==0||conversation||journey||carryingTransition||s.phase!=='room')return;const drag=e.target.closest('[data-c4-drag]')?.dataset.c4Drag;if(!drag&&e.target.closest('button,input,dialog,.c4-speech'))return;
-      cancelAnimationFrame(camFrame);pointer={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:camera.yaw,pitch:camera.pitch,drag,moved:false,el:e.target.closest('[data-c4-drag]')||stage};pointer.el.setPointerCapture?.(e.pointerId);if(drag)e.preventDefault();}
-    function move(e){if(!pointer||pointer.id!==e.pointerId)return;const dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;pointer.moved=pointer.moved||Math.hypot(dx,dy)>6;
+      cancelAnimationFrame(camFrame);pointer={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:camera.yaw,pitch:camera.pitch,drag,moved:false,el:e.target.closest('[data-c4-drag]')||stage};if(drag){pointer.el.setPointerCapture?.(e.pointerId);e.preventDefault();}}
+    function move(e){if(!pointer||pointer.id!==e.pointerId)return;const dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;if(!pointer.drag&&!pointer.moved&&Math.hypot(dx,dy)<=6)return;if(!pointer.moved&&Math.hypot(dx,dy)>6){pointer.moved=true;pointer.el.setPointerCapture?.(e.pointerId);}
       if(pointer.drag==='high'){if(r.lifted&&!s.upper){r.high=Math.max(0,Math.min(1,dx/70));updateMechanical();}return;}
       if(pointer.drag==='grip'){if(s.boss&&!r.lifted){r.handle=Math.max(0,Math.min(1,dy/55));updateMechanical();}return;}
       if(pointer.drag){pointer.el.style.translate=`${dx}px ${dy}px`;return;}
       camera.yaw=pointer.yaw-dx*.22;camera.pitch=pointer.pitch+dy*.15;updateCamera();}
-    function up(e){if(!pointer||pointer.id!==e.pointerId)return;const p=pointer;pointer=null;p.el.releasePointerCapture?.(e.pointerId);suppress=p.moved;later(()=>{suppress=false;},0);
+    function up(e){if(!pointer||pointer.id!==e.pointerId)return;const p=pointer;pointer=null;if(p.el.hasPointerCapture?.(e.pointerId))p.el.releasePointerCapture(e.pointerId);suppress=p.moved;later(()=>{suppress=false;},0);
       if(p.drag==='high'){if(r.high>=.85)highPull();r.high=0;updateMechanical();return;}
       if(p.drag==='grip'){if(!s.boss){pull();return;}if(r.handle>=.85){r.handle=1;select('door');}else M.release(s,r);updateMechanical();return;}
       if(p.drag?.startsWith('plug-')){p.el.style.translate='';if(Math.hypot(e.clientX-p.x,e.clientY-p.y)>55)link(p.drag.slice(5),false);return;}}

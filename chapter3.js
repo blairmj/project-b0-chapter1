@@ -137,10 +137,10 @@
     function renderGate(){
       app.innerHTML=`<main class="game c3-gate-game"><header><h1>내 위치: 외부 출입구</h1>${b('메뉴','menu','quiet')}</header><section class="c3-gate-scene"><div class="c3-gate-door"><span>외부 출입구</span><i></i></div><div class="c3-gate-terminal"><small>출입 관리</small><p>${s.approval==='rejected'?'외부 이동 보류':'외부 이동에는 중앙관리실의 승인이 필요합니다.'}</p>${s.approval==='rejected'?'<small>중앙관리실에서 직접 확인</small>':''}</div><div class="c3-gate-b0"><div class="robot-sprite live-body">${portrait()}</div></div><div class="c2-speech c3-speech" hidden></div></section><section class="c2-actions c3-actions"></section><footer><small>문 너머로는 바깥 불빛이 보인다.</small></footer></main>`;
       stage=null;world=null;speech=app.querySelector('.c3-speech');bar=app.querySelector('.c3-actions');
-      actions('외부 출입구',s.approval==='rejected'?[['중앙관리실로 가기','go-central'],['방으로 돌아가기','return-room']]:[['문 살펴보기','inspect-gate'],['B-0에게 승인 요청 부탁','request-approval'],['방으로 돌아가기','return-room']]);
+      actions('외부 출입구',s.approval==='rejected'?[['관찰실 통로로 가기','go-central'],['방으로 돌아가기','return-room']]:[['문 살펴보기','inspect-gate'],['B-0에게 승인 요청 부탁','request-approval'],['방으로 돌아가기','return-room']]);
     }
     function renderEnd(){
-      app.innerHTML=`<main class="game c3-end"><header><h1>내 위치: 중앙관리실 앞</h1>${b('메뉴','menu','quiet')}</header><section class="c3-central-scene"><div class="c3-central-door"><i></i><span>중앙관리실</span></div><div class="c3-central-dialogue"><div class="speech student"><b>나</b><p>출구까지 찾았는데, 누가 못 나가게 하는 거야?</p></div><div class="speech robot"><b>B-0</b><p>이 안에서 출입을 관리하고 있습니다.</p></div><div class="speech student"><b>나</b><p>그럼 직접 만나 보자.</p></div></div></section><footer>${b('중앙관리실로 들어가기','chapter-four','primary')}${b('이번 방의 기록','record')}${b('거울 관찰실 둘러보기','visit-mirror','quiet')}<small>문 너머에 중앙관리실이 있다.</small></footer></main>`;
+      app.innerHTML=`<main class="game c3-end"><header><h1>내 위치: 거울 관찰실 밖 통로</h1>${b('메뉴','menu','quiet')}</header><section class="c3-central-scene"><div class="c3-central-door"><i></i><span>중앙관리실</span></div><div class="c3-central-dialogue"><div class="speech student"><b>나</b><p>출구까지 찾았는데, 누가 못 나가게 하는 거야?</p></div><div class="speech robot"><b>B-0</b><p>이 안에서 출입을 관리하고 있습니다.</p></div><div class="speech student"><b>나</b><p>그럼 직접 만나 보자.</p></div></div></section><footer>${b('중앙관리실 앞으로 가기','chapter-four','primary')}${b('이번 방의 기록','record')}${b('거울 관찰실 둘러보기','visit-mirror','quiet')}<small>통로 끝에 중앙관리실 문이 보인다.</small></footer></main>`;
     }
     function leaveRoom(){
       if(!M.leave(s))return;cancelAnimationFrame(frame);cameraMoving=false;save();busy=true;
@@ -160,7 +160,7 @@
       if(a==='talk-next'){nextTalk();return;}if(a==='dismiss'){conversation=null;speech.hidden=true;return;}
       if(a==='return-room'){s.phase='room';save();render();return;}
       if(a==='inspect-gate'){say('student','바깥 불빛이 보이는데 문이 안 열려. 옆 화면에 승인 안내가 있어.');return;}
-      if(a==='request-approval'){if(M.request(s)){save();renderGate();talk([['robot','승인 요청을 보냈지만 외부 이동이 보류되었습니다. 중앙관리실에서 직접 확인하라고 나옵니다.'],['student','여기까지 왔는데 왜 못 나가게 하는 거야?']]);}return;}
+      if(a==='request-approval'){if(M.request(s)){save();renderGate();talk([['robot','외부 이동이 보류되었습니다. 중앙관리실에서 직접 확인하라고 나옵니다. 그쪽으로 가려면 옆 관찰실을 지나야 합니다.'],['student','여기까지 왔는데 왜 못 나가게 하는 거야?']]);}return;}
       if(a==='go-central'||a==='visit-mirror'){if(M.beginMirror(s)){save();render();}return;}
       if(s.phase!=='room'||(busy&&!cameraMoving))return;
       if(a==='home'){selection=null;mode=null;conversation=null;speech.hidden=true;actions('방 안을 자유롭게 살펴보세요.');animateCamera({x:0,z:30,yaw:-12,pitch:-8,zoom:1});return;}

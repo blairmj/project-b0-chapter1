@@ -70,7 +70,7 @@
       botFrame=requestAnimationFrame(step);
     }
     function introLine(){
-      const lines=[['student','저 안으로 가면 중앙관리실인가 봐.'],['robot','먼저 들어가 보겠습니다.'],['student','야, 너 혼자 먼저 가면 어떡해!'],['robot','먼저 가라고 하셨습니다.'],['student','그건 아까 창문에서 한 말이잖아!'],['student','일단 각자 살펴보자.']];
+      const lines=[['student','이 관찰실을 지나면 중앙관리실이 나오는 거네.'],['robot','먼저 들어가 보겠습니다.'],['student','야, 너 혼자 먼저 가면 어떡해!'],['robot','먼저 가라고 하셨습니다.'],['student','그건 아까 창문에서 한 말이잖아!'],['student','일단 각자 살펴보자.']];
       say(...lines[s.line],true);if(s.line===5)speech.querySelector('button').textContent='주변 살펴보기';actions('중앙관리실로 향하는 관찰실');
     }
     function nextIntro(){

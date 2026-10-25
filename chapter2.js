@@ -114,6 +114,13 @@
       else actions('닫힌 입구',[['살펴보기','inspect-entry'],['밀어 보기','push-entry'],['선택 닫기','clear']]);
     }
     const descriptions={wide:'바퀴가 없는 낮고 넓은 운반 상자다. 뚜껑이 단단히 닫혀 있다.',small:'들어서 옮길 수 있는 작은 상자다. 윗면이 평평하다.',window:'창 너머에 통로가 보인다. 걸쇠는 이쪽에 있다.','fake-window':'뿌연 유리 너머로 빛이 비친다. 정말 지나갈 수 있는 곳일까?',vent:'금속 덮개 틈으로 어두운 공간이 보인다. 손으로 열 수 있을 것 같다.',cabinet:'벽에 고정된 보관장이다. 안쪽을 확인할 수 있다.',entry:'문 가장자리가 벽에 밀착되어 있다. 안쪽에는 손잡이가 없다.'};
+    function describe(id){
+      if(id==='vent'&&s.ventOpen)return '열린 덮개 뒤가 금속판으로 막혀 있다. 이곳으로는 지나갈 수 없다.';
+      if(id==='fake-window'&&s.fakeWindowOpen)return '열린 창 바로 뒤가 벽이다. 빛은 들어오지만 통로는 아니다.';
+      if(id==='cabinet'&&s.cabinetOpen)return '보관장 안은 비어 있다. 벽에 고정되어 있어 옮길 수 없다.';
+      if(id==='window'&&s.windowOpen)return '걸쇠가 풀려 있다. 창 너머로 통로가 이어진다.';
+      return descriptions[id];
+    }
     function robotMenu(){actions('B-0에게 부탁',[['살펴봐 줘','request-inspect'],['옮겨 줘','request-move'],['나를 들어 올려 줘','boost'],['이 방을 살펴봐 줘','survey'],['닫기','clear']]);}
     function robotTarget(id){
       if(id==='robot')return;const verb=mode.verb;mode=null;
@@ -311,8 +318,8 @@
       if(a==='dismiss'){speech.hidden=true;return;}
       if(s.phase!=='room')return;
       if(a==='down'){
-        if(!standing)return;cancelAnimationFrame(animation);busy=false;viewHeight+=lift;lift=0;s.assisted=null;app.querySelector('.c2-robot').classList.remove('walking');const id=selection,ground=groundView||{x:0,z:0,height:0,yaw:camera.yaw,pitch:-12};standing=null;cancelMove();
-        travel([{...(ground.edge||ground),height:viewHeight,ms:350},{...(ground.edge||ground),height:0,ms:400},{...ground,ms:500}],()=>{groundView=null;if(id)select(id);});return;
+        if(!standing)return;cancelAnimationFrame(animation);busy=false;viewHeight+=lift;lift=0;s.assisted=null;app.querySelector('.c2-robot').classList.remove('walking');const id=selection,ground=groundView||{x:0,z:0,height:0,yaw:camera.yaw,pitch:-12};standing=null;cancelMove();speech.hidden=true;actions('상자에서 내려오는 중…',[]);
+        travel([{...(ground.edge||ground),height:viewHeight,ms:350},{...(ground.edge||ground),height:0,ms:400},{...ground,ms:500}],()=>{groundView=null;if(id)select(id);else actions('주변을 살펴보세요.',[]);say('student','바닥으로 내려왔어.');});return;
       }
       if(busy||travelling)return;
       if(a==='home'){standing=null;lift=0;s.assisted=null;groundView=null;cancelMove();camera={yaw:-48,pitch:-12,zoom:1};travel([{x:0,z:0,height:0}],null,false);return;}
@@ -322,7 +329,7 @@
       if(a.startsWith('request-')){mode={type:'target',verb:a.slice(8)};actions('부탁할 대상 물건을 직접 눌러 주세요.',[['취소','cancel']]);return;}
       if(a==='boost'){boostStudent();return;}
       if(a==='survey'){walkRobot(-205,35,()=>say('robot','보이는 벽면에서는 다른 문을 찾지 못했습니다. 아직 확인하지 못한 곳도 있습니다.'));return;}
-      if(a.startsWith('inspect-')){const id=a.slice(8);say('student',descriptions[id]);s.logs.push({action:'inspect',id});save();return;}
+      if(a.startsWith('inspect-')){const id=a.slice(8);say('student',describe(id));s.logs.push({action:'inspect',id});save();return;}
       if(a==='push-entry'){say('student','움직이지 않아. 다른 곳도 살펴봐야겠어.');return;}
       if(a==='vent'){s.ventOpen=!s.ventOpen;s.logs.push({action:'vent',open:s.ventOpen});update();select('vent');if(s.ventOpen)say('student','뒤가 금속판으로 막혀 있어. 통로처럼 보였는데…….');return;}
       if(a==='fake-window'){s.fakeWindowOpen=!s.fakeWindowOpen;s.logs.push({action:'fake-window',open:s.fakeWindowOpen});update();select('fake-window');if(s.fakeWindowOpen)say('student','창 바로 뒤가 벽이야. 여기로는 나갈 수 없겠어.');return;}
