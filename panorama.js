@@ -70,7 +70,7 @@ function createRoomPanorama(canvas, report) {
   function openDoor(){const start=performance.now();const step=now=>{if(dead)return;const t=Math.min(1,(now-start)/1200);setDoorOpen(t*t*(3-2*t));if(t<1)doorFrame=requestAnimationFrame(step);};doorFrame=requestAnimationFrame(step);}
   img.onload=()=>{if(dead)return;gl.bindTexture(gl.TEXTURE_2D,texture);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,img);ready=true;view(yaw,pitch);};
   img.onerror=()=>{if(!dead)report("방 배경을 불러오지 못했습니다. 페이지를 새로고침해 주세요.");};
-  img.src="./assets/room-panorama-v2.webp";
+  img.src="./assets/sf-practice-panorama-v1.webp";
   const lost=e=>{e.preventDefault();if(!dead)report("화면 연결이 중단되었습니다. 페이지를 새로고침해 주세요. 진행은 저장되어 있습니다.");};
   canvas.addEventListener("webglcontextlost",lost);
   return {view,setDoorOpen,openDoor,dispose(){dead=true;corridorImage.onload=null;corridorImage.onerror=null;gl.deleteTexture(corridorTexture);cancelAnimationFrame(doorFrame);doorImage.onload=null;doorImage.onerror=null;gl.deleteTexture(doorTexture);img.onload=null;img.onerror=null;canvas.removeEventListener("webglcontextlost",lost);gl.deleteTexture(texture);gl.deleteBuffer(buffer);gl.deleteProgram(program);gl.deleteShader(vs);gl.deleteShader(fs);}};

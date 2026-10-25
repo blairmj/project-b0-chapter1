@@ -26,7 +26,7 @@
       const approaching=s.phase==='approach',glassUp=approaching&&s.line<2||M.solved(s);
       app.innerHTML=`<main class="game c2-game mr-game"><header><h1>내 위치: 거울 관찰실</h1><nav>${b('← 원위치로','home','quiet')}${window.B0LessonJumpButton?.()||''}${b('메뉴','menu','quiet')}</nav></header>
       <section class="c2-stage mr-stage" tabindex="0" aria-label="유리벽으로 나뉜 관찰실. 빈 공간을 끌어 둘러보고 물건을 눌러 살펴보세요."><div class="c2-world mr-world">
-      ${['front','left','right','back'].map(f=>`<div class="c2-wall c2-wall-${f}"><div class="c3-conduit"></div><div class="c2-light"></div></div>`).join('')}<div class="c2-floor"></div><div class="c2-ceiling"></div>
+      ${['front','left','right','back'].map(f=>`<div class="c2-wall c2-wall-${f}"><div class="c3-conduit"></div><div class="c2-light"></div></div>`).join('')}<div class="c2-floor"></div><div class="c2-ceiling"></div><div class="sf-optical-apparatus" aria-hidden="true"></div>
       <div class="mr-room-sign" aria-hidden="true"><small>VISUAL PERCEPTION LAB</small><strong>시각 인식 관찰실</strong></div>
       <div class="mr-partition ${glassUp?'raised':''}"><div class="mr-glass"><i></i><i></i><span class="mr-glass-edge" data-mr-object="glass" role="button" tabindex="0" aria-label="두 구역 사이의 유리벽"></span></div></div><div class="mr-glass-rail" aria-hidden="true"></div>
       <div class="mr-door" data-mr-object="door" role="button" tabindex="0" aria-label="관찰실 출입문"><span class="mr-passage"></span><div class="mr-door-leaf"><span class="mr-door-plate">${symbol('triangle')}</span><span class="mr-door-grip"></span></div><i class="mr-bolt mr-bolt-upper"></i><i class="mr-bolt mr-bolt-lower"></i></div>

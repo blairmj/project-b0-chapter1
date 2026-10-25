@@ -1,0 +1,48 @@
+{
+  "tool": "built-in image_gen",
+  "sourceConcepts": "PROJECT_B0_디자인/SF_공간시안_v1",
+  "outputs": [
+    {
+      "file": "sf-practice-panorama-v1.webp",
+      "refs": [
+        "assets/room-panorama-v2.webp",
+        "../PROJECT_B0_디자인/SF_공간시안_v1/01_곡면_교육실습실.png"
+      ],
+      "transparent": false,
+      "prompt": "Production raster asset for PROJECT B-0. Match the approved reference's finely painted 2.5D illustrated SF game materials, fine dark edging, tactile gently worn surfaces and restrained cinematic color. No humans, no robots, no text, no logos, no UI, no watermark. EDIT INPUT 1, a 2:1 full 360-degree equirectangular panorama, by reskinning it to the curved warm ivory ceramic architecture and cyan/soft warm-white lighting of INPUT 2. Preserve input 1's exact panorama projection, room geometry, horizon, floor grid perspective, ceiling, continuous wrap and ALL object positions. Very important preserve the one EMPTY DARK doorway opening at horizontal 33.7%-43.6%, vertical 35.8%-60.7% of the whole image, its silhouette and location exactly; do not add door leaves. The game overlays interactive leaves here. Preserve the cabinets on the left and the large right observation window in place, but make the window frame rounded and surfaces warm ivory ceramic. Replace blue-gray metal wall surfaces with broad warm ivory curved ceramic shells, soft inset cyan seams and rounded ceiling ribs, lightly chipped glaze, no dense rust. Quiet spacious white science lab, significantly brighter than the gray original, broad ceramic floor tiles with subtle warm reflection. No new map, no new posters, no new door, no new furniture, no plants, no people or robots. Existing furniture can become ivory matching learning consoles in precisely the same position. Two far image edges must remain visually matching neutral ivory wall at equal lighting. Output one 2:1 equirectangular panorama, highest practical resolution, NOT a perspective room concept, not panels."
+    },
+    {
+      "file": "sf-cargo-wall-v1.webp",
+      "refs": [
+        "../PROJECT_B0_디자인/SF_공간시안_v1/02_수직형_물류보관실.png"
+      ],
+      "transparent": false,
+      "prompt": "Production raster asset for PROJECT B-0. Match the approved reference's finely painted 2.5D illustrated SF game materials, fine dark edging, tactile gently worn surfaces and restrained cinematic color. No humans, no robots, no text, no logos, no UI, no watermark. Derive ONE flat orthographic wall MATERIAL from reference, not a room scene. Full bleed square texture, seamlessly tileable left/right. Tall industrial warehouse steel plates in charcoal warm slate with chunky dark vertical reinforcement ribs at left and right edges, narrow faded ochre strips on the ribs and small worn bolts. Tall wide uncluttered center steel panels, subtle fine painted wear, seams and oil stains, amber warm edge bounce. Even surface lighting. Large industrial construction scale. No perspective, no floor, no ceiling, no door, no window, no grille, no fixture, no hanging cable, no cargo, no props, no geometric UI, no image borders. Texture only for a real CSS 3D warehouse wall."
+    },
+    {
+      "file": "sf-access-wall-v1.webp",
+      "refs": [
+        "../PROJECT_B0_디자인/SF_공간시안_v1/03_레트로_출입관리실.png"
+      ],
+      "transparent": false,
+      "prompt": "Production raster asset for PROJECT B-0. Match the approved reference's finely painted 2.5D illustrated SF game materials, fine dark edging, tactile gently worn surfaces and restrained cinematic color. No humans, no robots, no text, no logos, no UI, no watermark. Derive ONE flat orthographic wall MATERIAL from reference, not a room scene. Full bleed 3:2 landscape texture, seamlessly tileable left/right. Dark forest-green enamel lower panels covering lower 55%, muted warm grey-green upper plaster panels covering upper 45%, separated by a narrow worn brushed brass rail exactly horizontal. Broad handsome large panel divisions, subtle chipped green paint, dust, fine hairline wear and recessed screws, warm amber edge bounce. Quiet center suitable behind interactive maps and desks. Green must be clearly visible, not navy blue or generic grey. Even illumination. No perspective, no floor or ceiling, no door, no window, no objects, no monitor, no fixture, no furniture, no text, no image border. Texture only."
+    },
+    {
+      "file": "sf-optical-wall-v1.webp",
+      "refs": [
+        "../PROJECT_B0_디자인/SF_공간시안_v1/04_광학_유리관찰실.png"
+      ],
+      "transparent": false,
+      "prompt": "Production raster asset for PROJECT B-0. Match the approved reference's finely painted 2.5D illustrated SF game materials, fine dark edging, tactile gently worn surfaces and restrained cinematic color. No humans, no robots, no text, no logos, no UI, no watermark. Derive ONE flat orthographic wall MATERIAL from reference, not a room scene. Full bleed 3:2 landscape texture, tileable left/right. An elegant optical observation laboratory's translucent frosted blue-gray glass cladding over finely brushed midnight-blue steel. Broad vertical glazed panels, narrow precisely machined dark metal mullions, slim cyan luminous edge seams with a restrained violet reflected highlight. Hazy layered depth INSIDE frosted material only, cool blue controlled light, fine scratches and gentle wear. Not a mirror showing a room. Clear center region behind interactive controls. No perspective, no floor, no ceiling, no furniture, no objects, no instrument, no door, no window opening, no robot, no circle/triangle/square labels, no diagram or screen UI, no text. Material only."
+    },
+    {
+      "file": "sf-axiom-core-v1.webp",
+      "refs": [
+        "../PROJECT_B0_디자인/SF_공간시안_v1/05_AXIOM_코어홀.png"
+      ],
+      "transparent": true,
+      "prompt": "Production raster asset for PROJECT B-0. Match the approved reference's finely painted 2.5D illustrated SF game materials, fine dark edging, tactile gently worn surfaces and restrained cinematic color. No humans, no robots, no text, no logos, no UI, no watermark. Extract/reconstruct ONLY the suspended AXIOM core assembly from the reference as ONE isolated game prop with genuinely transparent background. Exactly the reference's imposing faceted black polyhedral core, tiny restrained red seam lights, enclosed by two large aged bronze concentric mechanical rings and structural brackets, thin warm-white inset ring lights, fine material scratches and believable dark ink edges. Front-on orthographic view for a wall-mounted 3D-game billboard sprite, circular assembly centered, complete silhouette uncropped, aspect close to square. Core remains huge relative to rings as in reference. No room, no walls, no floor, no boy, no B-0, no platform, no dangling cables outside silhouette, no support pole reaching image edges, no face, no UI, no letters, no watermark. Outer area truly transparent with no opaque black/grey rectangle. Preserve the art style and exact assembly design of reference."
+    }
+  ],
+  "encoding": "WebP quality 88; original dimensions and alpha preserved; PNG originals in PROJECT_B0_디자인/SF_게임적용_v1"
+}

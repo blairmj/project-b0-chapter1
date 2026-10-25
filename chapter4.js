@@ -5,7 +5,7 @@
     const M=window.B0Final,storage=preview?sessionStorage:localStorage,key='project-b0-final-v2';
     let s;try{s=M.restore(JSON.parse(storage.getItem(key)));}catch{s=M.fresh();}
     let dead=false,stage,world,bar,speech,conversation=null,selection=null,modalEl=null,pointer=null,suppress=false,frame=0,camFrame=0,previous=0,mute=false;
-    let camera={x:0,z:60,yaw:-15,pitch:-5,zoom:1,height:0},r={handle:0,latch:s.opened?1:0,lifted:false,high:0};
+    let camera={x:0,z:60,yaw:-15,pitch:14,zoom:.7,height:0},r={handle:0,latch:s.opened?1:0,lifted:false,high:0};
     let robot={x:93,z:-140},journey=null,journeyFrame=0,wakeUntil=0,recoveryPending=false,carryingTransition=false,lastControlled=s.met&&s.links.robot;
     const inRoom=()=>s.phase==='room'||s.phase==='farewell';
     try{mute=JSON.parse(storage.getItem('project-b0-firstperson-v4'))?.muted===true;}catch{}
@@ -44,7 +44,7 @@
       app.innerHTML=`<main class="game c2-game c4-game" data-farewell="${s.phase==='farewell'}"><header><h1>내 위치: 중앙관리실</h1><nav>${b('← 원위치로','home','quiet')}${window.B0LessonJumpButton?.()||''}${b('메뉴','menu','quiet')}</nav></header>
       <section class="c2-stage c4-stage" tabindex="0" aria-label="중앙관리실. 빈 공간을 끌어 둘러보고 물건을 눌러 조사하세요."><div class="c2-world c4-world">
       ${['front','left','right','back'].map(f=>`<div class="c2-wall c2-wall-${f}"><div class="c4-wall-ribs"></div><div class="c2-light"></div></div>`).join('')}<div class="c2-floor"></div><div class="c2-ceiling"></div>
-      <div class="c4-main-screen" data-c4-object="screen" role="button" tabindex="0" aria-label="AXIOM 관리 화면"><small>FACILITY CLOSURE SYSTEM</small><div class="c4-emblem"><i></i><i></i><i></i></div><strong>AXIOM</strong><p class="c4-main-status"></p><span class="c4-math">잔여 이용자 퇴실 / 교육 기체 회수</span><div class="c4-screen-grid"></div></div>
+      <div class="c4-main-screen" data-c4-object="screen" role="button" tabindex="0" aria-label="AXIOM 관리 화면"><img class="c4-core-art" src="./assets/sf-axiom-core-v1.webp" alt=""><small>FACILITY CLOSURE SYSTEM</small><div class="c4-emblem"><i></i><i></i><i></i></div><strong>AXIOM</strong><p class="c4-main-status"></p><span class="c4-math">잔여 이용자 퇴실 / 교육 기체 회수</span><div class="c4-screen-grid"></div></div>
       <div class="c4-desk-shell" aria-hidden="true"><i></i><i></i><i></i></div>
       <button class="c4-console" data-c4-object="console" aria-label="기체 제어 연결 조작대"><small>CONTROL</small><span>기체 제어 연결</span><i></i><i></i><i></i></button>
       <button class="c4-records" data-c4-object="records" aria-label="기록 단말기"><small>ARCHIVE</small><span>시설 운영 기록</span><i></i><i></i><i></i></button>
@@ -99,7 +99,7 @@
     function cameraTo(to,done){cancelAnimationFrame(camFrame);const from={height:0,...camera},start=performance.now(),turn=(((to.yaw??from.yaw)-from.yaw+540)%360)-180;
       function step(t){if(dead||s.phase!=='room')return;const v=reduced()?1:Math.min(1,(t-start)/850),q=v*v*(3-2*v);for(const k of ['x','z','pitch','zoom','height'])camera[k]=from[k]+((to[k]??from[k])-from[k])*q;camera.yaw=from.yaw+turn*q;updateCamera();if(v<1)camFrame=requestAnimationFrame(step);else done?.();}camFrame=requestAnimationFrame(step);
     }
-    function approach(id){const targets={screen:{x:0,z:-75,yaw:0,pitch:6,zoom:1.1},console:{x:-100,z:25,yaw:-90,pitch:-12,zoom:1.15},records:{x:85,z:-30,yaw:90,pitch:0,zoom:1.1},door:{x:-80,z:100,yaw:180,pitch:-5,zoom:1},handle:{x:-145,z:80,yaw:180,pitch:-6,zoom:1},high:{x:-80,z:125,yaw:180,pitch:28,zoom:1},robot:{x:0,z:30,yaw:20,pitch:-12,zoom:1}};if(targets[id]&&!r.lifted)cameraTo({...targets[id],height:0});}
+    function approach(id){const targets={screen:{x:0,z:60,yaw:0,pitch:35,zoom:.75},console:{x:-100,z:25,yaw:-90,pitch:-12,zoom:1.15},records:{x:85,z:-30,yaw:90,pitch:0,zoom:1.1},door:{x:-80,z:100,yaw:180,pitch:-5,zoom:1},handle:{x:-145,z:80,yaw:180,pitch:-6,zoom:1},high:{x:-80,z:125,yaw:180,pitch:28,zoom:1},robot:{x:0,z:30,yaw:20,pitch:-12,zoom:1}};if(targets[id]&&!r.lifted)cameraTo({...targets[id],height:0});}
     function select(id){if(conversation||carryingTransition)return;
       if(selection==='ask'){selection=null;ask(id);return;}
       if(selection==='lift-target'){selection=null;if(id!=='high'){say('robot','그곳에는 들어 올려 드릴 자리가 없습니다.');robotMenu();return;}lift();return;}
@@ -158,14 +158,14 @@
       if(a==='mute'){mute=!mute;try{const v=JSON.parse(storage.getItem('project-b0-firstperson-v4'))||{};v.muted=mute;storage.setItem('project-b0-firstperson-v4',JSON.stringify(v));}catch{}closeModal();return;}
       if(a==='controls'){modal('조작 방법','<p>빈 공간을 끌거나 방향키로 둘러보고, 물건을 눌러 가까이 살펴봅니다.</p><p>연결 단자는 옆으로 끌어 분리합니다. 닿을 수 있는 잠금쇠와 문 손잡이를 직접 끌어 조작할 수 있습니다. 각 물건의 조작 버튼도 사용할 수 있습니다.</p><p>B-0에게 부탁한 뒤 대상 물건을 직접 누릅니다. 원위치로는 시점과 배율만 초기화합니다. 진행은 자동 저장됩니다.</p>');return;}
       if(a==='reset-confirm'){modal('4차시를 다시 시작할까요?',`<p>다른 차시의 기록은 유지됩니다.</p>${b('4차시 초기화','reset')}`);return;}
-      if(a==='reset'){s=M.fresh();r={handle:0,latch:0,lifted:false,high:0};robot={x:93,z:-140};wakeUntil=0;recoveryPending=false;carryingTransition=false;lastControlled=false;camera={x:0,z:60,yaw:-15,pitch:-5,zoom:1};save();render();return;}
+      if(a==='reset'){s=M.fresh();r={handle:0,latch:0,lifted:false,high:0};robot={x:93,z:-140};wakeUntil=0;recoveryPending=false;carryingTransition=false;lastControlled=false;camera={x:0,z:60,yaw:-15,pitch:14,zoom:.7};save();render();return;}
       if(a==='back'){dispose();onBack();return;}
       if(a==='story-next'){if(s.phase==='farewell'){if(s.line<farewell.length-1){s.line++;save();farewellLine();}else startJourney('exit');return;}const lines=s.phase==='intro'?intro:ending;if(s.line<lines.length-1)s.line++;else{s.phase=s.phase==='intro'?'room':'complete';s.line=0;}save();render();return;}
-      if(a==='revisit'){s.phase='room';s.line=0;robot={x:93,z:-140};camera={x:0,z:60,yaw:-15,pitch:-5,zoom:1};save();render();return;}
+      if(a==='revisit'){s.phase='room';s.line=0;robot={x:93,z:-140};camera={x:0,z:60,yaw:-15,pitch:14,zoom:.7};save();render();return;}
       if(a==='reflection'){modal('이번 모험 돌아보기',`<p>B-0에게 전에 가르친 행동이 이번에는 어디에 쓰였나요?</p><p>혼자 할 수 없었던 일을 어떻게 나누어 했나요?</p><p>완료라는 표시와 실제 문 상태는 같았나요?</p><small>정해진 답을 고르는 시험이 아닙니다. 함께 이야기해 보세요.</small>`);return;}
       if(s.phase!=='room')return;
       if(a==='talk-next'){next();return;}if(a==='dismiss'){conversation=null;speech.hidden=true;return;}
-      if(a==='home'){if(r.lifted){lower();return;}cancelAnimationFrame(camFrame);camera={x:0,z:60,yaw:-15,pitch:-5,zoom:1,height:0};updateCamera();return;}
+      if(a==='home'){if(r.lifted){lower();return;}cancelAnimationFrame(camFrame);camera={x:0,z:60,yaw:-15,pitch:14,zoom:.7,height:0};updateCamera();return;}
       if(a==='zoom-in'||a==='zoom-out'){camera.zoom=Math.max(.65,Math.min(1.6,camera.zoom+(a==='zoom-in'?.15:-.15)));updateCamera();return;}
       if(a==='clear'){selection=null;actions('방 안을 살펴보세요.');speech.hidden=true;return;}
       if(a==='robot'){selection=null;speech.hidden=true;robotMenu();return;}if(a==='choose-target'){selection='ask';actions('확인할 물건을 직접 눌러 주세요.',[['취소','clear']]);return;}

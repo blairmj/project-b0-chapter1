@@ -20,8 +20,8 @@
       if(s.phase==='complete'){ending();return;}
       app.innerHTML=`<main class="game c2-game"><header><h1>내 위치: 폐쇄 보관실</h1><nav>${button('← 원위치로','home','quiet')}${window.B0LessonJumpButton?.()||''}${button('메뉴','menu','quiet')}</nav></header>
       <section class="c2-stage" tabindex="0" aria-label="폐쇄 보관실. 빈 공간을 끌거나 방향키로 둘러보세요. 물건을 누르면 조사할 수 있습니다.">
-      <div class="c2-world">
-        <div class="c2-wall c2-wall-front"><div class="c2-light"></div></div><div class="c2-wall c2-wall-left"><div class="c2-light"></div></div><div class="c2-wall c2-wall-right"><div class="c2-light"></div></div><div class="c2-wall c2-wall-back"><div class="c2-light"></div></div><div class="c2-floor"></div><div class="c2-ceiling"></div>
+      <div class="c2-world sf-cargo-world">
+        <div class="c2-wall c2-wall-front"><div class="c2-light"></div></div><div class="c2-wall c2-wall-left"><div class="c2-light"></div></div><div class="c2-wall c2-wall-right"><div class="c2-light"></div></div><div class="c2-wall c2-wall-back"><div class="c2-light"></div></div><div class="c2-floor"></div><div class="c2-ceiling"></div><div class="sf-cargo-gantry" aria-hidden="true"><i></i><i></i><span></span></div>
         <button class="c2-entry c2-object" data-object="entry" aria-label="닫힌 입구"><span></span></button>
         <button class="c2-window c2-object" data-object="window" aria-label="높은 창문"><span class="c2-window-glass"></span><span class="c2-latch"></span></button>
         <button class="c2-window c2-fake-window c2-object" data-object="fake-window" aria-label="옆 벽의 창문"><span class="c2-window-glass"></span><span class="c2-latch"></span></button>
