@@ -29,7 +29,7 @@
       conversation=null;pointer=null;selection=null;mode=null;
       if(s.phase==='mirror'){renderMirror();return;}
       if(s.phase==='intro'){renderIntro();return;}if(s.phase==='gate'){renderGate();return;}if(s.phase==='complete'){renderEnd();return;}
-      app.innerHTML=`<main class="game c2-game c3-game"><header><h1>내 위치: 출입 관리실</h1><nav>${b('← 원위치로','home','quiet')}${b('메뉴','menu','quiet')}</nav></header>
+      app.innerHTML=`<main class="game c2-game c3-game"><header><h1>내 위치: 출입 관리실</h1><nav>${b('← 원위치로','home','quiet')}${window.B0LessonJumpButton?.()||''}${b('메뉴','menu','quiet')}</nav></header>
       <section class="c2-stage c3-stage" tabindex="0" aria-label="출입 관리실. 빈 공간을 끌어 둘러보고 물건을 눌러 살펴보세요."><div class="c2-world c3-world">
       ${['front','left','right','back'].map(f=>`<div class="c2-wall c2-wall-${f}"><div class="c3-conduit" aria-hidden="true"></div><div class="c3-riser" aria-hidden="true"></div><div class="c2-light"></div></div>`).join('')}<div class="c2-floor"></div><div class="c2-ceiling"></div>
       <div class="c3-junction" aria-hidden="true"><i></i><i></i><span></span></div><div class="c3-room-plaque" aria-hidden="true"><small>ACCESS CONTROL</small><strong>출입 관리실</strong></div><div class="c3-clock" aria-hidden="true"><i></i><i></i></div>
@@ -132,15 +132,15 @@
     }
     function renderIntro(){
       s.line=Math.min(intro.length-1,s.line);const [who,text]=intro[s.line];
-      app.innerHTML=`<main class="game c3-intro"><header><h1>내 위치: 연구소 복도</h1>${b('메뉴','menu','quiet')}</header><section class="corridor-scene"><div class="corridor-view"></div><div class="corridor-b0 walking"><div class="robot-sprite live-body ${who==='robot'?'speaking':''}">${portrait()}</div></div><div class="corridor-dialogue"><div class="speech ${who}"><b>${who==='robot'?'B-0':'나'}</b><p>${esc(text)}</p></div>${b(s.line===intro.length-1?'출입 관리실로':'다음','intro-next','next')}</div></section><footer><small>함께 창문을 넘어, 복도 끝까지 걸어왔다.</small></footer></main>`;
+      app.innerHTML=`<main class="game c3-intro"><header><h1>내 위치: 연구소 복도</h1>${window.B0LessonJumpButton?.()||''}${b('메뉴','menu','quiet')}</header><section class="corridor-scene"><div class="corridor-view"></div><div class="corridor-b0 walking"><div class="robot-sprite live-body ${who==='robot'?'speaking':''}">${portrait()}</div></div><div class="corridor-dialogue"><div class="speech ${who}"><b>${who==='robot'?'B-0':'나'}</b><p>${esc(text)}</p></div>${b(s.line===intro.length-1?'출입 관리실로':'다음','intro-next','next')}</div></section><footer><small>함께 창문을 넘어, 복도 끝까지 걸어왔다.</small></footer></main>`;
     }
     function renderGate(){
-      app.innerHTML=`<main class="game c3-gate-game"><header><h1>내 위치: 외부 출입구</h1>${b('메뉴','menu','quiet')}</header><section class="c3-gate-scene"><div class="c3-gate-door"><span>외부 출입구</span><i></i></div><div class="c3-gate-terminal"><small>출입 관리</small><p>${s.approval==='rejected'?'외부 이동 보류':'외부 이동에는 중앙관리실의 승인이 필요합니다.'}</p>${s.approval==='rejected'?'<small>중앙관리실에서 직접 확인</small>':''}</div><div class="c3-gate-b0"><div class="robot-sprite live-body">${portrait()}</div></div><div class="c2-speech c3-speech" hidden></div></section><section class="c2-actions c3-actions"></section><footer><small>문 너머로는 바깥 불빛이 보인다.</small></footer></main>`;
+      app.innerHTML=`<main class="game c3-gate-game"><header><h1>내 위치: 외부 출입구</h1>${window.B0LessonJumpButton?.()||''}${b('메뉴','menu','quiet')}</header><section class="c3-gate-scene"><div class="c3-gate-door"><span>외부 출입구</span><i></i></div><div class="c3-gate-terminal"><small>출입 관리</small><p>${s.approval==='rejected'?'외부 이동 보류':'외부 이동에는 중앙관리실의 승인이 필요합니다.'}</p>${s.approval==='rejected'?'<small>중앙관리실에서 직접 확인</small>':''}</div><div class="c3-gate-b0"><div class="robot-sprite live-body">${portrait()}</div></div><div class="c2-speech c3-speech" hidden></div></section><section class="c2-actions c3-actions"></section><footer><small>문 너머로는 바깥 불빛이 보인다.</small></footer></main>`;
       stage=null;world=null;speech=app.querySelector('.c3-speech');bar=app.querySelector('.c3-actions');
       actions('외부 출입구',s.approval==='rejected'?[['관찰실 통로로 가기','go-central'],['방으로 돌아가기','return-room']]:[['문 살펴보기','inspect-gate'],['B-0에게 승인 요청 부탁','request-approval'],['방으로 돌아가기','return-room']]);
     }
     function renderEnd(){
-      app.innerHTML=`<main class="game c3-end"><header><h1>내 위치: 거울 관찰실 밖 통로</h1>${b('메뉴','menu','quiet')}</header><section class="c3-central-scene"><div class="c3-central-door"><i></i><span>중앙관리실</span></div><div class="c3-central-dialogue"><div class="speech student"><b>나</b><p>출구까지 찾았는데, 누가 못 나가게 하는 거야?</p></div><div class="speech robot"><b>B-0</b><p>이 안에서 출입을 관리하고 있습니다.</p></div><div class="speech student"><b>나</b><p>그럼 직접 만나 보자.</p></div></div></section><footer>${b('중앙관리실 앞으로 가기','chapter-four','primary')}${b('이번 방의 기록','record')}${b('거울 관찰실 둘러보기','visit-mirror','quiet')}<small>통로 끝에 중앙관리실 문이 보인다.</small></footer></main>`;
+      app.innerHTML=`<main class="game c3-end"><header><h1>내 위치: 거울 관찰실 밖 통로</h1>${window.B0LessonJumpButton?.()||''}${b('메뉴','menu','quiet')}</header><section class="c3-central-scene"><div class="c3-central-door"><i></i><span>중앙관리실</span></div><div class="c3-central-dialogue"><div class="speech student"><b>나</b><p>출구까지 찾았는데, 누가 못 나가게 하는 거야?</p></div><div class="speech robot"><b>B-0</b><p>이 안에서 출입을 관리하고 있습니다.</p></div><div class="speech student"><b>나</b><p>그럼 직접 만나 보자.</p></div></div></section><footer>${b('중앙관리실 앞으로 가기','chapter-four','primary')}${b('이번 방의 기록','record')}${b('거울 관찰실 둘러보기','visit-mirror','quiet')}<small>통로 끝에 중앙관리실 문이 보인다.</small></footer></main>`;
     }
     function leaveRoom(){
       if(!M.leave(s))return;cancelAnimationFrame(frame);cameraMoving=false;save();busy=true;
@@ -182,6 +182,11 @@
     }
     function click(e){const el=e.target.closest('[data-c3]');if(el){e.preventDefault();act(el.dataset.c3);}}
     function dispose(){dead=true;mirrorView?.dispose();mirrorView=null;cancelAnimationFrame(frame);timers.forEach(clearTimeout);app.removeEventListener('click',click);window.removeEventListener('resize',updateCamera);app.querySelector('.c3-modal')?.remove();}
-    app.addEventListener('click',click);window.addEventListener('resize',updateCamera);render();return {dispose};
+    function jumpToEnd(){
+      s.shelfZ=175;s.realDoorOpen=true;s.approval='rejected';s.phase='mirror';
+      s.mirror={...window.B0Mirror.restore(s.mirror),phase:'complete'};
+      M.finish(s);M.note(s,'temporary-skip');mirrorUrl(false);save();
+    }
+    app.addEventListener('click',click);window.addEventListener('resize',updateCamera);render();return {dispose,jumpToEnd};
   };
 })();

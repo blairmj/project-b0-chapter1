@@ -20,8 +20,8 @@ const context={window:{B0RoomTwo:M,addEventListener(){},removeEventListener(){}}
   sessionStorage:storage,localStorage:storage,document:{elementFromPoint(){return null;}},
   performance:{now:()=>clock},requestAnimationFrame(fn){frames.set(++frame,fn);return frame;},
   matchMedia:()=>({matches:reduceMotion}),setTimeout:()=>0,clearTimeout(){},cancelAnimationFrame(id){frames.delete(id);}};
-const source=fs.readFileSync(require.resolve('../chapter2.js'),'utf8').replace('return {dispose};',
-  'return {act,pointerDown,pointerMove,pointerUp,cancelPointer,select,rescuePose,state:()=>({s,camera,standing,mode,selection,view:view(),travelling})};');
+const source=fs.readFileSync(require.resolve('../chapter2.js'),'utf8').replace('return {dispose,jumpToEnd};',
+  'return {jumpToEnd,act,pointerDown,pointerMove,pointerUp,cancelPointer,select,rescuePose,state:()=>({s,camera,standing,mode,selection,view:view(),travelling})};');
 vm.runInNewContext(source,context);
 const game=context.window.startChapterTwo({app,portrait:()=>'',onBack(){},preview:true});
 function event(x,y,object){return {pointerId:1,button:0,clientX:x,clientY:y,preventDefault(){},
@@ -109,3 +109,7 @@ while(frames.size){const [id,fn]=frames.entries().next().value;frames.delete(id)
 assert.equal(game.state().view.x,-175);assert.equal(game.state().view.z,-60);assert.equal(game.state().view.height,62);
 assert.equal(JSON.stringify(game.state().s.boxes),fixed,'animation never moves the boxes');
 console.log('PASS: direct drag/orbit, walk-climb camera above fixed crate, descent, lid, decoy, lift, look-down rescue, corridor after reunion');
+
+const placedBeforeSkip=JSON.stringify(game.state().s.boxes);game.jumpToEnd();
+assert.equal(M.restore(game.state().s).phase,'complete');assert.equal(JSON.stringify(game.state().s.boxes),placedBeforeSkip);
+console.log('PASS: temporary lesson jump reaches a restorable ending without moving crates');

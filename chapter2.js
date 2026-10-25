@@ -18,7 +18,7 @@
     }
     function render(){
       if(s.phase==='complete'){ending();return;}
-      app.innerHTML=`<main class="game c2-game"><header><h1>내 위치: 폐쇄 보관실</h1><nav>${button('← 원위치로','home','quiet')}${button('메뉴','menu','quiet')}</nav></header>
+      app.innerHTML=`<main class="game c2-game"><header><h1>내 위치: 폐쇄 보관실</h1><nav>${button('← 원위치로','home','quiet')}${window.B0LessonJumpButton?.()||''}${button('메뉴','menu','quiet')}</nav></header>
       <section class="c2-stage" tabindex="0" aria-label="폐쇄 보관실. 빈 공간을 끌거나 방향키로 둘러보세요. 물건을 누르면 조사할 수 있습니다.">
       <div class="c2-world">
         <div class="c2-wall c2-wall-front"><div class="c2-light"></div></div><div class="c2-wall c2-wall-left"><div class="c2-light"></div></div><div class="c2-wall c2-wall-right"><div class="c2-light"></div></div><div class="c2-wall c2-wall-back"><div class="c2-light"></div></div><div class="c2-floor"></div><div class="c2-ceiling"></div>
@@ -300,7 +300,7 @@
     function ending(){
       if(s.phase==='ledge'){enterLedge();return;}
       cancelAnimationFrame(heightFrame);viewHeight=0;standing=null;mode=null;lift=0;const done=s.phase==='complete';
-      app.innerHTML=`<main class="game c2-ending"><header><h1>내 위치: ${done?'연구소 통로':'창문 바깥'}</h1>${button('메뉴','menu','quiet')}</header><section class="c2-outside ${done?'together':''}"><div class="c2-ending-b0">${portrait()}</div><div class="c2-end-dialogue"><div class="speech ${done?'robot':'student'}"><b>${done?'B-0':'나'}</b><p>${done?'문은 없었지만, 함께 나왔습니다.':'이제 너 올라와. 손 줘.'}</p></div>${button(done?'복도 따라가기':'B-0의 손 잡기',done?'chapter-three':'help-b0','primary')+(done?button('이번 방의 기록','summary','quiet'):'')}</div></section><footer><small>${done?'B-0와 함께 통로에 도착했다.':'B-0가 아래에서 기다리고 있다.'}</small></footer></main>`;
+      app.innerHTML=`<main class="game c2-ending"><header><h1>내 위치: ${done?'연구소 통로':'창문 바깥'}</h1>${window.B0LessonJumpButton?.()||''}${button('메뉴','menu','quiet')}</header><section class="c2-outside ${done?'together':''}"><div class="c2-ending-b0">${portrait()}</div><div class="c2-end-dialogue"><div class="speech ${done?'robot':'student'}"><b>${done?'B-0':'나'}</b><p>${done?'문은 없었지만, 함께 나왔습니다.':'이제 너 올라와. 손 줘.'}</p></div>${button(done?'복도 따라가기':'B-0의 손 잡기',done?'chapter-three':'help-b0','primary')+(done?button('이번 방의 기록','summary','quiet'):'')}</div></section><footer><small>${done?'B-0와 함께 통로에 도착했다.':'B-0가 아래에서 기다리고 있다.'}</small></footer></main>`;
     }
     function act(a){
       if(a==='campaign-home'){onHome?.();return;}
@@ -345,6 +345,7 @@
     function click(e){const b=e.target.closest('[data-c2]');if(b){e.preventDefault();act(b.dataset.c2);}}
     function dispose(){dead=true;timers.forEach(clearTimeout);cancelAnimationFrame(animation);cancelAnimationFrame(heightFrame);app.removeEventListener('click',click);window.removeEventListener('resize',updateCamera);app.querySelector('.c2-modal')?.remove();}
     app.addEventListener('click',click);window.addEventListener('resize',updateCamera);render();
-    return {dispose};
+    function jumpToEnd(){s.windowOpen=true;s.phase='ledge';M.finish(s);s.logs.push({action:'temporary-skip'});save();}
+    return {dispose,jumpToEnd};
   };
 })();

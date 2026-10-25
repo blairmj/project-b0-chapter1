@@ -4,7 +4,7 @@ const initial=M.fresh();Object.assign(initial,{phase:'room',met:true,boss:true})
 let saved,now=0,id=0;const frames=new Map(),timers=new Map(),app={innerHTML:'',querySelector:s=>node(s),addEventListener(){},removeEventListener(){}};
 const storage={getItem:k=>k==='project-b0-final-v2'?JSON.stringify(initial):null,setItem(k,v){if(k==='project-b0-final-v2')saved=JSON.parse(v);}};
 const ctx={window:{B0Final:M,addEventListener(){},removeEventListener(){}},localStorage:storage,sessionStorage:storage,matchMedia:()=>({matches:true}),performance:{now:()=>now},setTimeout(f){timers.set(++id,f);return id;},clearTimeout(n){timers.delete(n);},requestAnimationFrame(f){frames.set(++id,f);return id;},cancelAnimationFrame(n){frames.delete(n);}};
-vm.runInNewContext(fs.readFileSync(require.resolve('../chapter4.js'),'utf8').replace('render();return {dispose};','render();return {dispose,act,select,down,move,up,click,updateMechanical,state:()=>({s,r,camera,robot,journey})};'),ctx);
+vm.runInNewContext(fs.readFileSync(require.resolve('../chapter4.js'),'utf8').replace('render();return {dispose,jumpToEnd};','render();return {dispose,jumpToEnd,act,select,down,move,up,click,updateMechanical,state:()=>({s,r,camera,robot,journey})};'),ctx);
 const g=ctx.window.startChapterFour({app,portrait:()=>'',onBack(){}});
 function step(t){now=t;const pending=[...frames];frames.clear();pending.forEach(([,f])=>f(t));}
 function event(x,y,drag){return {button:0,pointerId:1,clientX:x,clientY:y,preventDefault(){},target:{closest:sel=>sel==='[data-c4-drag]'&&drag?Object.assign(node('drag'),{dataset:{c4Drag:drag}}):null}};}
@@ -35,3 +35,7 @@ console.log('PASS: target selection, lift and descent, physical drags, real bolt
 
 Object.assign(initial,M.fresh());const introGame=ctx.window.startChapterFour({app,portrait:()=>'',onBack(){}});assert.match(app.innerHTML,/내 위치: 중앙관리실 앞/);for(let i=0;i<4;i++)introGame.act('story-next');assert.match(app.innerHTML,/문 열고 들어가기/);assert.doesNotMatch(app.innerHTML,/저쪽에 출구/);introGame.dispose();
 console.log('PASS: world-object tap target retained, drag slop and capture, visitor bolt clearance, conversation keeps view, one central-room entry');
+
+const skipGame=ctx.window.startChapterFour({app,portrait:()=>'',onBack(){}});skipGame.jumpToEnd();
+const skipped=M.restore(saved);assert.equal(skipped.phase,'ending');assert.equal(skipped.opened,true);assert.equal(skipped.links.robot,false);assert.equal(skipped.holding,false);skipGame.dispose();
+console.log('PASS: temporary final-lesson jump saves a valid ending with B-0 free');

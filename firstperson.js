@@ -88,7 +88,16 @@ function tone(ok=true) {
   try { audio ||= new (window.AudioContext||window.webkitAudioContext)();void audio.resume();const o=audio.createOscillator(),g=audio.createGain();o.frequency.value=ok?720:220;g.gain.setValueAtTime(.035,audio.currentTime);g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+.18);o.connect(g).connect(audio.destination);o.start();o.stop(audio.currentTime+.18); }catch{}
 }
 function dialogue(who,text) { return `<div class="speech ${who}"><b>${who==="robot"?"B-0":who==="thought"?"속마음":"나"}</b><p>${esc(text)}</p></div>`; }
-function openingHeader(){return `<header class="opening-header"><span>내 위치: 알 수 없는 곳</span>${btn("← 원위치로","view-home","quiet")}</header>`;}
+// Temporary review control; remove this helper and header calls after lesson review.
+window.B0LessonJumpButton=()=>btn('차시 끝으로 (임시)','jump-lesson-end','quiet lesson-jump','title="현재 차시의 마무리 장면으로 이동"');
+function jumpLessonEnd(){
+  if(chapterFour){chapterFour.jumpToEnd();enterChapterFour();return;}
+  if(chapterThree){chapterThree.jumpToEnd();enterChapterThree();return;}
+  if(chapterTwo){chapterTwo.jumpToEnd();enterChapterTwo();return;}
+  stopAdventure();state.chapter=1;state.phase='escaped';state.unlocked=true;
+  save('임시 이동','1차시 마무리로 이동');ending(3);
+}
+function openingHeader(){return `<header class="opening-header"><span>내 위치: 알 수 없는 곳</span><nav>${btn("← 원위치로","view-home","quiet")}${window.B0LessonJumpButton()}</nav></header>`;}
 const campaignKeys=['project-b0-room2-v1','project-b0-room3-v1','project-b0-final-v1','project-b0-final-v2'];
 function hasAdventure(){
   if((state.chapter||1)>1||state.phase!=='intro'||state.line>0)return true;
@@ -141,7 +150,7 @@ function enterRoom(reveal=false,restoreView=false) {
   roomView?.dispose();roomView=null;
   token++;clearTimeout(timer);clearTimeout(speechTimer);target="";moving=false;
   camera={x:0,y:-5};zoom=1;drag=null;pinch=null;touchPoints.clear();suppressClick=false;
-  app.innerHTML=`<main class="game${reveal?" revealing":""}"><header><div class="location"><h1>내 위치: 교육 실습실</h1></div><nav aria-label="게임 메뉴">${btn("← 원위치로","view-home","quiet")}${btn("메뉴","menu","quiet")}</nav></header><section class="scene" tabindex="0" aria-label="교육 실습실. 드래그하거나 방향키로 시선을 돌려 네 벽과 구석을 살펴보세요."><canvas class="panorama-canvas" role="img" aria-label="벽과 바닥이 하나로 이어진 교육 실습실"></canvas><p class="render-error" hidden role="alert"></p><div class="room-rig"><div class="room-wall world${state.unlocked?" unlocked":""}" data-yaw="0">
+  app.innerHTML=`<main class="game${reveal?" revealing":""}"><header><div class="location"><h1>내 위치: 교육 실습실</h1></div><nav aria-label="게임 메뉴">${btn("← 원위치로","view-home","quiet")}${window.B0LessonJumpButton()}${btn("메뉴","menu","quiet")}</nav></header><section class="scene" tabindex="0" aria-label="교육 실습실. 드래그하거나 방향키로 시선을 돌려 네 벽과 구석을 살펴보세요."><canvas class="panorama-canvas" role="img" aria-label="벽과 바닥이 하나로 이어진 교육 실습실"></canvas><p class="render-error" hidden role="alert"></p><div class="room-rig"><div class="room-wall world${state.unlocked?" unlocked":""}" data-yaw="0">
     <div class="door-art" aria-hidden="true"><div class="device door-left"></div><div class="device door-right"></div></div><span class="lock-led" aria-hidden="true"></span>
     <div class="device terminal-art" aria-hidden="true"></div><div class="map-board" aria-hidden="true"><small>연구소 안내</small><strong>연구소 전체 지도</strong><div class="map-placeholder"><span>지도 준비 중</span></div><small>비상 출입 안내</small></div><div class="device light-art" aria-hidden="true"></div>
     <div class="targets">${Object.keys(places).filter(id=>places[id].wall===0&&id!=="robot").map(wallTarget).join("")}</div></div>${otherWalls()}<div class="robot-anchor"><div class="robot-sprite live-body" role="img" aria-label="함께 있는 AI 로봇 B-0">${portrait()}</div>${wallTarget("robot")}</div></div>
@@ -317,7 +326,7 @@ function ending(line=0) {
   roomView?.dispose();roomView=null;moving=false;
   const lines=[["student","너도 같이 가는 거지?"],["robot","네. 함께 출구를 찾아보겠습니다."],["robot","복도 끝에 다른 방이 보입니다."],["student","같이 가 보자."]];
   const [who,text]=lines[line];
-  app.innerHTML=`<main class="game corridor-game"><header><h1>내 위치: 연구소 복도</h1><nav aria-label="게임 메뉴">${btn("← 원위치로","view-home","quiet")}${btn("메뉴","menu","quiet")}</nav></header><section class="corridor-scene" aria-label="교육 실습실을 나와 마주한 연구소 복도"><div class="corridor-view" role="img" aria-label="불빛과 여러 출입문이 이어지는 긴 연구소 복도"></div><div class="corridor-b0 walking" role="img" aria-label="함께 복도를 걷는 B-0"><div class="robot-sprite live-body">${portrait()}</div></div><div class="corridor-dialogue">${dialogue(who,text)}${line<3?btn("다음","epilogue-"+(line+1),"next"):btn("복도 끝으로 이동","chapter-two","primary")}</div></section><footer><small>${line===3?"복도 끝에서 다음 통로를 찾는다.":"B-0와 함께 실습실을 나왔다."}</small></footer></main>`;
+  app.innerHTML=`<main class="game corridor-game"><header><h1>내 위치: 연구소 복도</h1><nav aria-label="게임 메뉴">${btn("← 원위치로","view-home","quiet")}${window.B0LessonJumpButton()}${btn("메뉴","menu","quiet")}</nav></header><section class="corridor-scene" aria-label="교육 실습실을 나와 마주한 연구소 복도"><div class="corridor-view" role="img" aria-label="불빛과 여러 출입문이 이어지는 긴 연구소 복도"></div><div class="corridor-b0 walking" role="img" aria-label="함께 복도를 걷는 B-0"><div class="robot-sprite live-body">${portrait()}</div></div><div class="corridor-dialogue">${dialogue(who,text)}${line<3?btn("다음","epilogue-"+(line+1),"next"):btn("복도 끝으로 이동","chapter-two","primary")}</div></section><footer><small>${line===3?"복도 끝에서 다음 통로를 찾는다.":"B-0와 함께 실습실을 나왔다."}</small></footer></main>`;
   performSpeech(who,text,"friendly");
 }
 function menu() {modal("메뉴",`<p>진행은 이 기기에 자동 저장됩니다.</p><div class="options">${btn("계속 탐색","close","primary")}${btn(state.muted?"효과음 켜기":"효과음 끄기","sound","secondary")}${btn("막혔을 때 생각거리","hint","secondary")}${btn("수업 안내","teacher","secondary")}${btn("시작 화면으로","campaign-home","secondary")}${btn("진행 초기화","restart","quiet")}</div>`);}
@@ -363,6 +372,8 @@ function handle(a) {
   if(a==="teacher"){modal("1차시 · 첫 만남",'<p>초등 고학년용 탐색 도입. AI도 확인하지 않은 정보는 모를 수 있으며, 사람과 함께 정보를 찾아 문제를 해결한다는 경험.</p><p>플레이: 출입문·안내도 탐색 → B-0의 보관함 확인 → 쪽지 획득 → 도어락 입력 → 탈출. 순서 강제 없음.</p><p>수업 대화: B-0는 쪽지를 갖고 있었는데 왜 몰랐을까요? 모른다고 했을 때 함께 무엇을 확인했나요?</p><small>정해진 게임 규칙으로 동작하며 실제 AI나 얼굴 인식은 사용하지 않습니다. 기록은 이 기기에만 저장됩니다.</small>');}
 }
 app.addEventListener("click",e=>{
+  const jump=e.target.closest('button[data-action="jump-lesson-end"]');
+  if(jump&&!jump.disabled){e.preventDefault();jumpLessonEnd();return;}
   if(suppressClick&&e.detail!==0){suppressClick=false;e.preventDefault();return;}
   const b=e.target.closest("button[data-action]");if(b&&!b.disabled&&!moving)handle(b.dataset.action);
 });

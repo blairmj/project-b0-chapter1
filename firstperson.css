@@ -157,3 +157,9 @@ body{display:flow-root}
 .campaign-home .wake-controls{gap:12px;background:linear-gradient(transparent,#091523f5 35%);padding-top:70px}
 .campaign-tagline{font-size:14px;color:#bdd1dc}.campaign-buttons{display:grid;gap:10px;margin-top:8px}
 .campaign-home .muted{font-size:11px;text-align:center}
+
+/* Temporary lesson review control; keep the location and camera reset readable. */
+.lesson-jump{font-size:11px!important;white-space:nowrap;border:1px dashed #6e8b9e!important;padding:7px 9px!important;min-height:36px}
+.game>header,.opening-header{flex-wrap:wrap;gap:6px 10px}
+.game>header>nav,.opening-header>nav{display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end;gap:6px}
+@media(max-width:480px){.game>header h1{font-size:12px}.game>header>nav,.opening-header>nav{margin-left:auto}.game>header .quiet,.opening-header .quiet{font-size:11px;padding:7px 8px}}
