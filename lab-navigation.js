@@ -60,6 +60,7 @@
       const d=M.doors[id];if(!d)return;
       if(d.floor!==s.floor){if(d.floor===2){walkTo('stairs');return;}descend(()=>walkTo(id));return;}
       const p=pose(id),limited=M.bound(s,p.x,p.z);const blocked=Math.abs(limited.z-p.z)>2;
+      selection=null;actions('');
       animate({...p,...limited},()=>{if(blocked){say(limited.z>-600?'안전 차단문이 복도를 가로막고 있다. 다른 길이 있을까?':'유리 차단문이 복도를 가로막고 있다.');actions('막힌 통로',[['다시 둘러보기','clear']]);return;}selection=id;if(!s.visited.includes(id))s.visited.push(id);save();showObject(id);});
     }
     function showObject(id){

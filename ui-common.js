@@ -5,6 +5,8 @@
   const common=(text,action)=>button(text,action);
   let returnMenu=null;
   function header({place,namespace='action',reset='home',zoomClass='',active=false}){
+    // The first corridor is a dialogue scene, not an explorable camera view.
+    if(namespace==='action'&&place==='연구소 복도')active=false;
     return `<header class="b0-hud"><div class="b0-hud-main"><h1 class="b0-location ${namespace==='lab'?'lab-location':''}">${place}</h1><nav aria-label="게임 메뉴"><div class="zoom-controls" role="group" aria-label="화면 배율">${button('−','zoom-out',namespace,`aria-label="축소" ${active?'':'disabled'}`)}<output class="${zoomClass}" hidden>100%</output>${button('+','zoom-in',namespace,`aria-label="확대" ${active?'':'disabled'}`)}</div>${button('메뉴','menu',namespace)}</nav></div><div class="b0-hud-tools">${button('처음 위치로',reset,namespace,active?'':'disabled')}${window.B0LessonJumpButton?.()||''}</div></header>`;
   }
   function menuContent({namespace='action',close='close-modal',home='campaign-home',record='',extras=''}={}){
@@ -46,5 +48,14 @@
   }
   document.addEventListener('click',e=>{const b=e.target.closest('button');if(b&&['action','c2','c3','mr','c4','lab'].some(ns=>b.getAttribute('data-'+ns)==='menu'))returnMenu=b;},true);
   document.addEventListener('click',handle,true);
-  window.B0UI={header,menuContent,inventoryButton:()=>common('소지품','inventory'),firstGuide(){try{if(localStorage.getItem('project-b0-controls-seen-v1'))return;localStorage.setItem('project-b0-controls-seen-v1','1');}catch{}help(true);}};
+  function cameraActive(active,scope=document){scope.querySelector('.b0-hud')?.querySelectorAll?.('button')?.forEach(b=>{
+    if(['action','c2','c3','mr','c4','lab'].some(ns=>['home','view-home','zoom-in','zoom-out'].includes(b.getAttribute('data-'+ns))))b.disabled=!active;
+  });}
+  // Action overlays must never resize a world while the player drags an object.
+  if(typeof ResizeObserver!=='undefined'&&typeof MutationObserver!=='undefined'){
+  let observedActions=null;
+  const actionSize=new ResizeObserver(entries=>{for(const {target} of entries){target.closest('main')?.style.setProperty('--b0-actions-height',target.getBoundingClientRect().height+'px');}});
+  new MutationObserver(()=>{const current=document.querySelector('#app main>.c2-actions,#app main>.lab-actions');if(current===observedActions)return;actionSize.disconnect();observedActions=current;if(current)actionSize.observe(current);}).observe(document.querySelector('#app'),{childList:true,subtree:true});
+  }
+  window.B0UI={header,menuContent,cameraActive,inventoryButton:()=>common('소지품','inventory'),firstGuide(){try{if(localStorage.getItem('project-b0-controls-seen-v1'))return;localStorage.setItem('project-b0-controls-seen-v1','1');}catch{}help(true);}};
 })();

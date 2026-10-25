@@ -10,7 +10,7 @@ const state=M.fresh();state.cleared.practice=true;
 const g=context.window.startLabNavigation({app,portrait:()=>'',state,onSave:()=>saves++,onEnter(){},onHome(){},muted:true});
 const original={...g.state().companion};g.act('turn-left');finish();
 assert.equal(g.state().companion.x,original.x);assert.equal(g.state().companion.z,original.z,'looking around must not teleport B-0');
-g.walkTo('storage');finish();assert.equal(state.camera.z,-320);assert.ok(state.barrierTriggered,'the shutter descends after entering the corridor');
+g.walkTo('storage');assert.doesNotMatch(node('.lab-actions').innerHTML,/data-lab="enter-/,'previous door actions disappear while walking to a new destination');finish();assert.equal(state.camera.z,-320);assert.ok(state.barrierTriggered,'the shutter descends after entering the corridor');
 assert.ok(g.state().companion.z>=M.bound(state,0,-9999).z,'B-0 cannot stand beyond a closed barrier');
 M.returned(state,'mirror');state.cleared.storage=true;state.keyboxOpen=true;
 const writes=htmlWrites;g.act('take-key');assert.ok(state.keyTaken);assert.equal(htmlWrites,writes,'picking up a key must not rebuild the corridor or replace B-0');
