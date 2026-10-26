@@ -1,17 +1,30 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const M=require('../chapter3-model.js');
-const nodes=new Map();function node(key){if(!nodes.has(key))nodes.set(key,{style:{},dataset:{},hidden:false,isConnected:true,clientWidth:616,clientHeight:500,innerHTML:'',textContent:'',classList:{toggle(){},add(){},remove(){}},querySelector:s=>node(key+s),querySelectorAll:()=>[],setAttribute(k,v){this[k]=v;},listeners:{},addEventListener(k,f){this.listeners[k]=f;},removeEventListener(){},setPointerCapture(){},hasPointerCapture(){return true;},releasePointerCapture(){},getBoundingClientRect(){return {left:0,top:0,width:616,height:500};}});return nodes.get(key);}
-let saved,back=0;const storage={getItem(){return null;},setItem(k,v){saved=v;}};
-const app={querySelector:s=>['.c3-modal','.mr-modal'].includes(s)?null:node(s),addEventListener(){},removeEventListener(){}};
+const nodes=new Map();function node(key){if(!nodes.has(key))nodes.set(key,{style:{},dataset:{},hidden:false,isConnected:true,clientWidth:616,clientHeight:500,innerHTML:'',textContent:'',classList:{toggle(){},add(){},remove(){}},querySelector:s=>node(key+s),querySelectorAll:()=>[],setAttribute(k,v){this[k]=v;},listeners:{},addEventListener(k,f){this.listeners[k]=f;},removeEventListener(){},focus(){},setPointerCapture(){},hasPointerCapture(){return true;},releasePointerCapture(){},getBoundingClientRect(){return {left:0,top:0,width:616,height:500};}});return nodes.get(key);}
+let saved,back=0,lastDialog=null;const storage={getItem(){return null;},setItem(k,v){saved=v;}};
+const app={querySelector:s=>['.c3-modal','.mr-modal'].includes(s)?lastDialog:node(s),append(){},addEventListener(){},removeEventListener(){}};
 let serial=0;const frames=new Map();const context={window:{B0RoomThree:M,B0Mirror:require('../mirror-model.js'),addEventListener(){},removeEventListener(){}},sessionStorage:storage,localStorage:storage,matchMedia:()=>({matches:true}),performance:{now:()=>0},requestAnimationFrame(fn){frames.set(++serial,fn);return serial;},cancelAnimationFrame(n){frames.delete(n);},setTimeout:()=>0,clearTimeout(){}};
 const source=fs.readFileSync(require.resolve('../chapter3.js'),'utf8').replace('return {dispose,jumpToEnd};','return {jumpToEnd,act,select,activateObject,down,move,up,mirror:()=>mirrorView,state:()=>({s,camera,busy,mode})};');
-context.document={addEventListener(){}};vm.runInNewContext(fs.readFileSync(require.resolve('../ui-common.js'),'utf8'),context);
+context.document={addEventListener(){},createElement(){const handlers={};return lastDialog={addEventListener(k,f){handlers[k]=f;},showModal(){},close(){handlers.close?.();},remove(){lastDialog=null;}};}};vm.runInNewContext(fs.readFileSync(require.resolve('../ui-common.js'),'utf8'),context);
 vm.runInNewContext(fs.readFileSync(require.resolve('../mirror-room.js'),'utf8').replace('return {dispose};','return {act,dispose};'),context);
 vm.runInNewContext(source,context);const game=context.window.startChapterThree({app,portrait:()=>'',onBack(){back++;},preview:true});
 const flush=()=>{while(frames.size){const [id,f]=frames.entries().next().value;frames.delete(id);f(1000);}};
 for(let i=0;i<6;i++)game.act('intro-next');game.act('talk-next');game.act('talk-next');
 assert.equal(game.state().s.phase,'room');
 assert.match(node('.c3-real-exit')['aria-hidden'],/true/);
+game.select('map');flush();game.act('inspect-map');lastDialog.close();
+assert.doesNotMatch(node('.c3-actions').innerHTML,/data-c3=/,'closing an inspection popup clears its object choices');
+game.select('map');flush();node('.c3-stage').listeners.keydown({key:'ArrowRight',target:{dataset:{}},preventDefault(){}});
+assert.doesNotMatch(node('.c3-actions').innerHTML,/data-c3=/,'looking away with the keyboard dismisses object choices');
+game.select('map');flush();game.down(ev(400,100));game.move(ev(350,100));game.up(ev(350,100));
+assert.doesNotMatch(node('.c3-actions').innerHTML,/data-c3=/,'dragging the view clears stale map choices');
+node('.c3-stage').listeners.click({target:{closest(){return null;}}});
+game.select('map');flush();node('.c3-stage').listeners.click({target:{closest(){return null;}}});
+assert.doesNotMatch(node('.c3-actions').innerHTML,/data-c3=/,'clicking empty room space dismisses the selection');
+game.select('map');flush();game.act('clear');assert.doesNotMatch(node('.c3-actions').innerHTML,/data-c3=/);
+game.act('robot');game.act('request-check');node('.c3-stage').listeners.keydown({key:'ArrowRight',target:{dataset:{}},preventDefault(){}});
+assert.equal(game.state().mode,'check','looking for a target must keep a pending B-0 request');game.act('clear');
+
 game.act('robot');game.act('ask-route');assert.doesNotMatch(node('.c3-speech').innerHTML,/보관장/);
 game.select('oldDoor');game.act('old-door');assert.equal(game.state().s.seen.wall,true,'context buttons work during the approach');flush();
 game.act('talk-next');game.act('talk-next');game.act('ask-route');assert.match(node('.c3-speech').innerHTML,/현재 출구 위치는 아직 확인하지/);
