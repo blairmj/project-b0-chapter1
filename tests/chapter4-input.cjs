@@ -5,7 +5,7 @@ let saved,now=0,id=0;const frames=new Map(),timers=new Map(),app={innerHTML:'',q
 const storage={getItem:k=>k==='project-b0-final-v2'?JSON.stringify(initial):null,setItem(k,v){if(k==='project-b0-final-v2')saved=JSON.parse(v);}};
 const ctx={window:{B0Final:M,addEventListener(){},removeEventListener(){}},localStorage:storage,sessionStorage:storage,matchMedia:()=>({matches:true}),performance:{now:()=>now},setTimeout(f){timers.set(++id,f);return id;},clearTimeout(n){timers.delete(n);},requestAnimationFrame(f){frames.set(++id,f);return id;},cancelAnimationFrame(n){frames.delete(n);}};
 ctx.document={addEventListener(){}};vm.runInNewContext(fs.readFileSync(require.resolve('../ui-common.js'),'utf8'),ctx);
-vm.runInNewContext(fs.readFileSync(require.resolve('../chapter4.js'),'utf8').replace('render();return {dispose,jumpToEnd};','render();return {dispose,jumpToEnd,act,select,down,move,up,click,updateMechanical,state:()=>({s,r,camera,robot,journey})};'),ctx);
+vm.runInNewContext(fs.readFileSync(require.resolve('../chapter4.js'),'utf8').replace('render();return {dispose,jumpToEnd};','render();return {dispose,jumpToEnd,act,select,down,move,up,click,updateMechanical,state:()=>({s,r,camera,robot,journey,conversation})};'),ctx);
 const g=ctx.window.startChapterFour({app,portrait:()=>'',onBack(){}});
 function step(t){now=t;const pending=[...frames];frames.clear();pending.forEach(([,f])=>f(t));}
 function event(x,y,drag){return {button:0,pointerId:1,clientX:x,clientY:y,preventDefault(){},target:{closest:sel=>sel==='[data-c4-drag]'&&drag?Object.assign(node('drag'),{dataset:{c4Drag:drag}}):null}};}
@@ -28,7 +28,7 @@ g.down(event(200,200,'grip'));g.move(event(200,265,'grip'));g.up(event(200,265,'
 for(let t=400;t<=2400;t+=100)step(t);assert.equal(node('.c4-stage').dataset.reported,'yes');assert.equal(g.state().s.opened,false);g.act('ask-door');assert.match(node('.c4-speech').innerHTML,/아직 문에 걸려/);
 g.act('release-b0');assert.ok(g.state().robot.x>-85,'released B-0 waits on the clear side of the exit');assert.equal(g.state().r.latch,0);assert.equal(g.state().s.upper,true);
 g.act('request-hold');g.select('handle');g.act('pull');for(let t=2500;t<=7900;t+=100)step(t);assert.equal(saved.opened,true);
-g.act('leave');assert.equal(g.state().s.phase,'room');g.act('release-b0');g.act('leave');assert.equal(g.state().s.phase,'farewell');for(let i=0;i<6;i++)g.act('story-next');assert.equal(g.state().s.phase,'ending');for(let i=0;i<6;i++)g.act('story-next');assert.equal(g.state().s.phase,'complete');
+g.act('leave');assert.equal(g.state().s.phase,'room');g.act('release-b0');g.act('enter-exit');assert.equal(g.state().s.phase,'farewell');for(let i=0;i<6;i++)g.act('story-next');assert.equal(g.state().s.phase,'ending');for(let i=0;i<6;i++)g.act('story-next');assert.equal(g.state().s.phase,'complete');
 g.dispose();assert.equal(frames.size,0);assert.equal(timers.size,0);
 ctx.matchMedia=()=>({matches:false});initial.opened=initial.upper=true;initial.links.robot=false;now=0;
 const a=ctx.window.startChapterFour({app,portrait:()=>'',onBack(){}});a.act('leave');step(1100);assert.equal(node('.c4-robot').dataset.pose,'walking');step(2300);assert.equal(a.state().s.phase,'farewell');for(let i=0;i<6;i++)a.act('story-next');step(3900);assert.ok(Number(node('.c4-passage-robot').style.opacity)>0);step(5400);assert.equal(a.state().s.phase,'ending');a.dispose();assert.equal(frames.size,0);
@@ -40,3 +40,29 @@ console.log('PASS: world-object tap target retained, drag slop and capture, visi
 const skipGame=ctx.window.startChapterFour({app,portrait:()=>'',onBack(){}});skipGame.jumpToEnd();
 const skipped=M.restore(saved);assert.equal(skipped.phase,'ending');assert.equal(skipped.opened,true);assert.equal(skipped.links.robot,false);assert.equal(skipped.holding,false);skipGame.dispose();
 console.log('PASS: temporary final-lesson jump saves a valid ending with B-0 free');
+
+Object.assign(initial,M.fresh(),{phase:'room'});
+const dialogueGame=ctx.window.startChapterFour({app,portrait:()=>'',onBack(){}});
+dialogueGame.act('try-door');
+const activeTalk=dialogueGame.state().conversation;
+assert.ok(activeTalk);
+assert.doesNotMatch(node('.c4-actions').innerHTML,/<button/,'a story conversation must hide old object actions');
+for(const action of ['robot','clear','home','enter-exit']){
+  dialogueGame.act(action);
+  assert.equal(dialogueGame.state().conversation,activeTalk);
+  assert.equal(node('.c4-speech').hidden,false,'room controls cannot hide a conversation while leaving input blocked');
+}
+node('.c4-speech').hidden=true;
+dialogueGame.select('door');
+assert.equal(node('.c4-speech').hidden,false,'clicking the exit recovers a previously hidden conversation');
+for(let i=0;i<7;i++)dialogueGame.act('talk-next');
+assert.equal(dialogueGame.state().conversation,null);
+assert.equal(dialogueGame.state().s.boss,false);
+dialogueGame.act('enter-exit');
+assert.equal(dialogueGame.state().s.boss,true,'the visitor-only exit continues the B-0 confrontation instead of silently doing nothing');
+for(let i=0;i<4;i++)dialogueGame.act('talk-next');
+dialogueGame.act('enter-exit');
+assert.equal(dialogueGame.state().s.phase,'room','clicking the closed exit cannot skip the puzzle');
+assert.match(node('.c4-actions').innerHTML,/문 손잡이 돌리기/);
+dialogueGame.dispose();
+console.log('PASS: hidden-conversation recovery, story control guard, clickable portal progression, closed exit cannot skip puzzle');

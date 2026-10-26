@@ -107,3 +107,15 @@
 @media(prefers-reduced-motion:reduce){.c4-bolt-upper{transition:none}}
 
 .c4-hold-art{transform:scaleX(-1)}
+
+/* Keep the character and dialogue in separate rows at every viewport size. */
+.c4-story-scene{display:flex;flex-direction:column;min-height:0;isolation:isolate}
+.c4-story-robot{position:relative;inset:auto;align-self:flex-end;flex:0 1 240px;min-height:0;width:clamp(100px,28vw,160px);height:240px;margin:auto 12% 18px;z-index:1;isolation:isolate;pointer-events:none}
+.c4-story-dialogue{position:relative;inset:auto;flex:none;margin:auto 20px 20px;z-index:6;max-height:65%;overflow-y:auto}
+.c4-story-robot+.c4-story-dialogue{margin-top:0}
+.c4-story-dialogue .speech{max-width:100%}
+.c4-story-robot>.robot-sprite{z-index:0}
+.c4-exit-crossing{position:absolute;inset:0;width:100%;height:100%;min-height:0;padding:0;border:0!important;border-radius:0;background:transparent!important;box-shadow:none;pointer-events:auto;cursor:pointer}
+.c4-exit-crossing:disabled,.c4-stage[data-journey] .c4-exit-crossing{pointer-events:none}
+.c4-exit-crossing:focus-visible{outline:3px solid #b9e8f6;outline-offset:-5px}
+@media(max-width:420px){.c4-story-dialogue{margin-inline:14px;margin-bottom:14px}.c4-story-robot{flex-basis:205px;height:205px}}

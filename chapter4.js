@@ -35,7 +35,7 @@
     function actions(title,items=[]){if(bar)bar.innerHTML=`<strong>${esc(title)}</strong><div>${items.map(([l,a,c])=>b(l,a,c||'')).join('')}</div>`;}
     function say(who,text){if(!speech)return;speech.hidden=false;speech.innerHTML=`<div class="speech ${who}"><b>${who==='robot'?'B-0':who==='axiom'?'AXIOM':'나'}</b><p>${esc(text)}</p></div>${b(conversation?'다음':'대화 닫기',conversation?'talk-next':'dismiss','quiet')}`;
       const actor=app.querySelector('.c4-robot .robot-sprite');actor?.classList.toggle('speaking',who==='robot');if(who==='robot')later(()=>actor?.classList.remove('speaking'),Math.min(3800,text.length*90));}
-    function talk(lines,done){conversation={lines,i:0,done};say(...lines[0]);}
+    function talk(lines,done){actions('');conversation={lines,i:0,done};say(...lines[0]);}
     function next(){if(!conversation)return;const c=conversation;if(++c.i<c.lines.length)say(...c.lines[c.i]);else{conversation=null;speech.hidden=true;c.done?.();}}
     function render(){closeModal(false);conversation=null;pointer=null;cancelAnimationFrame(frame);cancelAnimationFrame(camFrame);cancelAnimationFrame(journeyFrame);journey=null;previous=0;
       if(s.phase==='intro'){renderScene(intro,'2층 중앙관리실 앞','intro');return;}
@@ -49,7 +49,7 @@
       <div class="c4-desk-shell" aria-hidden="true"><i></i><i></i><i></i></div>
       <button class="c4-console" data-c4-object="console" aria-label="기체 제어 연결 조작대"><small>CONTROL</small><span>기체 제어 연결</span><i></i><i></i><i></i></button>
       <button class="c4-records" data-c4-object="records" aria-label="기록 단말기"><small>ARCHIVE</small><span>시설 운영 기록</span><i></i><i></i><i></i></button>
-      <div class="c4-door" data-c4-object="door" role="button" tabindex="0" aria-label="외부 출구"><div class="c4-outside"><div class="c4-passage-robot" aria-hidden="true"><div class="c4-walk-frame"></div></div></div><div class="c4-door-leaf"><span>외부 출구</span><i data-c4-drag="grip" role="slider" tabindex="0" aria-label="문 손잡이" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></i></div><div class="c4-bolt c4-bolt-lower" aria-label="실제 하부 잠금쇠"></div><div class="c4-bolt-upper" aria-label="실제 상부 잠금쇠"></div><small class="c4-door-status"></small></div>
+      <div class="c4-door" data-c4-object="door" role="button" tabindex="0" aria-label="외부 출구"><div class="c4-outside"><button type="button" class="c4-exit-crossing" data-c4="enter-exit" aria-label="문 너머로 이동" disabled></button><div class="c4-passage-robot" aria-hidden="true"><div class="c4-walk-frame"></div></div></div><div class="c4-door-leaf"><span>외부 출구</span><i data-c4-drag="grip" role="slider" tabindex="0" aria-label="문 손잡이" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></i></div><div class="c4-bolt c4-bolt-lower" aria-label="실제 하부 잠금쇠"></div><div class="c4-bolt-upper" aria-label="실제 상부 잠금쇠"></div><small class="c4-door-status"></small></div>
       <div class="c4-exit-box uncovered" data-c4-object="handle" role="button" tabindex="0" aria-label="문 옆 개방 손잡이"><strong>개방 손잡이</strong><div class="c4-track"></div><div class="c4-handle"><i></i></div></div>
       <div class="c4-high" data-c4-object="high" role="button" tabindex="0" aria-label="문 위 수동 잠금장치"><small>수동 잠금장치</small><div class="c4-high-track"></div><div class="c4-high-knob" data-c4-drag="high" role="slider" tabindex="0" aria-label="상부 잠금쇠" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div></div>
       <div class="c2-robot c4-robot" data-c4-object="robot" role="button" tabindex="0" aria-label="B-0"><div class="robot-sprite live-body">${portrait()}<svg class="c4-smile" viewBox="0 0 1024 1536" aria-hidden="true"><path d="M475 536 Q502 565 540 548"/></svg></div><span class="c4-recovery-light" aria-hidden="true"></span><img class="c4-hold-art" src="./assets/b0-bracing-v1.webp" alt=""><div class="c4-walk-art" aria-hidden="true"><div class="c4-walk-frame"></div></div></div><div class="c4-ceiling-ring" aria-hidden="true"></div>
@@ -65,7 +65,7 @@
       app.querySelector('.c4-robot').style.transform=`translate3d(${robot.x-48}px,24px,${robot.z}px) rotateY(${-camera.yaw}deg)`;window.B0RoomSpace?.sync(world);app.querySelector('.c4-zoom').textContent=Math.round(camera.zoom*100)+'%';stage.dataset.yaw=Math.round(camera.yaw);}
     function update(){if(!inRoom())return;const stopped=s.met&&s.links.robot;
       stage.classList.toggle('c4-confrontation',s.boss&&!s.opened);app.querySelector('.c4-robot').classList.toggle('controlled',stopped);
-      app.querySelector('.c4-door').classList.toggle('open',s.opened||s.met&&!s.boss);app.querySelector('.c4-exit-box').classList.toggle('available',M.ready(s));
+      app.querySelector('.c4-door').classList.toggle('open',s.opened||s.met&&!s.boss);app.querySelector('.c4-exit-crossing').disabled=!(s.opened||s.met&&!s.boss);app.querySelector('.c4-exit-box').classList.toggle('available',M.ready(s));
       app.querySelector('.c4-door-status').textContent=s.opened?'통로 열림 · 개방 고정':s.met&&!s.boss?'방문자 통과 허용':s.boss?'반출 제한 · 기체 회수':'방문자 출구';
       updateMechanical();updateTension();updateRobot();updateCamera();}
     function updateRobot(){if(!inRoom())return;const actor=app.querySelector('.c4-robot'),controlled=s.met&&s.links.robot,now=performance.now();
@@ -102,7 +102,7 @@
       function step(t){if(dead||s.phase!=='room')return;const v=reduced()?1:Math.min(1,(t-start)/850),q=v*v*(3-2*v);for(const k of ['x','z','pitch','zoom','height'])camera[k]=from[k]+((to[k]??from[k])-from[k])*q;camera.yaw=from.yaw+turn*q;updateCamera();if(v<1)camFrame=requestAnimationFrame(step);else done?.();}camFrame=requestAnimationFrame(step);
     }
     function approach(id){const targets={screen:{x:0,z:-90,yaw:0,pitch:26,zoom:.75},console:{x:-291+235/SPACE,z:0,yaw:-90,pitch:-7,zoom:1},records:{x:291-235/SPACE,z:0,yaw:90,pitch:0,zoom:1},door:{x:-85,z:290-250/SPACE,yaw:180,pitch:-5,zoom:1},handle:{x:-242.5,z:286-235/SPACE,yaw:180,pitch:-12,zoom:1},high:{x:-85,z:286-235/SPACE,yaw:180,pitch:28,zoom:1},robot:{x:robot.x,z:robot.z+260/SPACE,yaw:0,pitch:-18,zoom:1}};if(targets[id]&&!r.lifted)cameraTo({...targets[id],height:0});}
-    function select(id){if(conversation||carryingTransition)return;
+    function select(id){if(conversation){say(...conversation.lines[conversation.i]);return;}if(carryingTransition)return;
       if(selection==='ask'){selection=null;ask(id);return;}
       if(selection==='lift-target'){selection=null;if(id!=='high'){say('robot','그곳에는 들어 올려 드릴 자리가 없습니다.');robotMenu();return;}lift();return;}
       if(selection==='hold-target'){selection=null;if(id!=='handle'){say('robot','그 물건은 당긴 채 잡을 수 없습니다.');robotMenu();return;}hold(true);return;}
@@ -166,6 +166,8 @@
       if(a==='revisit'){s.phase='room';s.line=0;robot={x:93,z:-140};camera={x:0,z:60,yaw:-15,pitch:14,zoom:.7};save();render();return;}
       if(a==='reflection'){modal('이번 모험 돌아보기',`<p>B-0에게 전에 가르친 행동이 이번에는 어디에 쓰였나요?</p><p>혼자 할 수 없었던 일을 어떻게 나누어 했나요?</p><p>완료라는 표시와 실제 문 상태는 같았나요?</p><small>정해진 답을 고르는 시험이 아닙니다. 함께 이야기해 보세요.</small>`);return;}
       if(s.phase!=='room')return;
+      if(conversation&&!['talk-next','dismiss'].includes(a)){say(...conversation.lines[conversation.i]);return;}
+      if(a==='enter-exit'){if(selection==='ask'||selection==='lift-target'||selection==='hold-target'){select('door');return;}if(!s.met){meet();return;}if(!s.boss){challenge();return;}if(s.opened)startJourney('approach');else select('door');return;}
       if(a==='talk-next'){next();return;}if(a==='dismiss'){conversation=null;speech.hidden=true;return;}
       if(a==='home'){if(r.lifted){lower();return;}cancelAnimationFrame(camFrame);camera={x:0,z:60,yaw:-15,pitch:14,zoom:.7,height:0};updateCamera();return;}
       if(a==='zoom-in'||a==='zoom-out'){camera.zoom=Math.max(.65,Math.min(1.6,camera.zoom+(a==='zoom-in'?.15:-.15)));updateCamera();return;}
