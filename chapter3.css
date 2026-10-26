@@ -113,3 +113,8 @@
 .c3-monitor>*{visibility:hidden}.c3-keyboard{display:none}
 .c3-gate-scene,.c3-central-scene{background:#4b6074 url('./assets/chapter3-office-wall-v2.webp') center/cover}
 .c3-gate-door,.c3-central-door{background:linear-gradient(90deg,transparent 49%,#182e4099 49% 51%,transparent 51%),linear-gradient(#24435a33,#18354a77),url('./assets/chapter2-metal-v1.webp') center/280px;border-color:#22394d}
+
+/* Keep nested robot sprites below the dialogue and next button. */
+.c3-intro .corridor-scene{isolation:isolate}
+.c3-intro .corridor-b0{z-index:1;isolation:isolate}
+.c3-intro .corridor-dialogue{z-index:6}

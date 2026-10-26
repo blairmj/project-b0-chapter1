@@ -39,8 +39,8 @@
       <section class="c2-actions mr-actions" aria-label="선택한 물건의 행동"></section><footer>${b('B-0에게 말하기','robot','secondary')}${window.B0UI?.inventoryButton()||''}</footer></main>`;
       stage=app.querySelector('.mr-stage');world=app.querySelector('.mr-world');bar=app.querySelector('.mr-actions');speech=app.querySelector('.mr-speech');
       stage.addEventListener('pointerdown',down);stage.addEventListener('pointermove',move);stage.addEventListener('pointerup',up);stage.addEventListener('pointercancel',cancelPointer);
-      stage.addEventListener('click',e=>{if(suppress){suppress=false;return;}if(e.target.closest('[data-mr]'))return;const id=e.target.closest('[data-mr-object]')?.dataset.mrObject;if(id)select(id);});
-      stage.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.dataset.mrObject){e.preventDefault();select(e.target.dataset.mrObject);return;}if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();if(e.key==='ArrowLeft')camera.yaw-=15;if(e.key==='ArrowRight')camera.yaw+=15;if(e.key==='ArrowUp')camera.pitch+=8;if(e.key==='ArrowDown')camera.pitch-=8;updateCamera();});
+      stage.addEventListener('click',e=>{if(suppress){suppress=false;return;}if(e.target.closest('[data-mr]'))return;const id=e.target.closest('[data-mr-object]')?.dataset.mrObject;if(id)activateObject(id);});
+      stage.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.dataset.mrObject){e.preventDefault();activateObject(e.target.dataset.mrObject);return;}if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();if(e.key==='ArrowLeft')camera.yaw-=15;if(e.key==='ArrowRight')camera.yaw+=15;if(e.key==='ArrowUp')camera.pitch+=8;if(e.key==='ArrowDown')camera.pitch-=8;updateCamera();});
       stage.addEventListener('wheel',e=>{e.preventDefault();camera.zoom=Math.max(.7,Math.min(1.65,camera.zoom-e.deltaY*.001));updateCamera();},{passive:false});
       update();if(approaching)introLine();else if(s.phase==='unlocked')unlockedActions();else if(['reunited','complete'].includes(s.phase))joinedActions();else actions('방 안을 자유롭게 살펴보세요.');
       if(!approaching&&s.phase==='split')actions('방 안을 자유롭게 살펴보세요.');
@@ -79,6 +79,7 @@
       if(s.line===5){s.phase='split';save();speech.hidden=true;actions('방 안을 자유롭게 살펴보세요.');update();return;}
       s.line++;save();update();introLine();
     }
+    function activateObject(id){if(!targetMode&&id==='door'&&M.solved(s)){leave();return;}select(id);}
     function select(id){
       if(s.phase==='approach')return;selection=id;speech.hidden=true;
       if(targetMode&&M.symbols.includes(id)){targetMode=false;cameraTo({x:-55,z:-55,yaw:90,pitch:-5,zoom:1.45});requestMenu(id);return;}

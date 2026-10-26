@@ -35,7 +35,7 @@
       <footer><button type="button" data-c2="down" class="c2-descend" hidden>내려가기</button>${button('B-0에게 말하기','robot','secondary')}${window.B0UI?.inventoryButton()||''}</footer></main>`;
       room=app.querySelector('.c2-game');stage=app.querySelector('.c2-stage');world=app.querySelector('.c2-world');actionbar=app.querySelector('.c2-actions');speech=app.querySelector('.c2-speech');helpText=app.querySelector('.c2-basic-help');
       stage.addEventListener('pointerdown',pointerDown);stage.addEventListener('pointermove',pointerMove);stage.addEventListener('pointerup',pointerUp);stage.addEventListener('pointercancel',cancelPointer);
-      stage.addEventListener('click',e=>{if(suppress){suppress=false;return;}if(busy||travelling||mode?.looking)return;const el=e.target.closest('[data-object]');if(s.phase==='ledge'){if(el?.dataset.object==='robot')act('help-b0');return;}if(el){if(!mode&&el.dataset.object==='vent'&&s.ventOpen&&e.target.closest('.c2-vent-lid'))act('vent');else select(el.dataset.object);}else if(mode?.type==='move'){const p=floorPoint(e.clientX,e.clientY);if(p)place(p.x,p.z);}});
+      stage.addEventListener('click',e=>{if(suppress){suppress=false;return;}if(busy||travelling||mode?.looking)return;const el=e.target.closest('[data-object]');if(s.phase==='ledge'){if(el?.dataset.object==='robot')act('help-b0');return;}if(el){if(!mode&&el.dataset.object==='vent'&&s.ventOpen&&e.target.closest('.c2-vent-lid'))act('vent');else activateObject(el.dataset.object);}else if(mode?.type==='move'){const p=floorPoint(e.clientX,e.clientY);if(p)place(p.x,p.z);}});
       stage.addEventListener('wheel',e=>{e.preventDefault();if(s.phase!=='room'||travelling)return;if(!mode)camera.zoom=Math.max(.65,Math.min(1.5,camera.zoom-e.deltaY*.001));updateCamera();},{passive:false});
       stage.addEventListener('keydown',keyDown);
       update();
@@ -98,6 +98,7 @@
       const actor=app.querySelector('.c2-robot .robot-sprite');if(actor){actor.classList.toggle('speaking',who==='robot');later(()=>actor.classList.remove('speaking'),Math.min(4500,text.length*90));}
     }
     function actions(title,items){actionbar.innerHTML=`<strong>${escaped(title)}</strong><div>${items.map(([t,a])=>button(t,a)).join('')}</div>`;}
+    function activateObject(id){if(busy||travelling)return;if(!mode&&id==='window'&&s.windowOpen){act('exit');return;}select(id);}
     function select(id){
       if(mode?.looking)return;
       if(mode?.type==='target'){robotTarget(id);return;}
@@ -206,7 +207,7 @@
     function keyDown(e){
       if(busy||travelling)return;
       if(s.phase==='ledge'){if((e.key==='Enter'||e.key===' ')&&e.target.dataset.object==='robot'){e.preventDefault();act('help-b0');}return;}
-      if((e.key==='Enter'||e.key===' ')&&e.target.dataset.object){e.preventDefault();select(e.target.dataset.object);return;}
+      if((e.key==='Enter'||e.key===' ')&&e.target.dataset.object){e.preventDefault();activateObject(e.target.dataset.object);return;}
       if(e.key==='Escape'){cancelMove();return;}
       const dirs={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'front',ArrowDown:'back'};
       if(!dirs[e.key])return;e.preventDefault();

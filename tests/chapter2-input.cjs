@@ -21,7 +21,7 @@ const context={window:{B0RoomTwo:M,addEventListener(){},removeEventListener(){}}
   performance:{now:()=>clock},requestAnimationFrame(fn){frames.set(++frame,fn);return frame;},
   matchMedia:()=>({matches:reduceMotion}),setTimeout:()=>0,clearTimeout(){},cancelAnimationFrame(id){frames.delete(id);}};
 const source=fs.readFileSync(require.resolve('../chapter2.js'),'utf8').replace('return {dispose,jumpToEnd};',
-  'return {jumpToEnd,act,pointerDown,pointerMove,pointerUp,cancelPointer,select,rescuePose,state:()=>({s,camera,standing,mode,selection,view:view(),travelling})};');
+  'return {jumpToEnd,act,pointerDown,pointerMove,pointerUp,cancelPointer,select,activateObject,rescuePose,state:()=>({s,camera,standing,mode,selection,view:view(),travelling})};');
 vm.runInNewContext(source,context);
 const game=context.window.startChapterTwo({app,portrait:()=>'',onBack(){},preview:true});
 function event(x,y,object){return {pointerId:1,button:0,clientX:x,clientY:y,preventDefault(){},
@@ -82,7 +82,7 @@ assert.equal(M.reach(state,'small'),'ready');
 game.act('down');assert.equal(state.assisted,null);
 game.act('climb-small');game.act('boost');
 while(frames.size){const [id,fn]=frames.entries().next().value;frames.delete(id);fn(1500);}
-game.act('open-window');game.act('exit');
+game.activateObject('window');assert.equal(state.phase,'room','closed window click cannot bypass the latch');game.act('open-window');game.activateObject('window');
 assert.equal(state.phase,'ledge');assert.equal(game.state().view.z,-286);assert.equal(game.state().view.height,200);
 assert.ok(game.state().camera.pitch<-40,'from the sill the player looks DOWN into the existing room');
 assert.equal(node('.c2-sill').hidden,false);assert.equal(JSON.stringify(state.boxes),stacked,'ledge view keeps the same room layout');

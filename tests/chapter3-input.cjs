@@ -4,7 +4,7 @@ const nodes=new Map();function node(key){if(!nodes.has(key))nodes.set(key,{style
 let saved,back=0;const storage={getItem(){return null;},setItem(k,v){saved=v;}};
 const app={querySelector:s=>['.c3-modal','.mr-modal'].includes(s)?null:node(s),addEventListener(){},removeEventListener(){}};
 let serial=0;const frames=new Map();const context={window:{B0RoomThree:M,B0Mirror:require('../mirror-model.js'),addEventListener(){},removeEventListener(){}},sessionStorage:storage,localStorage:storage,matchMedia:()=>({matches:true}),performance:{now:()=>0},requestAnimationFrame(fn){frames.set(++serial,fn);return serial;},cancelAnimationFrame(n){frames.delete(n);},setTimeout:()=>0,clearTimeout(){}};
-const source=fs.readFileSync(require.resolve('../chapter3.js'),'utf8').replace('return {dispose,jumpToEnd};','return {jumpToEnd,act,select,down,move,up,mirror:()=>mirrorView,state:()=>({s,camera,busy,mode})};');
+const source=fs.readFileSync(require.resolve('../chapter3.js'),'utf8').replace('return {dispose,jumpToEnd};','return {jumpToEnd,act,select,activateObject,down,move,up,mirror:()=>mirrorView,state:()=>({s,camera,busy,mode})};');
 context.document={addEventListener(){}};vm.runInNewContext(fs.readFileSync(require.resolve('../ui-common.js'),'utf8'),context);
 vm.runInNewContext(fs.readFileSync(require.resolve('../mirror-room.js'),'utf8').replace('return {dispose};','return {act,dispose};'),context);
 vm.runInNewContext(source,context);const game=context.window.startChapterThree({app,portrait:()=>'',onBack(){back++;},preview:true});
@@ -26,7 +26,7 @@ game.act('home');flush();assert.equal(game.state().camera.zoom,1);assert.equal(g
 game.select('shelf');flush();game.act('help-shelf');flush();assert.equal(game.state().s.helper,true);
 game.act('push-right');game.act('push-right');game.act('push-right');assert.equal(M.clear(game.state().s),true);
 assert.equal(node('.c3-real-exit')['aria-hidden'],'false');
-game.select('exit');flush();game.act('open-exit');game.act('leave');
+game.activateObject('exit');flush();assert.equal(game.state().s.phase,'room','closed hidden exit click cannot bypass opening');game.act('open-exit');game.activateObject('exit');
 assert.equal(game.state().s.phase,'gate');assert.equal(game.state().busy,true);
 game.act('talk-next');game.act('talk-next');game.act('talk-next');assert.equal(game.state().busy,false);assert.match(app.innerHTML,/외부 출입구/);
 game.act('request-approval');assert.equal(game.state().s.approval,'rejected');assert.match(node('.c3-actions').innerHTML,/관찰실 통로로 가기/);game.act('go-central');assert.equal(game.state().s.phase,'mirror');assert.match(app.innerHTML,/mr-game/);const mirror=game.mirror();mirror.act('intro-next');mirror.act('intro-next');flush();for(let i=0;i<4;i++)mirror.act('intro-next');mirror.act('command-triangle-hold');flush();mirror.act('pull');flush();mirror.act('reunite');flush();mirror.act('leave');assert.match(app.innerHTML,/data-c3="chapter-four"/);assert.match(app.innerHTML,/중앙관리실 앞으로 가기/);assert.match(app.innerHTML,/거울 관찰실 밖 통로/);assert.doesNotMatch(app.innerHTML,/AXIOM|액시엄|엑시엄/);

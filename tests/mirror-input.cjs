@@ -3,7 +3,7 @@ const nodes=new Map();function node(k){if(!nodes.has(k))nodes.set(k,{style:{},da
 const app={querySelector:s=>s==='.mr-modal'?null:node(s),addEventListener(){},removeEventListener(){}};
 let serial=0,complete=0,saves=0;const frames=new Map(),timers=new Map();
 const context={window:{B0Mirror:M,addEventListener(){},removeEventListener(){}},matchMedia:()=>({matches:true}),performance:{now:()=>0},requestAnimationFrame(fn){frames.set(++serial,fn);return serial;},cancelAnimationFrame(n){frames.delete(n);},setTimeout(fn,ms){timers.set(++serial,{fn,ms});return serial;},clearTimeout(n){timers.delete(n);}};
-const source=fs.readFileSync(require.resolve('../mirror-room.js'),'utf8').replace('return {dispose};','return {dispose,act,select,down,move,up,cancelPointer,state:()=>({s,camera,robotBusy,robot})};');
+const source=fs.readFileSync(require.resolve('../mirror-room.js'),'utf8').replace('return {dispose};','return {dispose,act,select,activateObject,down,move,up,cancelPointer,state:()=>({s,camera,robotBusy,robot})};');
 vm.runInNewContext(source,context);const s=M.fresh();const game=context.window.startMirrorRoom({app,portrait:()=>'',state:s,onSave(){saves++;},onBack(){},onComplete(){complete++;}});
 const flush=()=>{while(frames.size){const [id,fn]=frames.entries().next().value;frames.delete(id);fn(1000);}};
 game.act('intro-next');game.act('intro-next');assert.equal(game.state().robotBusy,true);flush();
@@ -20,6 +20,6 @@ game.act('home');flush();assert.equal(game.state().camera.zoom,1);assert.equal(s
 function event(x,y,own){return {pointerId:1,button:0,clientX:x,clientY:y,preventDefault(){},target:{closest:sel=>own&&sel==='[data-mr-drag="own"]'?{}:null}};}
 let yaw=game.state().camera.yaw;game.down(event(200,200,false));game.move(event(340,215,false));game.up(event(340,215,false));assert.notEqual(game.state().camera.yaw,yaw);assert.ok(game.state().camera.x<0,'camera stays on the student side');
 yaw=game.state().camera.yaw;game.down(event(200,200,true));game.move(event(200,300,true));game.up(event(200,300,true));assert.equal(s.phase,'unlocked');assert.equal(game.state().camera.yaw,yaw,'handle drag must not rotate the room');
-game.act('leave');assert.equal(complete,0,'cannot leave B-0 behind');game.act('reunite');flush();assert.equal(s.phase,'reunited');assert.ok(game.state().robot.x<0,'B-0 crosses into the student compartment');game.act('leave');assert.equal(complete,1);assert.equal(s.phase,'complete');assert.ok(saves>0);
+game.activateObject('door');assert.equal(complete,0,'cannot leave B-0 behind');game.act('reunite');flush();assert.equal(s.phase,'reunited');assert.ok(game.state().robot.x<0,'B-0 crosses into the student compartment');game.activateObject('door');assert.equal(complete,1);assert.equal(s.phase,'complete');assert.ok(saves>0);
 game.dispose();assert.equal(frames.size,0);
 console.log('PASS: split introduction, no early answer, momentary movement, persistent request, independent camera, direct hand drag, cooperation, reunited exit and cleanup');

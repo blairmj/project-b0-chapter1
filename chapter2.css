@@ -115,3 +115,8 @@
 @media(max-width:420px){.c2-game>header{padding:7px 9px}.c2-game>header h1{font-size:12px}.c2-actions{padding:8px 10px}.c2-actions button{font-size:11px;padding:7px 9px}.c2-game>footer{padding:6px 10px}.c2-game .quiet{padding:8px;font-size:11px}}
 @media(max-height:650px){.c2-game{height:100dvh;min-height:0}.c2-stage{min-height:170px}.c2-actions{min-height:76px}}
 @media(prefers-reduced-motion:reduce){.c2-world,.c2-window-glass,.c2-cabinet-door,.c2-vent-lid{transition:none}.c2-robot.walking .robot-sprite{animation:none}}
+
+/* Dialogue and controls always paint above the companion. */
+.c2-ending .c2-outside{isolation:isolate}
+.c2-ending-b0{z-index:1;isolation:isolate;pointer-events:none}
+.c2-end-dialogue{z-index:6}

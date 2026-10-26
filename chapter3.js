@@ -47,9 +47,9 @@
       <section class="c2-actions c3-actions" aria-label="선택한 물건의 행동"><p>방 안을 자유롭게 살펴보세요.</p></section><footer>${b('B-0에게 말하기','robot','secondary')}${window.B0UI?.inventoryButton()||''}</footer></main>`;
       stage=app.querySelector('.c3-stage');world=app.querySelector('.c3-world');bar=app.querySelector('.c3-actions');speech=app.querySelector('.c3-speech');
       stage.addEventListener('pointerdown',down);stage.addEventListener('pointermove',move);stage.addEventListener('pointerup',up);stage.addEventListener('pointercancel',cancelPointer);
-      stage.addEventListener('click',e=>{if(suppress){suppress=false;return;}if(busy||e.target.closest('[data-c3]'))return;const id=e.target.closest('[data-object]')?.dataset.object;if(id)select(id);});
+      stage.addEventListener('click',e=>{if(suppress){suppress=false;return;}if(busy||e.target.closest('[data-c3]'))return;const id=e.target.closest('[data-object]')?.dataset.object;if(id)activateObject(id);});
       stage.addEventListener('wheel',e=>{e.preventDefault();if(!busy){camera.zoom=Math.max(.65,Math.min(1.5,camera.zoom-e.deltaY*.001));updateCamera();}},{passive:false});
-      stage.addEventListener('keydown',e=>{if(busy)return;if((e.key==='Enter'||e.key===' ')&&e.target.dataset.object){e.preventDefault();select(e.target.dataset.object);return;}const dirs={ArrowLeft:-15,ArrowRight:15};if(dirs[e.key]){e.preventDefault();camera.yaw+=dirs[e.key];updateCamera();}if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();camera.pitch+=e.key==='ArrowUp'?8:-8;updateCamera();}});
+      stage.addEventListener('keydown',e=>{if(busy)return;if((e.key==='Enter'||e.key===' ')&&e.target.dataset.object){e.preventDefault();activateObject(e.target.dataset.object);return;}const dirs={ArrowLeft:-15,ArrowRight:15};if(dirs[e.key]){e.preventDefault();camera.yaw+=dirs[e.key];updateCamera();}if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();camera.pitch+=e.key==='ArrowUp'?8:-8;updateCamera();}});
       update();
     }
     function renderMirror(){
@@ -82,6 +82,7 @@
       const targets={oldDoor:{x:45,z:-120,yaw:12,pitch:-8},map:{x:-80,z:-100,yaw:-22,pitch:10},shelf:{x:-75,z:0,yaw:-90,pitch:-10},floor:{x:-75,z:0,yaw:-90,pitch:-48},gap:{x:-75,z:0,yaw:-90,pitch:-36},desk:{x:65,z:85,yaw:90,pitch:-20},record:{x:65,z:85,yaw:90,pitch:-28},exit:{x:-85,z:0,yaw:-90,pitch:-8}};
       if(targets[id])animateCamera(targets[id]);
     }
+    function activateObject(id){if(busy)return;if(!mode&&id==='exit'&&s.realDoorOpen){leaveRoom();return;}select(id);}
     function select(id){
       if(id==='exit'&&!M.clear(s))return;if(id==='record'&&!s.drawerOpen)return;
       if(mode==='check'){mode=null;M.inspect(s,id);save();say('robot',M.reply(s,'check',id));showActions(id);return;}
