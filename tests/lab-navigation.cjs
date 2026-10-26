@@ -29,3 +29,12 @@ assert.equal(M.restore({...clickState,powerOut:true}).powerOut,true);
 assert.equal(M.restore({...clickState,powerOut:false}).powerOut,false);
 assert.equal(M.restore({version:1,camera:{z:-950},cleared:{access:true}}).powerOut,true,'old checkpoints migrate without repeating the outage');
 console.log('PASS: perspective floor clicks, reverse travel, wall bounds, ceiling rejection, persistent power and old-save migration');
+
+assert.equal(M.doors.practice.x,0,'practice room is centered at the corridor end');
+assert.equal(M.doors.practice.yaw,180,'practice doorway faces back into the corridor');
+assert.ok(M.doors.practice.z>M.fresh().camera.z,'on exiting practice, its door is behind the player');
+assert.equal(M.stepsOnPanel({x:0,z:80},{x:0,z:-200}),true);
+assert.equal(M.stepsOnPanel({x:150,z:80},{x:150,z:-200}),false,'walking beside the plate cannot trigger it');
+assert.equal(M.stepsOnPanel({x:0,z:80},{x:0,z:80}),false,'turning in place cannot trip power');
+assert.equal(M.stepsOnPanel({x:-130,z:-60},{x:130,z:-60}),true,'a sideways crossing steps on the actual plate');
+console.log('PASS: classroom endcap and physical loose-plate contact');

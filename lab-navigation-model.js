@@ -1,7 +1,7 @@
 (function(root){
   'use strict';
   const doors={
-    practice:{name:'교육 실습실',floor:1,x:-268,z:70,yaw:-90},
+    practice:{name:'교육 실습실',floor:1,x:0,z:236,yaw:180},
     storage:{name:'물류 보관실',floor:1,x:268,z:-320,yaw:90},
     access:{name:'출입 관리실',floor:1,x:-268,z:-950,yaw:-90},
     mirror:{name:'유리 관찰실',floor:1,x:268,z:-1320,yaw:90},
@@ -56,7 +56,20 @@
     const t=180/ry,scale=Math.min(1,900/Math.max(1,Math.hypot(dx*t,dz*t)));
     return bound(s,c.x+dx*t*scale,c.z+dz*t*scale);
   }
+  // Swept foot contact with the actual loose plate, rather than a hallway-wide trigger.
+  function stepsOnPanel(from,to){
+    if(Math.hypot(to.x-from.x,to.z-from.z)<.001)return false;
+    let enter=0,leave=1;
+    for(const [axis,min,max]of [['x',-55,55],['z',-125,-5]]){
+      const delta=to[axis]-from[axis];
+      if(Math.abs(delta)<.000001){if(from[axis]<min||from[axis]>max)return false;continue;}
+      const a=(min-from[axis])/delta,b=(max-from[axis])/delta;
+      enter=Math.max(enter,Math.min(a,b));leave=Math.min(leave,Math.max(a,b));
+      if(enter>leave)return false;
+    }
+    return true;
+  }
   function groundAt(z){return Math.max(0,Math.min(360,(-z-1810)/308*360));}
-  const api={doors,fresh,restore,merge,bound,canEnter,returned,takeKey,unlock,floor,companionSpot,floorTarget,groundAt};
+  const api={doors,fresh,restore,merge,bound,canEnter,returned,takeKey,unlock,floor,companionSpot,floorTarget,stepsOnPanel,groundAt};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.B0LabNavigation=api;
 })(typeof window!=='undefined'?window:globalThis);

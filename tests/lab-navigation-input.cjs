@@ -10,6 +10,7 @@ const state=M.fresh();state.cleared.practice=true;
 const g=context.window.startLabNavigation({app,portrait:()=>'',state,onSave:()=>saves++,onEnter(){},onHome(){},muted:true});
 const original={...g.state().companion};g.act('turn-left');finish();
 assert.equal(g.state().companion.x,original.x);assert.equal(g.state().companion.z,original.z,'looking around must not teleport B-0');
+g.walkTo('practice');finish();assert.equal(g.state().camera.z,80);assert.equal(Math.abs(g.state().camera.yaw),180);assert.equal(state.powerOut,false,'looking back at the classroom does not cut power');
 g.walkTo('storage');assert.doesNotMatch(node('.lab-actions').innerHTML,/data-lab="enter-/,'previous door actions disappear while walking to a new destination');finish();assert.equal(state.camera.z,-320);assert.ok(state.barrierTriggered,'the shutter descends after entering the corridor');
 assert.equal(state.powerOut,true,'stepping into the corridor records the outage');
 assert.match(node('.lab-notice').innerHTML,/뭔가 밟았어/,'the player notices the floor cover before the announcement');
