@@ -5,7 +5,7 @@ function createRoomPanorama(canvas, report) {
   if(!gl){report("이 브라우저에서는 360도 배경을 표시할 수 없습니다. 최신 브라우저로 열어 주세요.");return {view(){},setDoorOpen(){},openDoor(){},dispose(){}};}
   const vertex="attribute vec2 position;void main(){gl_Position=vec4(position,0.,1.);}";
   const fragment=`precision highp float;
-    uniform sampler2D room;uniform sampler2D door;uniform sampler2D corridor;uniform float doorOpen;uniform vec2 resolution;uniform float focal;uniform vec2 angle;
+    uniform sampler2D room;uniform sampler2D door;uniform sampler2D corridor;uniform float doorOpen;uniform float corridorLight;uniform vec2 resolution;uniform float focal;uniform vec2 angle;
     void main(){
       vec3 d=vec3((gl_FragCoord.x-resolution.x*.5)/focal,(resolution.y*.5-gl_FragCoord.y)/focal,-1.);
       float cp=cos(angle.y),sp=sin(angle.y),cy=cos(angle.x),sy=sin(angle.x);
@@ -21,7 +21,7 @@ function createRoomPanorama(canvas, report) {
       vec2 q=(uv-vec2(598./1774.,318./887.))/vec2(175./1774.,220./887.);
       float cut=max(0.,.075-q.y);
       if(q.y>=0.&&q.y<=1.&&q.x>=cut&&q.x<=1.-cut){
-        color=texture2D(corridor,q).rgb;
+        color=texture2D(corridor,q).rgb*corridorLight;
         float sx=q.x;bool leaf=false;
         if(q.x<.5*(1.-doorOpen)){sx=q.x+doorOpen*.5;leaf=true;}
         else if(q.x>.5*(1.+doorOpen)){sx=q.x-doorOpen*.5;leaf=true;}
@@ -50,7 +50,7 @@ function createRoomPanorama(canvas, report) {
   gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,1,1,0,gl.RGB,gl.UNSIGNED_BYTE,new Uint8Array([84,105,120]));gl.uniform1i(gl.getUniformLocation(program,"corridor"),2);gl.activeTexture(gl.TEXTURE0);
   const corridorImage=new Image();
   const doorImage=new Image();
-  const locations={doorOpen:gl.getUniformLocation(program,"doorOpen"),resolution:gl.getUniformLocation(program,"resolution"),focal:gl.getUniformLocation(program,"focal"),angle:gl.getUniformLocation(program,"angle")};
+  const locations={corridorLight:gl.getUniformLocation(program,"corridorLight"),doorOpen:gl.getUniformLocation(program,"doorOpen"),resolution:gl.getUniformLocation(program,"resolution"),focal:gl.getUniformLocation(program,"focal"),angle:gl.getUniformLocation(program,"angle")};
   let yaw=0,pitch=-5,dead=false,ready=false,cameraFocal=240,doorProgress=0,doorFrame;
   const img=new Image();
   function view(x,y,f=cameraFocal){
@@ -59,7 +59,7 @@ function createRoomPanorama(canvas, report) {
     if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
     gl.viewport(0,0,w,h);gl.useProgram(program);
     gl.uniform2f(locations.resolution,w,h);gl.uniform1f(locations.focal,cameraFocal*ratio);gl.uniform2f(locations.angle,yaw*Math.PI/180,pitch*Math.PI/180);
-    gl.uniform1f(locations.doorOpen,doorProgress);gl.drawArrays(gl.TRIANGLES,0,6);
+    gl.uniform1f(locations.corridorLight,canvas.closest('[data-corridor-power="out"]')?.38:1);gl.uniform1f(locations.doorOpen,doorProgress);gl.drawArrays(gl.TRIANGLES,0,6);
     if(ready)canvas.classList.add("ready");
   }
   corridorImage.onload=()=>{if(dead)return;gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,corridorTexture);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,corridorImage);gl.activeTexture(gl.TEXTURE0);view(yaw,pitch);};

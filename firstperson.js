@@ -38,7 +38,9 @@ function loadNavigation(){
   return n;
 }
 let navigation=loadNavigation();
-function saveNavigation(){try{progressStore.setItem(NAV_KEY,JSON.stringify(navigation));}catch{}}
+function syncCorridorPower(){app.setAttribute?.('data-corridor-power',navigation.powerOut?'out':'on');}
+syncCorridorPower();
+function saveNavigation(){syncCorridorPower();try{progressStore.setItem(NAV_KEY,JSON.stringify(navigation));}catch{}}
 function markRoom(){hallView?.dispose();hallView=null;navigation.mode='room';saveNavigation();}
 function showHall(from){
   stopAdventure();window.B0LabNavigation.merge(navigation,roomProgress());

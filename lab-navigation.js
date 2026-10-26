@@ -10,7 +10,7 @@
   };
   window.startLabNavigation=function({app,portrait,state:s,onSave,onEnter,onHome,muted=false}){
     let dead=false,frame=0,pointer=null,walking=false,suppress=false,selection=null,world,stage,bar,notice,modalEl,audio;
-    const timers=new Set(),camera={...s.camera,zoom:1,height:s.floor===2?360:0};let stairRejecting=false;
+    const timers=new Set(),camera={...s.camera,zoom:1,height:s.floor===2?360:0};let stairRejecting=false,powerTalkIndex=-1;
     function companionNear(c,floor){const wanted=c.z-240,limit=M.bound(s,c.x,wanted).z;return M.companionSpot(c.x+100,wanted<limit?c.z+240:wanted,floor);}
     let companion=s.companion||companionNear(camera,s.floor),botMoving=false;
     if(s.floor===1&&!s.stairsUnlocked&&companion.z<-1730)companion=companionNear(camera,s.floor);
@@ -25,12 +25,22 @@
       const actor=app.querySelector('.lab-b0 .robot-sprite');actor?.classList.toggle('speaking',who==='robot');
       if(who==='robot')later(()=>actor?.classList.remove('speaking'),Math.min(4500,text.length*85));
     }
+    const powerTalk=[
+      ['student','B-0, 왜 미리 말 안 해줬어?'],
+      ['robot','저도 몰랐습니다. 이 바닥 덮개가 전원 장치와 연결된 건 밟은 뒤에야 알았습니다.'],
+      ['student','그럼 앞은 같이 살펴보자. 뭔가 알아내면 바로 알려 줘.']
+    ];
+    function showPowerTalk(){
+      const [who,text]=powerTalk[powerTalkIndex];say(text,who);
+      actions('',powerTalkIndex<powerTalk.length-1?[['다음','power-talk-next']]:[['닫기','power-talk-close']]);
+    }
+    function cancelPowerTalk(){if(powerTalkIndex<0)return;powerTalkIndex=-1;actions('');}
     function relaySound(){if(muted)return;try{audio||=new(window.AudioContext||window.webkitAudioContext)();void audio.resume();for(let i=0;i<2;i++){const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime+i*.22;o.frequency.value=i?310:470;g.gain.setValueAtTime(.018,t);g.gain.exponentialRampToValueAtTime(.0001,t+.16);o.connect(g).connect(audio.destination);o.start(t);o.stop(t+.17);}}catch{}}
     function tripPower(){
       s.powerOut=true;save();app.querySelector('.lab-trip-panel')?.classList.add('tripped');
       stepSound();say('앗… 뭔가 밟았어.','student');
       later(()=>{stage.classList.add('power-out');relaySound();},650);
-      later(()=>say('전원이 차단되었습니다. 비상 조명으로 전환합니다.'),1700);
+      later(()=>{if(powerTalkIndex<0&&!s.powerTalked)say('전원이 차단되었습니다. 비상 조명으로 전환합니다.');},1700);
     }
     function door(id){const d=M.doors[id],h=d.floor===2?-360:0;return `<div class="lab-door lab-door-${id}" style="transform:translate3d(${d.x}px,${h}px,${d.z}px) rotateY(${-d.yaw}deg)" data-lab-object="${id}" role="button" tabindex="0" aria-label="${d.name}"><span class="lab-door-sign">${d.floor===2?'2F · ':''}${d.name}</span><div class="lab-door-leaf"><i></i><i></i></div><span class="lab-door-light"></span></div>`;}
     function render(){
@@ -41,7 +51,7 @@
       <div class="lab-keybox ${s.keyboxOpen?'open':''}" data-lab-object="keybox" role="button" tabindex="0" aria-label="벽면 열쇠 보관함"><div class="lab-keybox-back">${s.keyTaken?'':keyArt}</div><div class="lab-keybox-lid"><i></i></div></div>
       <div class="lab-stair-entry ${s.stairsUnlocked?'authorized':''}" data-lab-object="stairs" role="button" tabindex="0" aria-label="2층 계단"><span>2F · 중앙관리실</span><i class="lab-stair-field" aria-hidden="true"></i></div><div class="lab-stair-control ${s.stairsUnlocked?'authorized':''}" data-lab-object="stair-control" role="button" tabindex="0" aria-label="계단 차단 제어기"><span>2F</span><i></i><b>제어</b></div>
       ${Array.from({length:14},(_,i)=>`<div class="lab-step" style="transform:translate3d(0,${180-(i+1)*360/14}px,${-1820-i*22}px) rotateX(90deg)"></div><div class="lab-riser" style="transform:translate3d(0,${180-(i+1)*360/14}px,${-1809-i*22}px)"></div>`).join('')}
-      <div class="lab-upper-floor"></div><div class="lab-upper-ceiling"></div><div class="lab-upper-end"></div>${[-1,1].map(side=>`<div class="lab-upper-wall" style="transform:translate3d(${side*270}px,0,-2330px) rotateY(${-side*90}deg)"><span class="lab-wall-light"></span></div><div class="lab-stair-side" style="transform:translate3d(${side*270}px,0,-1940px) rotateY(${-side*90}deg)"></div>`).join('')}
+      ${[-2220,-2440].map((z,i)=>`<div class="lab-fluorescent" style="transform:translate3d(0,-642px,${z}px) rotateX(-90deg);--light-order:${i}" aria-hidden="true"><i></i></div><div class="lab-light-pool" style="transform:translate3d(0,-181px,${z}px) rotateX(90deg)" aria-hidden="true"></div>`).join('')}<div class="lab-upper-floor"></div><div class="lab-upper-ceiling"></div><div class="lab-upper-end"></div>${[-1,1].map(side=>`<div class="lab-upper-wall" style="transform:translate3d(${side*270}px,0,-2330px) rotateY(${-side*90}deg)"><span class="lab-wall-light"></span></div><div class="lab-stair-side" style="transform:translate3d(${side*270}px,0,-1940px) rotateY(${-side*90}deg)"></div>`).join('')}
       <div class="lab-b0"><div class="robot-sprite live-body">${portrait()}</div><div class="c4-walk-art"><div class="c4-walk-frame"></div></div></div></div><div class="lab-notice" role="status" hidden></div><div class="lab-walk-mark" aria-hidden="true">이동 중</div><div class="lab-dpad">${b('↶','turn-left','quiet')}${b('앞으로','forward')}${b('↷','turn-right','quiet')}${b('뒤로','backward','quiet')}</div></section><section class="lab-actions" aria-label="복도에서 선택한 대상"></section><footer>${b('B-0에게 말하기','robot','secondary')}<div class="lab-pocket">${b('소지품','inventory','quiet')}</div></footer></main>`;
       world=app.querySelector('.lab-world');stage=app.querySelector('.lab-stage');bar=app.querySelector('.lab-actions');notice=app.querySelector('.lab-notice');
       stage.addEventListener('pointerdown',down);stage.addEventListener('pointermove',move);stage.addEventListener('pointerup',up);stage.addEventListener('pointercancel',cancel);
@@ -58,7 +68,7 @@
       stage.classList.toggle('walking',walking);if(stage.dataset.floor!==String(s.floor)){app.querySelector('.lab-pocket').innerHTML=b('소지품','inventory','quiet')+(s.floor===2?b('1층 계단','downstairs','quiet'):'');}stage.dataset.floor=String(s.floor);stage.dataset.position=String(Math.round(camera.z));app.querySelector('.lab-location').textContent=`${s.floor}층 ${s.floor===2?'중앙관리실 앞 복도':camera.z<-1510?'계단 앞 복도':camera.z<-650?'연구 구역 복도':'실습 구역 복도'}`;
     }
     function animate(to,done,stair=false,durationMs){
-      if(walking)return;const from={...camera},start=performance.now(),turn=(((to.yaw??camera.yaw)-camera.yaw+540)%360)-180;const distance=Math.hypot((to.x??from.x)-from.x,(to.z??from.z)-from.z,(to.height??from.height)-from.height);const duration=matchMedia('(prefers-reduced-motion: reduce)').matches?1:durationMs??(stair?2300:Math.max(380,Math.min(1900,distance*3.7)));walking=true;notice.hidden=true;let lastStep=-1;
+      if(walking)return;cancelPowerTalk();const from={...camera},start=performance.now(),turn=(((to.yaw??camera.yaw)-camera.yaw+540)%360)-180;const distance=Math.hypot((to.x??from.x)-from.x,(to.z??from.z)-from.z,(to.height??from.height)-from.height);const duration=matchMedia('(prefers-reduced-motion: reduce)').matches?1:durationMs??(stair?2300:Math.max(380,Math.min(1900,distance*3.7)));walking=true;notice.hidden=true;let lastStep=-1;
       const botFrom={...companion},dx=(to.x??from.x)-from.x,dz=(to.z??from.z)-from.z,travelLength=Math.hypot(dx,dz);
       botMoving=travelLength>8;
       const targetFloor=(to.height??camera.height)>180?2:s.floor===2&&(to.height??camera.height)===0?1:s.floor;
@@ -76,7 +86,7 @@
       animate({...p,...limited},()=>{if(blocked){say(limited.z>-600?'안전 차단문이 복도를 가로막고 있다. 다른 길이 있을까?':'유리 차단문이 복도를 가로막고 있다.');actions('막힌 통로',[['다시 둘러보기','clear']]);return;}selection=id;if(!s.visited.includes(id))s.visited.push(id);save();showObject(id);});
     }
     function showObject(id){
-      selection=id;
+      cancelPowerTalk();selection=id;
       if(id==='shutter'){say(s.cleared.storage?'반대편에서 안전 차단문을 해제했다.':'안전 차단문이 내려와 있다. 옆방과 다른 통로를 살펴봐야겠다.');actions('복도 차단문',[['돌아가기','clear']]);return;}
       if(id==='glass'){say(s.cleared.mirror?'유리 차단문이 올라가 북쪽 복도가 이어진다.':'유리 너머로 계단과 작은 보관함이 보인다. 이쪽에서는 열 수 없다.');actions('북쪽 유리 차단문',[['돌아가기','clear']]);return;}
       if(id==='keybox'){if(!s.cleared.mirror){say('유리 차단문 너머에 있다. 여기서는 손이 닿지 않는다.');actions('벽면 보관함',[['돌아가기','clear']]);return;}actions('벽면 열쇠 보관함',[[s.keyboxOpen?'닫기':'열어 보기','keybox-open'],...(s.keyboxOpen&&!s.keyTaken?[['열쇠 집기','take-key']]:[]),['돌아가기','clear']]);return;}
@@ -106,11 +116,17 @@
       if(walking||stairRejecting)return;
       if(a==='view-home'){camera.zoom=1;selection=null;actions('');animate({x:0,z:s.floor===2?-2170:80,yaw:0,pitch:-4});return;}
       if(a==='zoom-in'||a==='zoom-out'){camera.zoom=Math.max(.65,Math.min(1.6,camera.zoom+(a==='zoom-in'?.15:-.15)));update();return;}
-      if(a==='robot'){say('함께 살펴보겠습니다. 확인할 문이나 물건을 직접 골라 주세요.','robot');return;}
+      if(a==='robot'){
+        if(s.powerOut&&!s.powerTalked){selection=null;if(powerTalkIndex<0)powerTalkIndex=0;showPowerTalk();}
+        else say('함께 살펴보겠습니다. 확인할 문이나 물건을 직접 골라 주세요.','robot');
+        return;
+      }
+      if(a==='power-talk-next'){if(powerTalkIndex>=0){powerTalkIndex=Math.min(powerTalk.length-1,powerTalkIndex+1);showPowerTalk();}return;}
+      if(a==='power-talk-close'){if(powerTalkIndex===powerTalk.length-1){s.powerTalked=true;save();cancelPowerTalk();notice.hidden=true;}return;}
       if(a.startsWith('go-')){close();walkTo(a.slice(3));return;}
       if(a==='forward'||a==='backward'){travel(a==='forward'?1:-1);return;}
       if(a==='turn-left'||a==='turn-right'){animate({yaw:camera.yaw+(a==='turn-left'?-90:90)});return;}
-      if(a==='clear'){selection=null;notice.hidden=true;actions('문과 물건을 직접 눌러 살펴보세요.');return;}
+      if(a==='clear'){cancelPowerTalk();selection=null;notice.hidden=true;actions('문과 물건을 직접 눌러 살펴보세요.');return;}
       if(a==='inspect-stairs'){say('문은 없다. 계단 옆 차단 제어기에 열쇠 구멍과 접근 제한 표시가 있다.');return;}
       if(a==='keybox-open'){s.keyboxOpen=!s.keyboxOpen;app.querySelector('.lab-keybox').classList.toggle('open',s.keyboxOpen);save();showObject('keybox');return;}
       if(a==='take-key'){if(M.takeKey(s)){save();app.querySelector('.lab-keybox-back').innerHTML='';app.querySelector('.lab-pocket').innerHTML=b('열쇠 1','inventory','quiet');showObject('keybox');say('작은 금속 열쇠를 집었다. 고리에 계단실이라고 적혀 있다.');}return;}

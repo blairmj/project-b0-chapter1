@@ -47,3 +47,9 @@
 .power-out .lab-wall-light{opacity:.2;background:#d4a16c;box-shadow:0 0 5px #d4a16c33}
 .lab-trip-panel{left:-55px;top:-60px;width:110px;height:120px;background:repeating-linear-gradient(90deg,#65757d 0 22px,#41545f 23px 25px);border-color:#9aa8ac;box-shadow:3px 2px 0 #02081099}
 @media(prefers-reduced-motion:reduce){.lab-fluorescent,.lab-fluorescent>i,.lab-light-pool{transition:none}}
+
+/* Corridor cutaways share the power state; characters and speech stay readable. */
+#app[data-corridor-power="out"] :is(.corridor-view,.corridor-transition,.c3-exit-space,.mr-passage){filter:brightness(.38) saturate(.75)}
+#app[data-corridor-power="out"] .c2-window-glass{background-image:linear-gradient(#020611b0,#020611b0),url('./assets/lab-corridor-v1.webp')}
+#app[data-corridor-power="out"] :is(.c2-window.open,.c2-outside,.c3-world .c3-observation-frame){background-image:linear-gradient(#020611aa,#020611aa),url('./assets/lab-corridor-v1.webp')}
+#app[data-corridor-power="out"] .c4-story-intro .c4-story-scene{background-image:linear-gradient(#020611aa,#020611aa),url('./assets/lab-corridor-v1.webp')}
