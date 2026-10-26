@@ -43,7 +43,7 @@
     e.preventDefault();e.stopPropagation();const action=control.dataset.ui;
     if(action==='close'||action==='guide-done'){close();return;}
     if(action==='back-menu'){const source=returnMenu;close();if(source?.isConnected)source.click();return;}
-    if(action==='map'){const info=window.B0CampaignUI?.location?.()||{};modal('지도',window.B0LabNavigation.mapMarkup(info));}
+    if(action==='map'){const info=window.B0CampaignUI?.location?.()||{};modal('지도',window.B0LabNavigation.mapMarkup(info),false);}
     if(action==='inventory')inventory();if(action==='help')help();if(action==='record')record();
   }
   document.addEventListener('click',e=>{const b=e.target.closest('button');if(b&&['action','c2','c3','mr','c4','lab'].some(ns=>b.getAttribute('data-'+ns)==='menu'))returnMenu=b;},true);

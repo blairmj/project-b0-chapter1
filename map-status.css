@@ -31,8 +31,18 @@
 .map-board{background:transparent;border:0;border-radius:0;padding:0;box-shadow:none}.map-board .lab-map.map-status-window{background:#040d2199;border-color:#d5f3ff22}.map-board .map-status-title strong{font-size:21px}
 :is(.modal,.lab-modal,.b0-common-modal):has(.map-status-window){background:#06101b12;border-color:#d3edff35;border-radius:3px;box-shadow:0 16px 70px #0003;font-family:'B0 Digital',monospace;text-shadow:0 1px 3px #000b}
 :is(.modal,.lab-modal,.b0-common-modal):has(.map-status-window)::backdrop{background:#02081030}
-:is(.modal,.lab-modal,.b0-common-modal):has(.map-status-window)>header{background:#06101bb8;border-color:#d3edff30}
+:is(.modal,.lab-modal,.b0-common-modal):has(.map-status-window)>:is(header,.modal-header){background:#06101bb8;border-color:#d3edff30}
 .b0-common-modal .lab-map.map-status-window>svg{max-height:38dvh}
 :is(.modal,.lab-modal,.b0-common-modal):has(.map-status-window) :is(h2,button){font-family:'B0 Digital',monospace;font-weight:400}
 :is(.modal,.lab-modal,.b0-common-modal):has(.map-status-window) button{background:#07152180;border-color:#c9e7f860;border-radius:2px;color:#eafaff}
 @media(max-width:420px){.map-status-title strong{font-size:22px}.map-status-legend{font-size:11px}.map-location-strip{font-size:14px}}
+
+/* A single HUD panel, without a second dialog frame or duplicate title bar. */
+:is(.modal,.lab-modal,.b0-common-modal):has(.map-status-window){background:transparent;border:0;border-radius:0;box-shadow:none}
+:is(.modal,.lab-modal,.b0-common-modal):has(.map-status-window)>:is(header,.modal-header){position:sticky;top:16px;z-index:5;height:0;min-height:0;margin:0 16px 0 0;padding:0;display:flex;justify-content:flex-end;align-items:flex-start;background:transparent;border:0;pointer-events:none}
+:is(.modal,.lab-modal,.b0-common-modal):has(.map-status-window)>:is(header,.modal-header) h2{display:none}
+:is(.modal,.lab-modal,.b0-common-modal):has(.map-status-window)>:is(header,.modal-header) button{pointer-events:auto;min-height:44px;margin:0;background:#06101bb8}
+:is(.modal,.lab-modal,.b0-common-modal):has(.map-status-window)>:is(.modal-body,.lab-modal-body,.b0-modal-body){padding:0}
+:is(.modal,.lab-modal,.b0-common-modal) .map-status-title{padding-right:78px;min-height:52px}
+:is(.modal,.lab-modal,.b0-common-modal) .map-status-code{display:none}
+:is(.modal,.lab-modal,.b0-common-modal) .lab-map.map-status-window{border:0;box-shadow:none}

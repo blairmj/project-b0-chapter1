@@ -79,7 +79,7 @@
     function descend(done){if(s.floor!==2){done?.();return;}animate({x:0,z:-2145,yaw:180,pitch:-12},()=>animate({x:0,z:-1700,yaw:180,pitch:-4,height:0},()=>{M.floor(s,1);Object.assign(camera,s.camera,{height:0});save();update();actions('1층 계단 앞 복도',[['다시 둘러보기','clear']]);done?.();},true));}
     function modal(title,body){close();modalEl=document.createElement('dialog');modalEl.className='lab-modal';modalEl.innerHTML=`<header><h2>${title}</h2>${b('닫기','close','quiet')}</header><div class="lab-modal-body">${body}</div>`;app.append(modalEl);modalEl.showModal();}
     function close(){modalEl?.close();modalEl?.remove();modalEl=null;}
-    function map(){modal('지도',M.mapMarkup({floor:s.floor,z:camera.z})+`<p>목적지를 고르면 그 앞 복도까지 걸어갑니다. 입장은 문 앞에서 직접 선택합니다.</p><div class="lab-map-destinations">${['practice','storage','access','mirror','stairs','central'].map(id=>b(M.doors[id].name,'go-'+id)).join('')}</div>`);}
+    function map(){modal('지도',M.mapMarkup({floor:s.floor,z:camera.z}));}
     function act(a){
       if(a==='close'){close();return;}if(a==='menu'){modal('메뉴',window.B0UI.menuContent({namespace:'lab',close:'close',home:'home',record:'',extras:``}));return;}if(a==='home'){onHome();return;}if(a==='map'){map();return;}
       if(a==='inventory'){modal('소지품',s.keyTaken?`<div class="lab-key-detail">${keyArt}</div><p>계단실 열쇠</p>`:'<p>아직 가지고 있는 물건이 없다.</p>');return;}
