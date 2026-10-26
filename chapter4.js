@@ -124,10 +124,10 @@
       carryingTransition=true;r.lifted=true;robot={x:-85,z:286-155/SPACE};actions('B-0가 들어 올리는 중…');updateRobot();say('robot','이번에도 떨어지지 않게 받치겠습니다.');
       cameraTo({x:-85,z:286-145/SPACE,yaw:180,pitch:12,zoom:1,height:145},()=>{carryingTransition=false;select('high');actions('문 위 수동 잠금장치',[['살펴보기','inspect-high'],['잠금쇠 오른쪽으로 밀기','high-pull'],['내려 줘','lower']]);});
     }
-    function lower(){if(!r.lifted||carryingTransition)return;carryingTransition=true;r.lifted=false;r.high=0;robot={x:-135,z:290-190/SPACE};actions('바닥으로 내려오는 중…');cameraTo({x:-85,z:290-250/SPACE,yaw:180,pitch:5,zoom:1,height:0},()=>{carryingTransition=false;select('door');});updateRobot();say('robot','내려 드리겠습니다.');}
+    function lower(){if(!r.lifted||carryingTransition)return;carryingTransition=true;r.lifted=false;r.high=0;robot={x:-35,z:290-190/SPACE};actions('바닥으로 내려오는 중…');cameraTo({x:-85,z:290-250/SPACE,yaw:180,pitch:5,zoom:1,height:0},()=>{carryingTransition=false;select('door');});updateRobot();say('robot','내려 드리겠습니다.');}
     function highPull(){if(M.latch(s,r)){save();update();react('수동 개방을 중단하십시오. 해당 기체는 회수 대상입니다.','critical');say('student','알아들었어. 그런데 두고 가지는 않을 거야.');}else say('student','너무 높아. 여기서는 손이 닿지 않아.');}
     function hold(on){if(r.lifted){say('robot','지금은 들어 올려 드리고 있습니다.');return;}if(!M.hold(s,on)){say('robot',s.boss?'회수 모드로 움직일 수 없습니다.':'어느 손잡이인지 확인해 주세요.');return;}
-      if(on){robot={x:-235,z:286-62/SPACE};say('robot','놓아도 된다고 하실 때까지 잡겠습니다.');}else{M.release(s,r);robot={x:-155,z:205};say('student',s.opened?'됐어. 이제 놓아도 돼. 이리 와.':'잠깐 놓아 줘. 다시 살펴볼게.');}
+      if(on){robot={x:-235,z:286-62/SPACE};say('robot','놓아도 된다고 하실 때까지 잡겠습니다.');}else{M.release(s,r);robot={x:-35,z:205};say('student',s.opened?'됐어. 이제 놓아도 돼. 이리 와.':'잠깐 놓아 줘. 다시 살펴볼게.');}
       save();update();robotMenu();
     }
 
