@@ -431,5 +431,5 @@ app.addEventListener("click",e=>{
 });
 window.addEventListener("resize",()=>panTo(camera.x,camera.y));
 app.addEventListener("keydown",e=>{if(e.target.id==="code"&&e.key==="Enter"){e.preventDefault();submitCode();}});
-window.B0CampaignUI={location:()=>({floor:app.querySelector('.lab-game')?navigation.floor:state.chapter===4?2:1,z:navigation.camera.z,current:app.querySelector('.b0-location')?.textContent||'교육 실습실'})};
+window.B0CampaignUI={location:()=>({floor:app.querySelector('.lab-game')?navigation.floor:state.chapter===4?2:1,z:navigation.camera.z,stairsUnlocked:navigation.stairsUnlocked,current:app.querySelector('.b0-location')?.textContent||'교육 실습실'})};
 boot();

@@ -1,0 +1,15 @@
+/* One status-window design for the wall display and the player's map. */
+(function(){
+  'use strict';
+  const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  window.B0LabNavigation.mapMarkup=function(options={}){
+    const live=window.B0CampaignUI?.location?.()||{};
+    const floor=options.floor??live.floor??1,current=options.current??live.current??`${floor}층 연구소 복도`;
+    const unlocked=options.stairsUnlocked??live.stairsUnlocked??false;
+    const z=options.z??live.z??80;
+    const rooms=[{id:'central',label:'중앙관리실',x:112,y:40,w:216,h:62,floor:2},{id:'access',label:'출입 관리실',x:18,y:207,w:162,h:58,floor:1},{id:'mirror',label:'유리 관찰실',x:260,y:207,w:162,h:58,floor:1},{id:'practice',label:'교육 실습실',x:18,y:327,w:162,h:58,floor:1},{id:'storage',label:'물류 보관실',x:260,y:327,w:162,h:58,floor:1}];
+    const here=!current.includes('복도')&&rooms.find(r=>r.floor===floor&&(current.includes(r.label)||r.id==='storage'&&current.includes('보관실')||r.id==='mirror'&&current.includes('관찰실')));
+    const dot=here?{x:here.x+14,y:here.y+14}:{x:220,y:floor===2?125:Math.max(218,Math.min(366,366-(80-z)*.085))};
+    return `<section class="lab-map map-status-window" aria-label="연구소 지도 상태창"><div class="map-status-title"><div><small>시설 정보</small><strong>연구소 지도</strong></div><span class="map-status-code">B-0</span></div><div class="map-location-strip"><span class="map-location-light" aria-hidden="true"></span><b>${floor}F</b><span>${esc(current.replace(/^[12]층\s*/,''))}</span></div><svg viewBox="0 0 440 414" role="img" aria-label="2층 중앙관리실은 위쪽, 1층 네 방은 아래쪽에 표시된 지도. 현재 위치 ${esc(current)}. 계단실 ${unlocked?'개방':'잠김'}."><g class="status-map-grid"><path d="M0 24H440M0 84H440M0 144H440M0 204H440M0 264H440M0 324H440M0 384H440M40 0V414M100 0V414M160 0V414M220 0V414M280 0V414M340 0V414M400 0V414"/></g><g class="status-map-corridor"><path d="M208 191h24v209h-24Z"/><path d="M180 236h28m24 0h28M180 356h28m24 0h28"/></g><path class="status-map-stairs ${unlocked?'is-open':''}" d="M220 102v89"/><g class="status-map-rooms">${rooms.map(r=>`<rect class="${here===r?'is-current ':''}${r.floor===2&&!unlocked?'is-restricted':''}" x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="5"/>`).join('')}</g><g class="status-map-labels"><text class="floor-label" x="18" y="24">2F</text><text class="floor-caption" x="53" y="24">중앙 제어 구역</text><text class="floor-label" x="18" y="186">1F</text><text class="floor-caption" x="53" y="186">연구 · 교육 구역</text>${rooms.map(r=>`<text class="${here===r?'is-current':''}" x="${r.x+r.w/2}" y="${r.y+r.h/2+7}">${r.label}</text>`).join('')}<text class="stair-label ${unlocked?'is-open':''}" x="245" y="151">${unlocked?'계단실 개방':'계단실 잠김'}</text><text class="corridor-label" x="220" y="301">복도</text></g><circle class="status-map-you-ring" cx="${dot.x}" cy="${dot.y}" r="9"/><circle class="status-map-you" cx="${dot.x}" cy="${dot.y}" r="4"/></svg><div class="map-status-legend"><span><i class="legend-here"></i>현재 위치</span><span><i class="legend-room"></i>탐색 구역</span><span><i class="legend-locked"></i>${unlocked?'계단 개방':'열쇠 필요'}</span></div></section>`;
+  };
+})();
