@@ -6,7 +6,7 @@
     access:{name:'출입 관리실',floor:1,x:-268,z:-950,yaw:-90},
     mirror:{name:'유리 관찰실',floor:1,x:268,z:-1320,yaw:90},
     keybox:{name:'열쇠 보관함',floor:1,x:-268,z:-1640,yaw:-90},
-    stairs:{name:'2층 계단 문',floor:1,x:0,z:-1810,yaw:0},
+    stairs:{name:'2층 계단',floor:1,x:0,z:-1810,yaw:0},
     outside:{name:'외부 출입구',floor:1,x:-268,z:-1160,yaw:-90},
     central:{name:'중앙관리실',floor:2,x:0,z:-2540,yaw:0}
   };
