@@ -20,10 +20,21 @@
     function stepSound(){if(muted)return;try{audio||=new(window.AudioContext||window.webkitAudioContext)();void audio.resume();const o=audio.createOscillator(),g=audio.createGain();o.type='triangle';o.frequency.setValueAtTime(78,audio.currentTime);o.frequency.exponentialRampToValueAtTime(42,audio.currentTime+.1);g.gain.setValueAtTime(.012,audio.currentTime);g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+.13);o.connect(g).connect(audio.destination);o.start();o.stop(audio.currentTime+.14);}catch{}}
     function pose(id){const d=M.doors[id];return {x:0,z:d.floor===2?-2370:d.z+(id==='stairs'?145:0),yaw:d.yaw,pitch:-3};}
     function actions(title,items=[]){if(!items.length&&title==='문과 물건을 직접 눌러 살펴보세요.')title='';bar.innerHTML=`<strong>${esc(title)}</strong><div>${items.map(([t,a,c])=>b(t,a,c||'')).join('')}</div>`;}
-    function say(text){notice.textContent=text;notice.hidden=false;}
+    function say(text,who='system'){
+      notice.innerHTML=`<div class="speech ${who}"><b>${who==='robot'?'B-0':who==='student'?'나':'시설 안내'}</b><p>${esc(text)}</p></div>`;notice.hidden=false;
+      const actor=app.querySelector('.lab-b0 .robot-sprite');actor?.classList.toggle('speaking',who==='robot');
+      if(who==='robot')later(()=>actor?.classList.remove('speaking'),Math.min(4500,text.length*85));
+    }
+    function relaySound(){if(muted)return;try{audio||=new(window.AudioContext||window.webkitAudioContext)();void audio.resume();for(let i=0;i<2;i++){const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime+i*.22;o.frequency.value=i?310:470;g.gain.setValueAtTime(.018,t);g.gain.exponentialRampToValueAtTime(.0001,t+.16);o.connect(g).connect(audio.destination);o.start(t);o.stop(t+.17);}}catch{}}
+    function tripPower(){
+      s.powerOut=true;save();app.querySelector('.lab-trip-panel')?.classList.add('tripped');
+      stepSound();say('앗… 뭔가 밟았어.','student');
+      later(()=>{stage.classList.add('power-out');relaySound();},650);
+      later(()=>say('전원이 차단되었습니다. 비상 조명으로 전환합니다.'),1700);
+    }
     function door(id){const d=M.doors[id],h=d.floor===2?-360:0;return `<div class="lab-door lab-door-${id}" style="transform:translate3d(${d.x}px,${h}px,${d.z}px) rotateY(${-d.yaw}deg)" data-lab-object="${id}" role="button" tabindex="0" aria-label="${d.name}"><span class="lab-door-sign">${d.floor===2?'2F · ':''}${d.name}</span><div class="lab-door-leaf"><i></i><i></i></div><span class="lab-door-light"></span></div>`;}
     function render(){
-      app.innerHTML=`<main class="game lab-game">${window.B0UI?.header({place:`${s.floor}층 연구소 복도`,namespace:"lab",reset:"view-home",zoomClass:"lab-zoom",active:true})||""}<section class="lab-stage" tabindex="0" aria-label="직접 이동하는 연구소 복도. 방향키나 이동 버튼으로 걷고 빈 공간을 끌어 둘러보세요."><div class="lab-world">
+      app.innerHTML=`<main class="game lab-game">${window.B0UI?.header({place:`${s.floor}층 연구소 복도`,namespace:"lab",reset:"view-home",zoomClass:"lab-zoom",active:true})||""}<section class="lab-stage ${s.powerOut?'power-out':''}" tabindex="0" aria-label="직접 이동하는 연구소 복도. 바닥을 누르면 그곳으로 걷고 빈 공간을 끌면 둘러봅니다. 방향키와 이동 버튼도 사용할 수 있습니다."><div class="lab-world"><div class="lab-trip-panel ${s.powerOut?'tripped':''}" aria-hidden="true"></div>
       ${Array.from({length:7},(_,i)=>{const z=90-i*300;return [-1,1].map(side=>`<div class="lab-wall" style="transform:translate3d(${side*270}px,0,${z}px) rotateY(${-side*90}deg)"><span class="lab-wall-light"></span><span class="lab-pipe"></span></div>`).join('');}).join('')}<div class="lab-floor"></div><div class="lab-ceiling"></div><div class="lab-end"></div>
       <div class="lab-barrier ${s.cleared.storage?'open':s.barrierTriggered?'':'raised'}" data-lab-object="shutter" role="button" tabindex="0" aria-label="복도 안전 차단문"><span>구역 폐쇄</span></div><div class="lab-glass-gate ${s.cleared.mirror?'open':''}" data-lab-object="glass" role="button" tabindex="0" aria-label="북쪽 복도의 유리 차단문"><i></i><i></i></div>
       ${['practice','storage','access','mirror','outside','central'].map(door).join('')}
@@ -31,7 +42,7 @@
       <div class="lab-stair-surround" aria-hidden="true"></div><div class="lab-stair-door ${s.stairsUnlocked?'open':''}" data-lab-object="stairs" role="button" tabindex="0" aria-label="2층 계단 문"><span>2F · 중앙관리실</span><div class="lab-stair-leaf"><i></i><b>계단실</b></div></div>
       ${Array.from({length:14},(_,i)=>`<div class="lab-step" style="transform:translate3d(0,${180-(i+1)*360/14}px,${-1820-i*22}px) rotateX(90deg)"></div><div class="lab-riser" style="transform:translate3d(0,${180-(i+1)*360/14}px,${-1809-i*22}px)"></div>`).join('')}
       <div class="lab-upper-floor"></div><div class="lab-upper-ceiling"></div><div class="lab-upper-end"></div>${[-1,1].map(side=>`<div class="lab-upper-wall" style="transform:translate3d(${side*270}px,0,-2330px) rotateY(${-side*90}deg)"><span class="lab-wall-light"></span></div><div class="lab-stair-side" style="transform:translate3d(${side*270}px,0,-1940px) rotateY(${-side*90}deg)"></div>`).join('')}
-      <div class="lab-b0"><div class="robot-sprite live-body">${portrait()}</div><div class="c4-walk-art"><div class="c4-walk-frame"></div></div></div></div><p class="lab-notice" role="status" hidden></p><div class="lab-walk-mark" aria-hidden="true">이동 중</div><div class="lab-dpad">${b('↶','turn-left','quiet')}${b('앞으로','forward')}${b('↷','turn-right','quiet')}${b('뒤로','backward','quiet')}</div></section><section class="lab-actions" aria-label="복도에서 선택한 대상"></section><footer>${b('B-0에게 말하기','robot','secondary')}<div class="lab-pocket">${b('소지품','inventory','quiet')}</div></footer></main>`;
+      <div class="lab-b0"><div class="robot-sprite live-body">${portrait()}</div><div class="c4-walk-art"><div class="c4-walk-frame"></div></div></div></div><div class="lab-notice" role="status" hidden></div><div class="lab-walk-mark" aria-hidden="true">이동 중</div><div class="lab-dpad">${b('↶','turn-left','quiet')}${b('앞으로','forward')}${b('↷','turn-right','quiet')}${b('뒤로','backward','quiet')}</div></section><section class="lab-actions" aria-label="복도에서 선택한 대상"></section><footer>${b('B-0에게 말하기','robot','secondary')}<div class="lab-pocket">${b('소지품','inventory','quiet')}</div></footer></main>`;
       world=app.querySelector('.lab-world');stage=app.querySelector('.lab-stage');bar=app.querySelector('.lab-actions');notice=app.querySelector('.lab-notice');
       stage.addEventListener('pointerdown',down);stage.addEventListener('pointermove',move);stage.addEventListener('pointerup',up);stage.addEventListener('pointercancel',cancel);
       stage.addEventListener('keydown',key);stage.addEventListener('wheel',e=>{e.preventDefault();camera.pitch=Math.max(-35,Math.min(45,camera.pitch-e.deltaY*.025));update();save();},{passive:false});
@@ -43,7 +54,8 @@
       // A companion occupies one world position. Looking around never relocates him.
       bot.style.transform=`translate3d(${companion.x-42}px,${24-M.groundAt(companion.z)}px,${companion.z}px) rotateY(${-camera.yaw}deg)`;
       bot.classList.toggle('walking',botMoving);bot.dataset.x=String(companion.x);bot.dataset.z=String(companion.z);
-      if(!s.barrierTriggered&&!s.cleared.storage&&camera.z<=-60){s.barrierTriggered=true;app.querySelector('.lab-barrier').classList.remove('raised');say('복도에 들어서자 뒤쪽 차단문이 내려왔다. B-0도 함께 들어왔다.');save();}
+      if(s.floor===1&&!s.powerOut&&walking&&camera.z<=-60)tripPower();
+      if(!s.barrierTriggered&&!s.cleared.storage&&camera.z<=-60){s.barrierTriggered=true;app.querySelector('.lab-barrier').classList.remove('raised');save();}
       stage.classList.toggle('walking',walking);if(stage.dataset.floor!==String(s.floor)){app.querySelector('.lab-pocket').innerHTML=b('소지품','inventory','quiet')+(s.floor===2?b('1층 계단','downstairs','quiet'):'');}stage.dataset.floor=String(s.floor);stage.dataset.position=String(Math.round(camera.z));app.querySelector('.lab-location').textContent=`${s.floor}층 ${s.floor===2?'중앙관리실 앞 복도':camera.z<-1510?'계단 앞 복도':camera.z<-650?'연구 구역 복도':'실습 구역 복도'}`;
     }
     function animate(to,done,stair=false){
@@ -86,7 +98,7 @@
       if(walking)return;
       if(a==='view-home'){camera.zoom=1;selection=null;actions('');animate({x:0,z:s.floor===2?-2170:80,yaw:0,pitch:-4});return;}
       if(a==='zoom-in'||a==='zoom-out'){camera.zoom=Math.max(.65,Math.min(1.6,camera.zoom+(a==='zoom-in'?.15:-.15)));update();return;}
-      if(a==='robot'){say('B-0: 함께 살펴보겠습니다. 확인할 문이나 물건을 직접 골라 주세요.');return;}
+      if(a==='robot'){say('함께 살펴보겠습니다. 확인할 문이나 물건을 직접 골라 주세요.','robot');return;}
       if(a.startsWith('go-')){close();walkTo(a.slice(3));return;}
       if(a==='forward'||a==='backward'){travel(a==='forward'?1:-1);return;}
       if(a==='turn-left'||a==='turn-right'){animate({yaw:camera.yaw+(a==='turn-left'?-90:90)});return;}
@@ -98,12 +110,21 @@
       if(a==='upstairs'){ascend();return;}if(a==='downstairs'){descend();return;}
       if(a.startsWith('enter-')){const id=a.slice(6);if(M.canEnter(s,id)){save();onEnter(id);}return;}
     }
-    function click(e){if(suppress){suppress=false;return;}const action=e.target.closest('[data-lab]');if(action){e.preventDefault();act(action.dataset.lab);return;}if(walking||modalEl)return;const el=e.target.closest('[data-lab-object]');if(!el)return;const id=el.dataset.labObject;if(M.doors[id])walkTo(id);else showObject(id);}
+    function click(e){
+      if(suppress){suppress=false;return;}const action=e.target.closest('[data-lab]');if(action){e.preventDefault();act(action.dataset.lab);return;}
+      if(walking||modalEl||!stage.contains(e.target))return;
+      const el=e.target.closest('[data-lab-object]');if(el){const id=el.dataset.labObject;if(M.doors[id])walkTo(id);else showObject(id);return;}
+      if(e.detail===0)return;
+      const rect=stage.getBoundingClientRect(),f=Math.min(stage.clientWidth*.65,stage.clientHeight*.6)*camera.zoom;
+      const p=M.floorTarget(s,camera,e.clientX-rect.left,e.clientY-rect.top,rect.width,rect.height,f);
+      if(!p||Math.hypot(p.x-camera.x,p.z-camera.z)<8)return;
+      selection=null;actions('');stage.focus({preventScroll:true});animate(p);
+    }
     function down(e){if(e.button!==0||walking||modalEl||e.target.closest('button'))return;pointer={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:camera.yaw,pitch:camera.pitch,moved:false};}
     function move(e){if(!pointer||pointer.id!==e.pointerId)return;const dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;if(!pointer.moved&&Math.hypot(dx,dy)<6)return;pointer.moved=true;camera.yaw=pointer.yaw-dx*.22;camera.pitch=Math.max(-35,Math.min(45,pointer.pitch+dy*.15));update();}
     function up(){if(!pointer)return;suppress=pointer.moved;pointer=null;save();later(()=>{suppress=false;},0);}
     function cancel(){pointer=null;suppress=false;}
-    function key(e){if(walking||modalEl||e.target.closest('button'))return;if(['ArrowUp','w','W'].includes(e.key)){e.preventDefault();travel(1);}else if(['ArrowDown','s','S'].includes(e.key)){e.preventDefault();travel(-1);}else if(['ArrowLeft','ArrowRight','a','A','d','D'].includes(e.key)){e.preventDefault();animate({yaw:camera.yaw+(['ArrowLeft','a','A'].includes(e.key)?-90:90)});}else if((e.key==='Enter'||e.key===' ')&&e.target.dataset.labObject){e.preventDefault();const id=e.target.dataset.labObject;M.doors[id]?walkTo(id):showObject(id);}}
+    function key(e){if(walking||modalEl||e.target.closest('input,textarea,select,dialog'))return;if(['ArrowUp','w','W'].includes(e.key)){e.preventDefault();travel(1);}else if(['ArrowDown','s','S'].includes(e.key)){e.preventDefault();travel(-1);}else if(['ArrowLeft','ArrowRight','a','A','d','D'].includes(e.key)){e.preventDefault();animate({yaw:camera.yaw+(['ArrowLeft','a','A'].includes(e.key)?-90:90)});}else if((e.key==='Enter'||e.key===' ')&&e.target.dataset.labObject){e.preventDefault();const id=e.target.dataset.labObject;M.doors[id]?walkTo(id):showObject(id);}}
     function dispose(){dead=true;cancelAnimationFrame(frame);timers.forEach(clearTimeout);close();audio?.close();app.removeEventListener('click',click);window.removeEventListener('resize',update);}
     app.addEventListener('click',click);window.addEventListener('resize',update);render();save();return {dispose};
   };

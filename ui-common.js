@@ -5,8 +5,6 @@
   const common=(text,action)=>button(text,action);
   let returnMenu=null;
   function header({place,namespace='action',reset='home',zoomClass='',active=false}){
-    // The first corridor is a dialogue scene, not an explorable camera view.
-    if(namespace==='action'&&place==='연구소 복도')active=false;
     return `<header class="b0-hud"><div class="b0-hud-main"><h1 class="b0-location ${namespace==='lab'?'lab-location':''}">${place}</h1><nav aria-label="게임 메뉴"><div class="zoom-controls" role="group" aria-label="화면 배율">${button('−','zoom-out',namespace,`aria-label="축소" ${active?'':'disabled'}`)}<output class="${zoomClass}" hidden>100%</output>${button('+','zoom-in',namespace,`aria-label="확대" ${active?'':'disabled'}`)}</div>${button('메뉴','menu',namespace)}</nav></div><div class="b0-hud-tools">${button('처음 위치로',reset,namespace,active?'':'disabled')}${window.B0LessonJumpButton?.()||''}</div></header>`;
   }
   function menuContent({namespace='action',close='close-modal',home='campaign-home',record='',extras=''}={}){
@@ -30,7 +28,7 @@
     modal('소지품',items.length?`<ul class="b0-items">${items.join('')}</ul>`:'<p>아직 가지고 있는 물건이 없습니다.</p>');
   }
   function help(first=false){
-    const body='<ul class="b0-help"><li><b>둘러보기</b><p>빈 공간을 끌어 시선을 돌립니다. 복도에서는 이동 버튼이나 방향키로 걸어갑니다.</p></li><li><b>조사하고 조작하기</b><p>물건을 눌러 살펴봅니다. 상자·손잡이처럼 움직이는 물건은 직접 끌거나 조사 창의 버튼으로 조작합니다.</p></li><li><b>B-0와 협력하기</b><p>B-0에게 말한 뒤 확인하거나 조작할 대상을 직접 고릅니다. 상자 위에서는 내려가기 버튼을 사용할 수 있습니다.</p></li><li><b>화면 조절</b><p>오른쪽 위 −·+로 배율을 조절합니다. 처음 위치로는 현재 공간의 시점과 배율만 되돌립니다.</p></li><li><b>지도와 기록</b><p>메뉴에서 지도·소지품·사용법·기록 보기를 엽니다. 차시 이동 버튼은 개발 확인용 임시 기능입니다.</p></li></ul>';
+    const body='<ul class="b0-help"><li><b>둘러보기</b><p>빈 공간을 끌어 시선을 돌립니다. 복도에서는 바닥을 누른 곳으로 걷습니다. 이동 버튼과 방향키도 사용할 수 있습니다.</p></li><li><b>조사하고 조작하기</b><p>물건을 눌러 살펴봅니다. 상자·손잡이처럼 움직이는 물건은 직접 끌거나 조사 창의 버튼으로 조작합니다.</p></li><li><b>B-0와 협력하기</b><p>B-0에게 말한 뒤 확인하거나 조작할 대상을 직접 고릅니다. 상자 위에서는 내려가기 버튼을 사용할 수 있습니다.</p></li><li><b>화면 조절</b><p>오른쪽 위 −·+로 배율을 조절합니다. 처음 위치로는 시점과 배율만 되돌립니다.</p></li><li><b>지도와 기록</b><p>메뉴에서 지도·소지품·사용법·기록 보기를 엽니다. 차시 이동 버튼은 개발 확인용 임시 기능입니다.</p></li></ul>';
     const room=document.querySelector('#app main');
     const detail=room?.classList.contains('mr-game')?'손잡이는 누른 채 아래로 끌거나, 조사 창의 당기기 버튼으로 조작합니다.':room?.classList.contains('c4-game')?'연결 단자를 옆으로 끌어 분리하고 손잡이·잠금쇠를 직접 끌 수 있습니다. 각 장치의 조작 버튼도 사용할 수 있습니다.':room?.classList.contains('c3-game')?'보관장은 직접 끌거나 조사 창의 밀기 버튼으로 움직입니다.':room?.classList.contains('c2-game')?'상자는 누른 채 끌어서 옮깁니다. 짧게 눌러 올라서거나 내려갈 수 있습니다. 다른 상자 위에도 놓을 수 있습니다.':'';
     modal(first?'처음 조작 안내':'사용법',body+(detail?`<p>${detail}</p>`:'')+(first?common('알겠어, 시작하자','guide-done'):''),!first);

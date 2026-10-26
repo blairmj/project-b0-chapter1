@@ -317,7 +317,7 @@ function door(tried=false) {
 }
 function guide() {
   state.guide=true;save("발견","벽면 지도의 비상 출입 지침");
-  modal("벽면 지도",`<section class="map-preview"><h3>연구소 전체 지도</h3>${window.B0LabNavigation.mapMarkup?.({current:"교육 실습실"})||""}</section><div class="notice-paper"><h3>비상 출입 안내</h3><p>출입 시스템 정지 시<br>관리용 쪽지의 비밀번호를 사용하십시오.</p></div>${dialogue("student","비밀번호가 적힌 쪽지가 있다는 거네.")}`);
+  modal("벽면 지도",`<section class="map-preview"><h3>연구소 전체 지도</h3>${window.B0LabNavigation.mapMarkup?.({current:"교육 실습실"})||""}</section><div class="notice-paper"><h3>비상 출입 안내</h3><p>출입 시스템 정지 시<br>관리용 쪽지의 비밀번호를 사용하십시오.</p></div>`);
 }
 const robotQuestions={identity:"넌 어떤 로봇이야?",where:"여기는 어떤 곳이야?",exit:"여기서 어떻게 나가?",password:"비밀번호 쪽지를 알아?",limits:"AI인데 왜 모르는 게 있어?",belongings:"네가 갖고 있는 건 뭐야?"};
 function robotAnswer(topic){
@@ -363,6 +363,7 @@ function walkIntoCorridor(){
   function frame(now){
     if(ticket!==token)return;
     const t=Math.min(1,(now-start)/2100),ease=t*t*(3-2*t);
+    if(t>=.5){const place=game.querySelector('.b0-location');if(place)place.textContent='1층 연구소 복도';}
     zoom=1+ease*2.6;panTo(-13,3);
     layer.style.opacity=String(Math.max(0,(t-.48)/.52));
     layer.style.transform=`scale(${1.04+.06*ease})`;
@@ -370,12 +371,9 @@ function walkIntoCorridor(){
   }
   walkFrame=requestAnimationFrame(frame);
 }
-function ending(line=0) {
+function ending() {
   roomView?.dispose();roomView=null;moving=false;
-  const lines=[["student","너도 같이 가는 거지?"],["robot","네. 함께 출구를 찾아보겠습니다."],["robot","복도 끝에 다른 방이 보입니다."],["student","같이 가 보자."]];
-  const [who,text]=lines[line];
-  app.innerHTML=`<main class="game corridor-game">${window.B0UI?.header({place:`연구소 복도`,namespace:"action",reset:"view-home",zoomClass:"zoom-value",active:true})||""}<section class="corridor-scene" aria-label="교육 실습실을 나와 마주한 연구소 복도"><div class="corridor-view" role="img" aria-label="불빛과 여러 출입문이 이어지는 긴 연구소 복도"></div><div class="corridor-b0 walking" role="img" aria-label="함께 복도를 걷는 B-0"><div class="robot-sprite live-body">${portrait()}</div></div><div class="corridor-dialogue">${dialogue(who,text)}${line<3?btn("다음","epilogue-"+(line+1),"next"):btn("복도 둘러보기","chapter-two","primary")}</div></section><footer><small>${line===3?"지도를 보며 다른 방과 출구를 찾아본다.":"B-0와 함께 실습실을 나왔다."}</small></footer></main>`;
-  performSpeech(who,text,"friendly");
+  showHall('practice');
 }
 function menu() {modal("메뉴",window.B0UI.menuContent({namespace:'action',close:'close',extras:`${btn(state.muted?"효과음 켜기":"효과음 끄기","sound")}${btn("생각거리","hint")}${btn("수업 안내","teacher")}${btn("진행 초기화","restart")}`}));}
 function handle(a) {

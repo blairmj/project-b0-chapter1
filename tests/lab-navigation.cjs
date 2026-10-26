@@ -18,3 +18,14 @@ const savedNpc=M.restore({...s,floor:2,companion:{x:90,z:-2290,floor:2}});assert
 assert.equal(M.groundAt(-1700),0);assert.equal(M.groundAt(-2300),360);
 assert.equal(M.restore({version:1,camera:{z:-320}}).barrierTriggered,true);
 console.log("PASS: wider corridor bounds, persisted world-space companion, stair grounding and barrier migration");
+
+const clickState=M.fresh(),cam={x:0,z:80,yaw:0,pitch:-4};
+const near=M.floorTarget(clickState,cam,380,410,760,480,288),far=M.floorTarget(clickState,cam,380,300,760,480,288);
+assert.ok(near.z<80&&far.z<near.z,'a farther floor point must produce farther forward travel');
+assert.equal(M.floorTarget(clickState,cam,380,50,760,480,288),null,'ceiling clicks must not move the player');
+const behind=M.floorTarget(clickState,{...cam,z:-500,yaw:180},380,410,760,480,288);assert.ok(behind.z>-500,'turning around allows walking back');
+const sideways=M.floorTarget(clickState,{...cam,z:-500,yaw:90},380,410,760,480,288);assert.ok(sideways.x>0&&sideways.x<=180,'sideways floor clicks respect corridor walls');
+assert.equal(M.restore({...clickState,powerOut:true}).powerOut,true);
+assert.equal(M.restore({...clickState,powerOut:false}).powerOut,false);
+assert.equal(M.restore({version:1,camera:{z:-950},cleared:{access:true}}).powerOut,true,'old checkpoints migrate without repeating the outage');
+console.log('PASS: perspective floor clicks, reverse travel, wall bounds, ceiling rejection, persistent power and old-save migration');

@@ -1,0 +1,20 @@
+/* The hallway remains lit until the player steps on the loose floor cover. */
+.lab-wall,.lab-upper-wall,.lab-stair-side,.lab-end,.lab-upper-end,.lab-stair-surround{background-image:linear-gradient(#07131b44,#08121c77),url('./assets/sf-corridor-wall-v2.webp')}
+.lab-stage:after{opacity:0;transition:opacity 2.8s ease}
+.lab-stage:before{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;background:#02061155;opacity:0;transition:opacity 2.8s ease}
+.lab-stage.power-out:before,.lab-stage.power-out:after{opacity:1}
+.lab-wall-light{opacity:1;background:#d6f4ee;box-shadow:0 0 28px #a4e9f0aa;transition:opacity 2.3s ease,background-color 2.3s ease,box-shadow 2.3s ease}
+.power-out .lab-wall-light{opacity:.12;background:#9b7870;box-shadow:0 0 4px #ae796322}
+.lab-trip-panel{position:absolute;left:-55px;top:-60px;width:110px;height:120px;transform:translate3d(0,178px,-65px) rotateX(90deg);background:repeating-linear-gradient(90deg,#414b50 0 22px,#29363e 23px 25px);border:3px solid #71828c;box-shadow:3px 2px 0 #02081099;pointer-events:none}
+.lab-trip-panel:after{content:'';position:absolute;left:76px;top:-30px;width:5px;height:60px;border-left:3px solid #776e52;border-radius:45%;transform:rotate(-20deg)}
+.lab-trip-panel.tripped{background-color:#25313b;border-color:#52636a}
+.lab-stage{cursor:grab}.lab-stage:active{cursor:grabbing}.lab-floor,.lab-upper-floor{cursor:crosshair}
+.lab-notice{padding:0;border:0;background:transparent;box-shadow:none;bottom:75px;left:16px;right:16px;z-index:5}
+.lab-notice .speech{font-family:inherit;font-size:14px;pointer-events:none}.lab-notice .speech p{margin:0}.lab-notice .speech.system{max-width:90%}
+.lab-notice .speech.system b{text-align:center}.lab-notice .speech.robot{margin-left:auto;margin-right:0}.lab-notice .speech.student{margin-left:0;margin-right:auto}
+.lab-notice .speech.robot p{background:#b9e8f6;color:#123548}
+.lab-notice .speech.system p{background:rgba(4,13,21,.88);font-family:'B0 Digital',monospace;color:#f1fcff;border:1px solid #d3edff50;border-radius:2px}
+.lab-notice .speech.system b{font-family:'B0 Digital',monospace;color:#e8cf9e}
+.lab-game .lab-dpad{z-index:6}
+.leaving-room>header{opacity:1!important;z-index:40}
+@media(prefers-reduced-motion:reduce){.lab-stage:before,.lab-stage:after,.lab-wall-light{transition:none}}

@@ -3,7 +3,7 @@ const elements=new Map();
 function el(k){if(!elements.has(k))elements.set(k,{innerHTML:'',textContent:'',value:'',hidden:false,style:{},dataset:{},offsetWidth:600,offsetHeight:700,clientWidth:400,clientHeight:600,handlers:{},addEventListener(k,f){this.handlers[k]=f},setPointerCapture(){},hasPointerCapture(){return false},querySelector(){return null},getBoundingClientRect(){return {left:0,top:0,width:600,height:900}},cloneNode(){return null},classList:{add(){},remove(){},contains(){return false}},insertAdjacentHTML(){},select(){}});return elements.get(k);}
 const app={innerHTML:'',querySelector:k=>k==='dialog'?null:el(k),addEventListener(){},querySelectorAll:()=>[]};
 let storage=null;const extraStorage=new Map();
-const ctx=vm.createContext({createRoomPanorama:()=>({view(){},setDoorOpen(){},openDoor(){},dispose(){}}),document:{querySelector:()=>app,addEventListener(){}},localStorage:{getItem:k=>k==='project-b0-firstperson-v4'?storage:extraStorage.get(k)??null,setItem:(k,v)=>{if(k==='project-b0-firstperson-v4')storage=v;else extraStorage.set(k,v);},removeItem(k){extraStorage.delete(k);}},setTimeout:f=>{f();return 1},clearTimeout(){},cancelAnimationFrame(){},window:{B0LabNavigation:require('../lab-navigation-model.js'),addEventListener(){},matchMedia:()=>({matches:true})}});
+const ctx=vm.createContext({createRoomPanorama:()=>({view(){},setDoorOpen(){},openDoor(){},dispose(){}}),document:{querySelector:()=>app,addEventListener(){}},localStorage:{getItem:k=>k==='project-b0-firstperson-v4'?storage:extraStorage.get(k)??null,setItem:(k,v)=>{if(k==='project-b0-firstperson-v4')storage=v;else extraStorage.set(k,v);},removeItem(k){extraStorage.delete(k);}},setTimeout:f=>{f();return 1},clearTimeout(){},cancelAnimationFrame(){},window:{startLabNavigation:({app})=>{app.innerHTML='<main class="game lab-game">연구소 복도</main>';return {dispose(){}}},B0LabNavigation:require('../lab-navigation-model.js'),addEventListener(){},matchMedia:()=>({matches:true})}});
 const run=s=>vm.runInContext(s,ctx);
 run(fs.readFileSync(path.join(__dirname,'../ui-common.js'),'utf8'));
 run(fs.readFileSync(path.join(__dirname,'../firstperson.js'),'utf8').replace(/boot\(\);\s*$/,''));
@@ -34,7 +34,7 @@ run('inventory();');assert.match(run('panel.content'),/4732/);
 run('approach("lock");inspect();submitCode("4732");');assert.equal(run('state.unlocked'),true);
 assert.equal(run('state.phase'),'room');run('handle("escape");');assert.equal(run('state.phase'),'escaped');
 assert.equal(run('load().noteTaken'),true);
-assert.match(app.innerHTML,/연구소 복도/);run('handle("epilogue-1")');assert.match(app.innerHTML,/함께 출구를 찾아/);run('handle("epilogue-2")');assert.doesNotMatch(app.innerHTML,/AXIOM/);
+assert.match(app.innerHTML,/lab-game/);assert.doesNotMatch(app.innerHTML,/epilogue-|너도 같이 가는 거지|AXIOM/);
 // The player can discover the compartment without being forced to read the guide first.
 run('state=fresh();state.phase="room";enterRoom();robot();handle("ask-storage");handle("open-storage");handle("take-note");');
 assert.equal(run('state.guide'),false);assert.equal(run('state.noteTaken'),true);
@@ -92,8 +92,7 @@ console.log('PASS: selectable questions, context-sensitive topics, no early pass
 assert.doesNotMatch(run('JSON.stringify(intro)'),/실망하셨나요|먼저 출입구/);
 assert.match(run('JSON.stringify(intro)'),/궁금한 것이 있으면/);
 assert.doesNotMatch(run('openingHeader()'),/restart|처음으로/);
-run('state.phase="escaped";state.noteTaken=true;state.unlocked=true;ending(1)');assert.match(app.innerHTML,/corridor-b0 walking/);
-run('handle("epilogue-2")');assert.match(app.innerHTML,/corridor-b0 walking/);assert.doesNotMatch(app.innerHTML,/AXIOM/);
-run('handle("epilogue-3")');assert.match(app.innerHTML,/같이 가 보자/);assert.match(app.innerHTML,/chapter-two/);assert.doesNotMatch(app.innerHTML,/data-action="epilogue-|data-action="restart"/);
+run('state.phase="escaped";state.noteTaken=true;state.unlocked=true;ending()');assert.match(app.innerHTML,/lab-game/);assert.doesNotMatch(app.innerHTML,/epilogue-|같이 가는 거지|AXIOM/);
+run('guide()');assert.doesNotMatch(run('panel.content'),/speech student|비밀번호가 적힌 쪽지가 있다는 거네/);
 run('enterRoom(false,true);panTo(70,12);setZoom(1.6);handle("view-home")');assert.equal(run('state.phase'),'escaped');assert.equal(run('state.noteTaken'),true);assert.equal(run('state.unlocked'),true);assert.equal(run('camera.x'),0);assert.equal(run('zoom'),1);
 console.log('PASS: revised opening, corridor continuation, late AXIOM reveal preserved, home preserves completed progress');
