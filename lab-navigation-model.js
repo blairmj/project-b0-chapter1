@@ -2,6 +2,7 @@
   'use strict';
   const doors={
     practice:{name:'출입 관리실',floor:1,x:0,z:236,yaw:180},
+    education:{name:'교육 실습실',floor:1,x:-268,z:-320,yaw:-90},
     storage:{name:'물류 보관실',floor:1,x:268,z:-320,yaw:90},
     access:{name:'기록 보관실',floor:1,x:-268,z:-950,yaw:-90},
     mirror:{name:'유리 관찰실',floor:1,x:268,z:-1320,yaw:90},
@@ -10,7 +11,7 @@
     outside:{name:'외부 출입구',floor:1,x:-268,z:-1160,yaw:-90},
     central:{name:'중앙관리실',floor:2,x:0,z:-2540,yaw:0}
   };
-  const fresh=()=>({version:1,mode:'hall',floor:1,camera:{x:0,z:80,yaw:0,pitch:-4},cleared:{practice:false,storage:false,access:false,mirror:false},keyboxOpen:false,keyTaken:false,stairsUnlocked:false,stairRejected:false,barrierTriggered:false,powerOut:false,powerTalked:false,emergencyOn:false,companion:null,visited:[]});
+  const fresh=()=>({version:1,mode:'hall',floor:1,camera:{x:0,z:80,yaw:0,pitch:-4},cleared:{practice:false,education:false,storage:false,access:false,mirror:false},keyboxOpen:false,keyTaken:false,stairsUnlocked:false,stairRejected:false,barrierTriggered:false,powerOut:false,powerTalked:false,emergencyOn:false,companion:null,visited:[]});
   function restore(raw){
     const s=fresh();if(!raw||raw.version!==1)return s;
     for(const id of Object.keys(s.cleared))s.cleared[id]=raw.cleared?.[id]===true;
@@ -23,6 +24,7 @@
     s.powerOut=raw.powerOut===true||(raw.powerOut===undefined&&(s.barrierTriggered||s.cleared.access||s.cleared.mirror));
     s.emergencyOn=s.powerOut&&raw.emergencyOn===true;
     if(raw.companion&&Number.isFinite(raw.companion.x)&&Number.isFinite(raw.companion.z)&&raw.companion.floor===s.floor)s.companion=companionSpot(raw.companion.x,raw.companion.z,s.floor);
+    if(raw.room==='education')s.room='education';
     s.visited=Array.isArray(raw.visited)?raw.visited.filter(id=>doors[id]):[];return s;
   }
   function merge(s,p){for(const id of Object.keys(s.cleared))s.cleared[id]||=p[id]===true;return s;}
@@ -32,7 +34,7 @@
     const min=!s.cleared.mirror?-1460:-1700;
     return {x,z:Math.max(min,Math.min(160,z))};
   }
-  function canEnter(s,id){if(['practice','storage','access','mirror'].includes(id))return true;if(id==='central')return s.floor===2&&s.stairsUnlocked;return false;}
+  function canEnter(s,id){if(['practice','education','storage','access','mirror'].includes(id))return true;if(id==='central')return s.floor===2&&s.stairsUnlocked;return false;}
   function returned(s,from,completed=true){
     // Backtracking uses the same doorway without marking its puzzle complete.
     // Solved rooms retain their distinct exits (window / hidden passage).
@@ -44,6 +46,7 @@
       return s;
     }
     s.mode='hall';s.floor=1;s.companion=null;s.camera={x:0,z:80,yaw:0,pitch:-4};
+    if(from==='education'){s.cleared.education=true;s.camera.z=doors.education.z;}
     if(from==='storage'){s.cleared.storage=true;s.camera.z=-790;}
     if(from==='access'){s.cleared.access=true;s.camera.z=-1100;}
     if(from==='mirror'){s.cleared.access=s.cleared.mirror=true;s.camera.z=-1610;s.camera.yaw=-22;}

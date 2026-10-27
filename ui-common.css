@@ -35,3 +35,20 @@
 .lab-barrier{transform:translate3d(0,0,220px)}.lab-barrier.raised{transform:translate3d(0,-490px,220px)}
 .map-board .lab-map>svg{height:165px}.lab-map .map-floor-label{font-weight:600}
 @media(max-width:420px){.game>header.b0-hud,.awakening>.b0-hud{padding:10px 8px}.game>footer{padding:10px 8px}.game>footer button{font-size:12px;padding:6px}.lab-game>footer>button{min-width:0;max-width:100%;white-space:normal;word-break:keep-all;line-height:1.15}.lab-game>footer{gap:4px}.lab-pocket{min-width:0}}
+/* Compact review controls fit the same single row without horizontal scrolling. */
+.game>header.b0-hud,.awakening>.b0-hud{overflow:visible}
+.b0-hud-main{min-width:0;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:6px}
+.b0-hud-tools{gap:3px}
+.game>.b0-hud .lesson-jump,.awakening>.b0-hud .lesson-jump{font-size:9px!important;padding:4px!important;min-height:34px;height:34px}
+.game>.b0-hud .b0-hud-tools>button,.awakening>.b0-hud .b0-hud-tools>button{font-size:10px;padding:4px 5px;min-height:34px;height:34px}
+@media(max-width:560px){
+ .game>header.b0-hud,.awakening>.b0-hud{padding:8px 6px;height:60px;min-height:60px}
+ .b0-hud-main{gap:3px}.b0-hud-main h1,.b0-hud-main .lab-location{font-size:9px}
+ .b0-hud .zoom-controls button{width:27px;font-size:17px!important}
+ .game>.b0-hud nav,.awakening>.b0-hud nav{gap:3px}.b0-hud .zoom-controls{gap:2px}
+ .game>.b0-hud nav>button,.awakening>.b0-hud nav>button{font-size:10px;padding:4px;min-width:32px}
+ .game>.b0-hud .b0-hud-tools>button,.awakening>.b0-hud .b0-hud-tools>button{font-size:8px;padding:3px;letter-spacing:-.4px}
+ .game>.b0-hud .lesson-jump,.awakening>.b0-hud .lesson-jump{font-size:8px!important;padding:3px!important;letter-spacing:-.4px}
+}
+
+@media(max-width:360px){.b0-hud .zoom-controls button{width:24px}.game>.b0-hud nav>button,.awakening>.b0-hud nav>button{min-width:28px;font-size:9px}.game>.b0-hud .b0-hud-tools>button,.awakening>.b0-hud .b0-hud-tools>button{font-size:7px}.game>.b0-hud .lesson-jump,.awakening>.b0-hud .lesson-jump{font-size:7px!important}}

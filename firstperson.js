@@ -27,26 +27,26 @@ function load() {
 }
 let state = load() || fresh(), target = "", moving = false, token = 0, timer, speechTimer, audio, lastFocus;
 let faceId=0, talkTimer, camera={x:0,y:0}, drag=null, suppressClick=false, roomView, walkFrame, zoom=1, pinch=null;
-let chapterTwo,chapterThree,chapterFour,hallView;
+let chapterTwo,chapterThree,chapterFour,hallView,educationView;
 const NAV_KEY='project-b0-lab-navigation-v1';
 function readProgress(key){try{return JSON.parse(progressStore.getItem(key));}catch{return null;}}
-function roomProgress(){const two=readProgress('project-b0-room2-v1'),three=readProgress('project-b0-room3-v1');return {practice:state.phase==='escaped',storage:two?.phase==='complete',access:['gate','mirror','complete'].includes(three?.phase),mirror:three?.phase==='complete'||three?.mirror?.phase==='complete'};}
+function roomProgress(){const two=readProgress('project-b0-room2-v1'),three=readProgress('project-b0-room3-v1');return {practice:state.phase==='escaped',education:readProgress('project-b0-education-v1')?.memoryTaken===true,storage:two?.phase==='complete',access:['gate','mirror','complete'].includes(three?.phase),mirror:three?.phase==='complete'||three?.mirror?.phase==='complete'};}
 function loadNavigation(){
   const raw=readProgress(NAV_KEY),n=window.B0LabNavigation.restore(raw);window.B0LabNavigation.merge(n,roomProgress());
   // Existing players already in the final room keep their checkpoint after the map update.
-  if(!raw&&readProgress('project-b0-final-v2')?.version===2){for(const id of Object.keys(n.cleared))n.cleared[id]=true;n.keyTaken=n.stairsUnlocked=true;n.floor=2;n.camera={x:0,z:-2350,yaw:0,pitch:-4};n.mode='room';}
+  if(!raw&&readProgress('project-b0-final-v2')?.version===2){for(const id of ['practice','storage','access','mirror'])n.cleared[id]=true;n.keyTaken=n.stairsUnlocked=true;n.floor=2;n.camera={x:0,z:-2350,yaw:0,pitch:-4};n.mode='room';}
   return n;
 }
 let navigation=loadNavigation();
 function syncCorridorPower(){app.setAttribute?.('data-corridor-power',navigation.powerOut?'out':'on');}
 syncCorridorPower();
 function saveNavigation(){syncCorridorPower();try{progressStore.setItem(NAV_KEY,JSON.stringify(navigation));}catch{}}
-function markRoom(){hallView?.dispose();hallView=null;navigation.mode='room';saveNavigation();}
+function markRoom(){delete navigation.room;hallView?.dispose();hallView=null;navigation.mode='room';saveNavigation();}
 function showHall(from,completed=true,arriving=false){
   if(from&&from!=='practice'&&!arriving&&window.B0RoomTransit&&app.querySelector('.c2-stage')){window.B0RoomTransit.cross(app,()=>showHall(from,completed,true),{direction:'exit',completed,corridor:{state:navigation,from}});return;}
   stopAdventure();window.B0LabNavigation.merge(navigation,roomProgress());
   if(from)window.B0LabNavigation.returned(navigation,from,completed);
-  navigation.mode='hall';saveNavigation();
+  navigation.mode='hall';delete navigation.room;saveNavigation();
   if(typeof location!=='undefined'){const url=new URL(location.href);url.searchParams.set('area','hall');url.searchParams.delete('room');url.searchParams.set('chapter',String(state.chapter||1));history.replaceState(null,'',url);}
   hallView=window.startLabNavigation({app,portrait,state:navigation,onSave:saveNavigation,onEnter:enterFromHall,onHome:campaignHome,muted:state.muted,arrival:arriving&&from?{from,completed}:null});
 }
@@ -54,13 +54,20 @@ function enterFromHall(id,arriving=false){
   if(!window.B0LabNavigation.canEnter(navigation,id))return;
   if(!arriving&&window.B0RoomTransit){window.B0RoomTransit.cross(app,()=>enterFromHall(id,true));return;}
   if(id==='practice'){stopAdventure();markRoom();state.chapter=1;save();chapterUrl(1);enterRoom(false,true);panTo(167,-5);setZoom(1);return;}
+  if(id==='education'){enterEducation();return;}
   if(id==='storage'){enterChapterTwo();return;}
   if(id==='access'){enterChapterThree('access',true);return;}
   if(id==='mirror'){enterChapterThree('mirror',true);return;}
   if(id==='central')enterChapterFour(true);
 }
 function chapterUrl(number){if(typeof location==='undefined')return;const url=new URL(location.href);url.searchParams.delete('area');if(number!==3)url.searchParams.delete('room');if(number===1)url.searchParams.delete('chapter');else url.searchParams.set('chapter',String(number));history.replaceState(null,'',url);}
+function enterEducation(){
+  stopAdventure();markRoom();navigation.room='education';saveNavigation();state.chapter=2;save();chapterUrl(2);
+  const url=new URL(location.href);url.searchParams.set('room','education');history.replaceState(null,'',url);
+  educationView=window.startEducationRoom({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),onHome:campaignHome,onBack:done=>showHall('education',done)});
+}
 function enterChapterTwo(){
+  educationView?.dispose();educationView=null;
   markRoom();
   chapterFour?.dispose();chapterFour=null;
   roomView?.dispose();roomView=null;chapterTwo?.dispose();chapterThree?.dispose();chapterThree=null;
@@ -69,6 +76,7 @@ function enterChapterTwo(){
   chapterTwo=window.startChapterTwo({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),onNext:()=>showHall('storage'),onHome:campaignHome,onBack:()=>showHall('storage',false)});
 }
 function enterChapterThree(view='access',arrived=false){
+  educationView?.dispose();educationView=null;
   markRoom();
   if(typeof location!=='undefined'){const url=new URL(location.href);if(view==='mirror')url.searchParams.set('room','mirror');else url.searchParams.delete('room');history.replaceState(null,'',url);}
   chapterFour?.dispose();chapterFour=null;
@@ -78,6 +86,7 @@ function enterChapterThree(view='access',arrived=false){
   chapterThree=window.startChapterThree({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),arrived,onBack:()=>showHall('access',false),onMirrorBack:()=>showHall('mirror',false),onNext:()=>showHall('mirror'),onCorridor:()=>showHall('access'),showCompleted:view==='summary',onHome:campaignHome});
 }
 function enterChapterFour(arrived=false){
+  educationView?.dispose();educationView=null;
   if(!navigation.stairsUnlocked){navigation.floor=1;navigation.camera={x:0,z:window.B0LabNavigation.bound(navigation,0,-1665).z,yaw:0,pitch:-4};showHall();return;}
   markRoom();
   roomView?.dispose();roomView=null;chapterTwo?.dispose();chapterTwo=null;chapterThree?.dispose();chapterThree=null;chapterFour?.dispose();
@@ -125,7 +134,7 @@ function tone(ok=true) {
 }
 function dialogue(who,text) { return `<div class="speech ${who}"><b>${who==="robot"?"B-0":who==="thought"?"속마음":"나"}</b><p>${esc(text)}</p></div>`; }
 // Temporary review control; remove this helper and header calls after lesson review.
-window.B0LessonJumpButton=()=>`<span class="lesson-review-controls">${btn('차시 앞으로 (임시)','jump-lesson-next','quiet lesson-jump')}${btn('차시 끝으로 (임시)','jump-lesson-end','quiet lesson-jump','title="현재 차시의 마무리 장면으로 이동"')}</span>`;
+window.B0LessonJumpButton=()=>`<span class="lesson-review-controls">${btn('차시 앞으로','jump-lesson-next','quiet lesson-jump','aria-label="차시 앞으로 (임시)" title="개발 확인용 임시 이동"')}${btn('차시 끝으로','jump-lesson-end','quiet lesson-jump','aria-label="차시 끝으로 (임시)" title="현재 차시의 마무리 장면으로 이동"')}</span>`;
 function reviewLesson(number){
   window.B0RoomTransit?.cancel();
   stopAdventure();navigation.mode='room';saveNavigation();
@@ -139,6 +148,7 @@ function reviewLesson(number){
 }
 
 function jumpLessonEnd(){
+  if(educationView){educationView.jumpToEnd();showHall('education',true);return;}
   if(hallView){const chapter=state.chapter||1;if(chapter===2)enterChapterTwo();else if(chapter===3)enterChapterThree();else if(chapter===4){if(!navigation.stairsUnlocked)reviewLesson(4);else enterChapterFour();}}
   if(chapterFour){chapterFour.jumpToEnd();enterChapterFour();return;}
   if(chapterThree){chapterThree.jumpToEnd();enterChapterThree('summary');return;}
@@ -147,12 +157,13 @@ function jumpLessonEnd(){
   save('임시 이동','1차시 마무리로 이동');ending(3);
 }
 function openingHeader(){return window.B0UI?.header({place:'알 수 없는 곳',namespace:'action',reset:'view-home'})|| `<header class="opening-header"><span>알 수 없는 곳</span><nav>${btn("처음 위치로","view-home","quiet")}${window.B0LessonJumpButton()}</nav></header>`;}
-const campaignKeys=[NAV_KEY,'project-b0-room2-v1','project-b0-room3-v1','project-b0-final-v1','project-b0-final-v2'];
+const campaignKeys=[NAV_KEY,'project-b0-education-v1','project-b0-room2-v1','project-b0-room3-v1','project-b0-final-v1','project-b0-final-v2'];
 function hasAdventure(){
   if((state.chapter||1)>1||state.phase!=='intro'||state.line>0)return true;
   try{return campaignKeys.some(key=>progressStore.getItem(key)!==null);}catch{return false;}
 }
 function stopAdventure(){
+  educationView?.dispose();educationView=null;
   hallView?.dispose();hallView=null;
   chapterTwo?.dispose();chapterTwo=null;chapterThree?.dispose();chapterThree=null;chapterFour?.dispose();chapterFour=null;
   roomView?.dispose();roomView=null;token++;clearTimeout(timer);clearTimeout(speechTimer);clearTimeout(talkTimer);cancelAnimationFrame(walkFrame);
@@ -165,6 +176,7 @@ function campaignHome(){
 }
 function resumeAdventure(chapter=state.chapter||1){
   if(navigation.mode==='hall'&&navigation.cleared.practice){showHall();return;}
+  if(new URLSearchParams(location.search).get('room')==='education'||navigation.room==='education'){enterEducation();return;}
   if(chapter===4){enterChapterFour();return;}if(chapter===3){enterChapterThree(new URLSearchParams(location.search).get('room')==='mirror'?'mirror':'access');return;}if(chapter===2){enterChapterTwo();return;}
   state.chapter=1;save();if(state.phase==='intro')opening();else enterRoom();
 }
@@ -177,7 +189,7 @@ function startAdventure(){
 function boot() {
   const requested=typeof location!=="undefined"?new URLSearchParams(location.search).get('chapter'):null;
   if(typeof location!=='undefined'&&new URLSearchParams(location.search).get('area')==='hall'&&Object.values(navigation.cleared).some(Boolean)){showHall();return;}
-  if(['1','2','3','4'].includes(requested)){navigation.mode='room';resumeAdventure(Number(requested));}else campaignHome();
+  if(['1','2','3','4'].includes(requested)){navigation.mode='room';if(new URLSearchParams(location.search).get('room')!=='education')delete navigation.room;resumeAdventure(Number(requested));}else campaignHome();
 }
 function opening() {
   roomView?.dispose();roomView=null;
@@ -316,7 +328,7 @@ function inspect() {
   if(target==="terminal")modal("꺼진 단말기",`<p>화면에 전원이 들어오지 않는다.</p>${dialogue("robot","이 단말기는 작동하지 않습니다.")}${btn("돌아가기","close","secondary wide")}`);
   if(target==="cabinet")modal("보관장",`<p>낡은 장비 상자와 비어 있는 수납칸이다. 문을 여는 데 쓸 만한 물건은 보이지 않는다.</p>${btn("그만 살펴보기","close","secondary wide")}`);
   if(target==="bench")modal("실습대",`<p>실습 도구가 남아 있다. 모니터와 장비의 전원은 모두 꺼져 있다.</p>${btn("그만 살펴보기","close","secondary wide")}`);
-  if(target==="window")modal("관찰창",`<p>두꺼운 유리 너머로 빈 교실이 보인다. 이쪽에는 나갈 수 있는 문이 없다.</p>${btn("그만 살펴보기","close","secondary wide")}`);
+  if(target==="window")modal("관찰창",`<p>두꺼운 유리 너머에 교육 실습실이 보인다. 이쪽에는 나갈 수 있는 문이 없다.</p>${btn("그만 살펴보기","close","secondary wide")}`);
 }
 function door(tried=false) {
   window.B0RoomDialogue?.remember(state,"door",tried?3:2);save();

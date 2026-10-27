@@ -5,7 +5,7 @@ let saved,back=0,lastDialog=null;const storage={getItem(){return null;},setItem(
 const app={querySelector:s=>['.c3-modal','.mr-modal'].includes(s)?lastDialog:node(s),append(){},addEventListener(){},removeEventListener(){}};
 let serial=0;const frames=new Map();const context={window:{B0RoomThree:M,B0RoomDialogue:require('../room-dialogue.js'),B0Mirror:require('../mirror-model.js'),addEventListener(){},removeEventListener(){}},sessionStorage:storage,localStorage:storage,matchMedia:()=>({matches:true}),performance:{now:()=>0},requestAnimationFrame(fn){frames.set(++serial,fn);return serial;},cancelAnimationFrame(n){frames.delete(n);},setTimeout:()=>0,clearTimeout(){}};
 const source=fs.readFileSync(require.resolve('../chapter3.js'),'utf8').replace('return {dispose,jumpToEnd};','return {jumpToEnd,act,select,activateObject,down,move,up,mirror:()=>mirrorView,state:()=>({s,camera,busy,mode})};');
-context.document={addEventListener(){},createElement(){const handlers={};return lastDialog={addEventListener(k,f){handlers[k]=f;},showModal(){},close(){handlers.close?.();},remove(){lastDialog=null;}};}};vm.runInNewContext(fs.readFileSync(require.resolve('../ui-common.js'),'utf8'),context);
+context.document={addEventListener(){},createElement(){const handlers={};return lastDialog={dataset:{},addEventListener(k,f){handlers[k]=f;},showModal(){},close(){handlers.close?.();},remove(){lastDialog=null;}};}};vm.runInNewContext(fs.readFileSync(require.resolve('../ui-common.js'),'utf8'),context);
 vm.runInNewContext(fs.readFileSync(require.resolve('../mirror-room.js'),'utf8').replace('return {dispose};','return {act,dispose};'),context);
 vm.runInNewContext(source,context);const game=context.window.startChapterThree({app,portrait:()=>'',onBack(){back++;},preview:true});
 const flush=()=>{while(frames.size){const [id,f]=frames.entries().next().value;frames.delete(id);f(1000);}};
@@ -69,3 +69,20 @@ passage.state().s.phase='gate'; // Opening the discovered exit changes puzzle ph
 transitView.write({...transitView.read(),x:-500,z:0,yaw:-90});
 assert.match(node('.c3-world').style.transform,/translate3d\(500px/,'completed archive exits still move the shared world camera');
 console.log('PASS: exit travel remains available after the archive puzzle changes phase');
+
+// The new diary flow must not leave the old object choices or busy flag behind.
+let hasLessonMemory=false;
+context.window.B0Education={read:()=>({memoryTaken:hasLessonMemory})};
+const story=context.window.startChapterThree({app,portrait:()=>'',onBack(){},preview:true,arrived:true});
+story.select('computer');flush();story.act('computer-power');story.act('computer-files');
+assert.doesNotMatch(lastDialog.innerHTML,/복구된 기록/,'memory files stay hidden before connection');
+story.act('close-modal');story.select('computer');flush();story.act('computer-connect');
+assert.equal(story.state().s.memoryConnected,false);
+hasLessonMemory=true;story.act('computer-connect');story.act('computer-files');story.act('file-memory');story.act('diary-open');
+assert.equal(story.state().s.diaryRead,true);assert.equal(lastDialog.dataset.diary,'1');
+story.act('close-modal');assert.equal(story.state().busy,true);assert.match(node('.c3-speech').innerHTML,/틀리지 않는 사람/);
+assert.doesNotMatch(node('.c3-actions').innerHTML,/data-c3=/,'dialogue does not retain computer action choices');
+for(let i=0;i<6;i++)story.act('talk-next');
+assert.equal(story.state().s.axiomHeard,true);assert.equal(story.state().busy,false);assert.equal(story.state().s.memoryConnected,false);
+story.act('close-modal');story.select('shelf');flush();assert.match(node('.c3-actions').innerHTML,/밀어 보기/);
+console.log('PASS: computer power, memory inventory guard, hidden diary, single close, AXIOM broadcast and immediate puzzle interaction');

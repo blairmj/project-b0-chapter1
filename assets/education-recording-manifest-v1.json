@@ -1,0 +1,10 @@
+{
+  "purpose": "교육 실습실의 수업 기록 영상과 포스터",
+  "generatedSource": "C:/Users/RESON/.codex/generated_images/01a0ece3-470c-7581-b7c0-7f893be566bc/exec-86a7d4b2-e892-40d8-a083-ea1e65590375.png",
+  "prompt": "16:9 cinematic anime painted classroom recording; two Korean upper elementary children, age 11–12, frustrated and confused by their working at metal desks; detailed worn off-white riveted sci-fi AI education laboratory; cyan screens and fluorescent classroom light; no text, no robot, no UI, gentle age-appropriate emotions. Match the supplied PROJECT B-0 laboratory and night-study illustration style.",
+  "references": ["PROJECT_B0_디자인/교육실습실_대표화면_v1.png", "PROJECT_B0_오프닝/밤공부_또_틀렸네.png"],
+  "poster": "education-recording-v1.webp",
+  "video": "education-recording-v1.mp4",
+  "videoFormat": "H.264, 1280x720, 24 fps, 12 seconds, silent",
+  "animation": "Generated still illustration with a gentle camera push; captions and math working are rendered separately as accessible HTML. Character motion and synthesized voices are not present."
+}

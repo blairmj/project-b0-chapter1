@@ -18,6 +18,7 @@
     const solved=s.cleared[id];
     const lines={
       practice:[['student','여기가 우리가 깨어났던 방이지?'],['robot','네. 출입 관리실입니다. 우리가 나온 문이 복도 끝에 있습니다.']],
+      education:solved?[['student','아이의 풀이를 같이 고쳤던 교실이네.'],['robot','네. 수업 기록을 확인하고 메모리를 꺼냈던 곳입니다.']]:[['student','저쪽 창 너머로 보였던 교실인가?'],['robot','문에 교육 실습실이라고 적혀 있습니다. 수업 화면의 내용은 직접 확인해 봐야 합니다.']],
       storage:solved?[['student','우리가 창문으로 나왔던 방이네.'],['robot','네. 닫힌 입구 외에도 나갈 수 있는 곳을 함께 찾았습니다.']]:[['student','여기는 뭘 보관하던 곳이야?'],['robot','문 옆에 물류 보관실이라고 적혀 있습니다. 안쪽 상태는 들어가서 확인해야 합니다.']],
       access:solved?[['student','여기서 네 지도에 없던 문을 찾았잖아.'],['robot','네. 기록과 실제 방을 비교해서 찾았습니다. 확인한 위치로 제 지도를 수정했습니다.']]:[['student','기록을 보면 나갈 길도 알 수 있을까?'],['robot','이곳은 기록 보관실입니다. 다만 오래된 기록이 지금 모습과 같은지는 직접 확인해야 합니다.']],
       mirror:solved?[['student','유리 너머로 떨어져 있으니까 답답하더라.'],['robot','네. 어느 장치를 어떻게 움직일지 알려 주셔서, 서로 다른 쪽에서도 함께 문을 열 수 있었습니다.']]:[['student','유리 관찰실? 여기는 어떤 곳이야?'],['robot','유리로 구역을 나누어 관찰하던 방입니다. 지금 안쪽 상황은 아직 확인하지 못했습니다.']],
@@ -35,7 +36,7 @@
     if(s.floor===2)return c.z<=-2290?room(s,'central'):conversation('upper-hall',
       ['student','여기가 2층이구나. 중앙관리실은 어디지?'],['robot','이 복도 끝에 있습니다. 문 옆 표시도 확인해 보세요.']);
     if(c.z<=-1550)return stairs(s);
-    if(['practice','storage','access','mirror','outside'].includes(selected)&&at(selected))return room(s,selected);
+    if(['practice','education','storage','access','mirror','outside'].includes(selected)&&at(selected))return room(s,selected);
     if(nearPlate(c)){
       if(!s.powerOut)return conversation('plate-before',['student','바닥 판이 조금 들떠 있네?'],['robot','네. 어디에 연결된 판인지는 아직 확인하지 못했습니다.']);
       if(s.emergencyOn)return conversation('plate-emergency',['student','이제 바닥이 좀 보이네.'],['robot','비상 전원으로 벽면 조명만 켰습니다. 천장 형광등은 아직 꺼져 있습니다.']);
@@ -48,7 +49,7 @@
     if(Math.abs(c.z+610)<=125)return s.cleared.storage?
       conversation('shutter-open',['student','아까 막혀 있던 데가 열렸네?'],['robot','네. 이제 복도의 앞뒤가 이어져 있습니다.']):
       conversation('shutter',['student','차단문이 내려왔어. 이쪽은 못 가는 거야?'],['robot','지금은 닫혀 있습니다. 주변의 다른 문이나 통로를 살펴볼 수 있습니다.']);
-    const nearest=['storage','access','mirror','outside'].sort((a,b)=>Math.abs(c.z-doors[a].z)-Math.abs(c.z-doors[b].z))[0];
+    const nearest=['education','storage','access','mirror','outside'].sort((a,b)=>Math.abs(c.z-doors[a].z)-Math.abs(c.z-doors[b].z)||(a==='education'?(c.yaw<0?-1:1):b==='education'?(c.yaw<0?1:-1):0))[0];
     if(Math.abs(c.z-doors[nearest].z)<=145)return room(s,nearest);
     return conversation('hall',['student','어디부터 살펴보는 게 좋을까?'],['robot','문 옆 이름과 눈에 보이는 장치를 확인할 수 있습니다. 아직 살펴보지 않은 곳은 저도 어떤 상태인지 모릅니다.']);
   }
@@ -56,7 +57,7 @@
     if(s.floor===2)return '복도 끝 문 위에 중앙관리실이라고 적혀 있습니다. 안쪽은 아직 확인하지 않았습니다.';
     if(nearPlate(c))return '발밑에 밟았던 덮개가 있고, 천장 형광등은 꺼져 있습니다. 양옆에는 방으로 들어가는 문이 보입니다.';
     if(c.z<=-1550)return s.stairsUnlocked?'계단의 접근 차단이 해제되어 있습니다.':'계단 옆 제어기에 접근 제한 표시와 열쇠 구멍이 보입니다.';
-    const nearest=['storage','access','mirror','outside'].sort((a,b)=>Math.abs(c.z-doors[a].z)-Math.abs(c.z-doors[b].z))[0];
+    const nearest=['education','storage','access','mirror','outside'].sort((a,b)=>Math.abs(c.z-doors[a].z)-Math.abs(c.z-doors[b].z)||(a==='education'?(c.yaw<0?-1:1):b==='education'?(c.yaw<0?1:-1):0))[0];
     return Math.abs(c.z-doors[nearest].z)<=180?'가까운 문 옆에 '+doors[nearest].name+'이라고 적혀 있습니다. 안쪽 상태는 문 밖에서 단정할 수 없습니다.':'복도 양옆에 문이 있습니다. 문 위 이름과 눈앞의 바닥부터 확인할 수 있습니다.';
   }
   const api={resolve,nearPlate,observe};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.B0LabDialogue=api;

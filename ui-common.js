@@ -18,7 +18,7 @@
   function close(){const d=document.querySelector('.b0-common-modal');d?.close();d?.remove();}
   function modal(title,body,back=true){
     document.querySelectorAll('#app dialog[open]').forEach(d=>{
-      const nativeClose=d.querySelector('[data-action="close"],[data-c2="close-modal"],[data-c3="close-modal"],[data-mr="close-modal"],[data-c4="close-modal"],[data-lab="close"]');
+      const nativeClose=d.querySelector('[data-action="close"],[data-c2="close-modal"],[data-ed="close-modal"],[data-c3="close-modal"],[data-mr="close-modal"],[data-c4="close-modal"],[data-lab="close"]');
       if(nativeClose)nativeClose.click();else d.close();
     });close();
     const d=document.createElement('dialog');d.className='b0-common-modal';
@@ -28,7 +28,8 @@
   function read(key){try{const storage=location.pathname.endsWith('/preview-v2.html')?sessionStorage:localStorage;return JSON.parse(storage.getItem(key));}catch{return null;}}
   function inventory(){
     const one=read('project-b0-firstperson-v4'),nav=read('project-b0-lab-navigation-v1');
-    const items=[];if(one?.noteTaken)items.push('<li><b>관리용 쪽지</b><p>비상 출입번호: 4732</p></li>');if(nav?.keyTaken)items.push('<li><b>계단실 열쇠</b><p>계단 차단 제어기에서 사용하는 금속 열쇠.</p></li>');
+    const memory=read('project-b0-education-v1'),archive=read('project-b0-room3-v1');
+    const items=[];if(memory?.memoryTaken)items.push('<li><b>기록 메모리</b><p>교육 실습실에서 복구한 수업 기록. '+(archive?.memoryConnected?'기록 보관실 컴퓨터에 연결되어 있습니다.':'외부 기록 컴퓨터에 연결할 수 있습니다.')+'</p></li>');if(one?.noteTaken)items.push('<li><b>관리용 쪽지</b><p>비상 출입번호: 4732</p></li>');if(nav?.keyTaken)items.push('<li><b>계단실 열쇠</b><p>계단 차단 제어기에서 사용하는 금속 열쇠.</p></li>');
     modal('소지품',items.length?`<ul class="b0-items">${items.join('')}</ul>`:'<p>아직 가지고 있는 물건이 없습니다.</p>');
   }
   function help(first=false){
@@ -38,7 +39,7 @@
     modal(first?'처음 조작 안내':'사용법',body+(detail?`<p>${detail}</p>`:'')+(first?common('알겠어, 시작하자','guide-done'):''),!first);
   }
   function record(){
-    const one=read('project-b0-firstperson-v4');modal('기록 보기',one?.logs?.length?`<ul>${one.logs.slice(-30).map(l=>`<li>${esc(l.text||l.kind||'탐색')}</li>`).join('')}</ul>`:'<p>아직 기록이 없습니다.</p>');
+    const one=read('project-b0-firstperson-v4'),education=read('project-b0-education-v1'),archive=read('project-b0-room3-v1');const learned=(education?.verified?'<p>수업 기록 017: 계산 순서를 수정하고 결과를 확인했다.</p>':'')+(archive?.diaryRead?'<p>비공개 교육 운영 일지: 정답률을 우선하면서 실패 기록을 제외하고 학생의 판단을 제한했다.</p>':'');modal('기록 보기',learned+(one?.logs?.length?`<ul>${one.logs.slice(-30).map(l=>`<li>${esc(l.text||l.kind||'탐색')}</li>`).join('')}</ul>`:learned?'':'<p>아직 기록이 없습니다.</p>'));
   }
   function handle(e){
     const control=e.target.closest('button[data-ui]');if(!control)return;
@@ -48,10 +49,10 @@
     if(action==='map'){const info=window.B0CampaignUI?.location?.()||{};modal('지도',window.B0LabNavigation.mapMarkup(info),false);}
     if(action==='inventory')inventory();if(action==='help')help();if(action==='record')record();
   }
-  document.addEventListener('click',e=>{const b=e.target.closest('button');if(b&&['action','c2','c3','mr','c4','lab'].some(ns=>b.getAttribute('data-'+ns)==='menu'))returnMenu=b;},true);
+  document.addEventListener('click',e=>{const b=e.target.closest('button');if(b&&['action','c2','c3','mr','c4','lab','ed'].some(ns=>b.getAttribute('data-'+ns)==='menu'))returnMenu=b;},true);
   document.addEventListener('click',handle,true);
   function cameraActive(active,scope=document){scope.querySelector('.b0-hud')?.querySelectorAll?.('button')?.forEach(b=>{
-    if(['action','c2','c3','mr','c4','lab'].some(ns=>['home','view-home','zoom-in','zoom-out'].includes(b.getAttribute('data-'+ns))))b.disabled=!active;
+    if(['action','c2','c3','mr','c4','lab','ed'].some(ns=>['home','view-home','zoom-in','zoom-out'].includes(b.getAttribute('data-'+ns))))b.disabled=!active;
   });}
   // Action overlays must never resize a world while the player drags an object.
   if(typeof ResizeObserver!=='undefined'&&typeof MutationObserver!=='undefined'){
@@ -59,5 +60,5 @@
   const actionSize=new ResizeObserver(entries=>{for(const {target} of entries){target.closest('main')?.style.setProperty('--b0-actions-height',target.getBoundingClientRect().height+'px');}});
   new MutationObserver(()=>{const current=document.querySelector('#app main>.c2-actions,#app main>.lab-actions');if(current===observedActions)return;actionSize.disconnect();observedActions=current;if(current)actionSize.observe(current);}).observe(document.querySelector('#app'),{childList:true,subtree:true});
   }
-  window.B0UI={header,menuContent,dialogBody,cameraActive,inventoryButton:()=>common('소지품','inventory'),firstGuide(){try{if(localStorage.getItem('project-b0-controls-seen-v1'))return;localStorage.setItem('project-b0-controls-seen-v1','1');}catch{}help(true);}};
+  window.B0UI={showInventory:inventory,header,menuContent,dialogBody,cameraActive,inventoryButton:()=>common('소지품','inventory'),firstGuide(){try{if(localStorage.getItem('project-b0-controls-seen-v1'))return;localStorage.setItem('project-b0-controls-seen-v1','1');}catch{}help(true);}};
 })();

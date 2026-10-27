@@ -7,7 +7,7 @@ function hit(camera,x=width/2,y=height/2){
   for(const face of scene.faces){const d=R.intersect(ray,face.a,face.b,face.c)??R.intersect(ray,face.a,face.c,face.d);if(d!==null&&d<distance){distance=d;result=face;}}
   return result;
 }
-for(const [id,camera] of Object.entries({practice:{x:0,z:80,yaw:180},storage:{x:0,z:-320,yaw:90},access:{x:0,z:-950,yaw:-90},mirror:{x:0,z:-1320,yaw:90},central:{x:0,z:-2370,yaw:0,height:360}})){
+for(const [id,camera] of Object.entries({practice:{x:0,z:80,yaw:180},education:{x:0,z:-320,yaw:-90},storage:{x:0,z:-320,yaw:90},access:{x:0,z:-950,yaw:-90},mirror:{x:0,z:-1320,yaw:90},central:{x:0,z:-2370,yaw:0,height:360}})){
   assert.equal(hit(camera).id,id,`${id}: the rendered doorway and picking ray must agree`);
 }
 assert.equal(hit({x:0,z:80,yaw:0,pitch:-4},width/2,height-25).surface,'floor','the near floor is available for click-to-walk');
