@@ -1,6 +1,6 @@
 (function(){
   'use strict';
-  window.startChapterFour=function({app,portrait,onBack,onHome,preview=false}){
+  window.startChapterFour=function({app,portrait,onBack,onHome,preview=false,arrived=false}){
     const SPACE=3.9;
     const M=window.B0Final,storage=preview?sessionStorage:localStorage,key='project-b0-final-v2';
     let s;try{s=M.restore(JSON.parse(storage.getItem(key)));}catch{s=M.fresh();}
@@ -38,6 +38,8 @@
     function talk(lines,done){actions('');conversation={lines,i:0,done};say(...lines[0]);}
     function next(){if(!conversation)return;const c=conversation;if(++c.i<c.lines.length)say(...c.lines[c.i]);else{conversation=null;speech.hidden=true;c.done?.();}}
     function render(){closeModal(false);conversation=null;pointer=null;cancelAnimationFrame(frame);cancelAnimationFrame(camFrame);cancelAnimationFrame(journeyFrame);journey=null;previous=0;
+      const entranceTalk=arrived&&s.phase==='intro';
+      if(entranceTalk){s.phase='room';s.line=0;save();}
       if(s.phase==='intro'){renderScene(intro,'2층 중앙관리실 앞','intro');return;}
       if(s.phase==='farewell'){camera={x:-125,z:235-240/SPACE,yaw:-180,pitch:-8,zoom:1};robot={x:-85,z:235};}
       if(s.phase==='ending'){renderScene(ending,'내 방','ending');return;}
@@ -58,7 +60,7 @@
       stage=app.querySelector('.c4-stage');world=app.querySelector('.c4-world');bar=app.querySelector('.c4-actions');speech=app.querySelector('.c4-speech');
       stage.addEventListener('pointerdown',down);stage.addEventListener('pointermove',move);stage.addEventListener('pointerup',up);stage.addEventListener('pointercancel',cancel);
       stage.addEventListener('wheel',e=>{e.preventDefault();camera.zoom=Math.max(.65,Math.min(1.6,camera.zoom-e.deltaY*.001));updateCamera();},{passive:false});
-      update();if(s.phase==='farewell')farewellLine();frame=requestAnimationFrame(loop);
+      update();if(entranceTalk)talk(intro.map(([who,text])=>[who,text.replace('들어가 보자.','여기서 출구를 찾아보자.')]));if(s.phase==='farewell')farewellLine();frame=requestAnimationFrame(loop);
     }
     function updateCamera(){if(!inRoom()||!world?.isConnected)return;camera.pitch=Math.max(-60,Math.min(40,camera.pitch));camera.yaw=((camera.yaw+540)%360)-180;
       const f=Math.min(stage.clientWidth*.62,stage.clientHeight*.5)*camera.zoom;stage.style.perspective=f+'px';world.style.transform=`translateZ(${f}px) rotateX(${camera.pitch}deg) rotateY(${camera.yaw}deg) translate3d(${-camera.x*SPACE}px,${camera.height||0}px,${-camera.z*SPACE}px)`;

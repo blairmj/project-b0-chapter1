@@ -139,7 +139,7 @@
       if(a==='take-key'){if(M.takeKey(s)){save();app.querySelector('.lab-keybox-back').innerHTML='';app.querySelector('.lab-pocket').innerHTML=b('열쇠 1','inventory','quiet');showObject('keybox');say('작은 금속 열쇠를 집었다. 고리에 계단실이라고 적혀 있다.');}return;}
       if(a==='unlock-stairs'){if(M.unlock(s)){save();app.querySelector('.lab-stair-entry').classList.add('authorized');app.querySelector('.lab-stair-control').classList.add('authorized');showObject('stairs');say('열쇠를 돌리자 계단의 접근 차단이 해제됐다.');}return;}
       if(a==='upstairs'){s.stairsUnlocked?ascend():rejectStairs();return;}if(a==='downstairs'){descend();return;}
-      if(a.startsWith('enter-')){const id=a.slice(6);if(M.canEnter(s,id)){save();onEnter(id);}return;}
+      if(a.startsWith('enter-')){const id=a.slice(6);if(M.canEnter(s,id)){actions('');const angle=camera.yaw*Math.PI/180;animate({x:camera.x+Math.sin(angle)*80,z:camera.z-Math.cos(angle)*80,pitch:0},()=>{save();onEnter(id);},false,480);}return;}
     }
     function click(e){
       if(suppress){suppress=false;return;}const action=e.target.closest('[data-lab]');if(action){e.preventDefault();act(action.dataset.lab);return;}

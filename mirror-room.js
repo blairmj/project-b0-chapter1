@@ -103,7 +103,7 @@
       clearTimeout(pulse);cancelAnimationFrame(handFrame);
       M.release(s);if(!pointer?.own&&s.phase==='split')M.setOwn(s,0);save();update();robotBusy=true;requestMenu(id);say('robot','그 손잡이로 이동하겠습니다.');
       walk({x:245,z:controlZ[id]+48},()=>{
-        const wasSolved=M.solved(s),result=M.command(s,id,verb);save();update();sound('lever');if(!wasSolved&&M.solved(s)){afterUnlock();return;}requestMenu(id);
+        const wasSolved=M.solved(s),result=M.command(s,id,verb);save();update();sound('lever');if(!wasSolved&&M.solved(s)){afterUnlock();return;}if(selection===id)requestMenu(id);
         if(result==='momentary'){
           say('robot',M.names[id]+' 손잡이를 내리겠습니다.');pulse=later(()=>{if(s.active!==id||s.holding)return;M.release(s,id);save();update();say('robot','내렸다가 놓았습니다.');walk({x:145,z:55});},700);
         }else if(result==='holding')say('robot',M.names[id]+' 손잡이를 내린 채 잡고 있습니다.');else{say('robot',result==='raised'?'위로 올렸습니다.':'손을 놓았습니다.');walk({x:145,z:55});}

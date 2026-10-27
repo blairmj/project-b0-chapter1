@@ -1,0 +1,10 @@
+/* The canvas and original animated objects share one perspective. Keep the
+   original DOM hit areas, borders, details, glass and animated character layers. */
+.room-webgl-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;transform:translateZ(0)}
+.room-gpu-surface{background-image:none!important;background-color:transparent!important}
+.room-webgl-active>.c2-world{z-index:1}
+.b0-scene-crossing{position:fixed;z-index:10000;background:#07121c;pointer-events:all;opacity:0;transition:opacity .28s ease;will-change:opacity}
+.b0-scene-crossing.covered{opacity:1}
+.b0-room-arrival{animation:b0-room-arrive .65s ease-out both}
+@keyframes b0-room-arrive{from{opacity:.2;scale:1.035}to{opacity:1;scale:1}}
+@media(prefers-reduced-motion:reduce){.b0-scene-crossing{transition:none}.b0-room-arrival{animation:none}}

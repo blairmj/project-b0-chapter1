@@ -66,3 +66,12 @@ assert.equal(dialogueGame.state().s.phase,'room','clicking the closed exit canno
 assert.match(node('.c4-actions').innerHTML,/문 손잡이 돌리기/);
 dialogueGame.dispose();
 console.log('PASS: hidden-conversation recovery, story control guard, clickable portal progression, closed exit cannot skip puzzle');
+
+Object.assign(initial,M.fresh());
+const arrivingGame=ctx.window.startChapterFour({app,portrait:()=>'',onBack(){},arrived:true});
+assert.equal(arrivingGame.state().s.phase,'room');
+assert.match(app.innerHTML,/c4-world/,'hall entry introduces AXIOM inside the actual 3D room');
+assert.ok(arrivingGame.state().conversation,'arrival preserves the introduction dialogue');
+assert.equal(arrivingGame.state().s.boss,false);assert.equal(arrivingGame.state().s.upper,false);
+arrivingGame.dispose();
+console.log('PASS: hall entry preserves the introduction in the 3D room without solving any puzzle');

@@ -1,6 +1,6 @@
 (function(){
   'use strict';
-  window.startChapterThree=function({app,portrait,onBack,onNext,onCorridor,onHome,showCompleted=false,preview=false}){
+  window.startChapterThree=function({app,portrait,onBack,onNext,onCorridor,onHome,showCompleted=false,preview=false,arrived=false}){
     const SPACE=1.95;
     const M=window.B0RoomThree,storage=preview?sessionStorage:localStorage,key='project-b0-room3-v1';
     let s;try{s=M.restore(JSON.parse(storage.getItem(key)));}catch{s=M.fresh();}
@@ -33,6 +33,8 @@
       mirrorView?.dispose();mirrorView=null;
       conversation=null;pointer=null;selection=null;mode=null;
       if(s.phase==='mirror'){renderMirror();return;}
+      const entranceTalk=arrived&&s.phase==='intro';
+      if(entranceTalk){s.phase='room';s.line=0;save();}
       if(s.phase==='intro'){renderIntro();return;}if(s.phase==='gate'){renderGate();return;}if(s.phase==='complete'){renderEnd();return;}
       app.innerHTML=`<main class="game c2-game c3-game">${window.B0UI?.header({place:`기록 보관실`,namespace:"c3",reset:"home",zoomClass:"c3-zoom",active:true})||""}
       <section class="c2-stage c3-stage" tabindex="0" aria-label="기록 보관실. 빈 공간을 끌어 둘러보고 물건을 눌러 살펴보세요."><div class="c2-world c3-world">
@@ -54,7 +56,7 @@
       stage.addEventListener('click',e=>{if(suppress){suppress=false;return;}if(busy||e.target.closest('[data-c3]'))return;const id=e.target.closest('[data-object]')?.dataset.object;if(id)activateObject(id);else if(!mode&&!conversation)clearSelection();});
       stage.addEventListener('wheel',e=>{e.preventDefault();if(!busy){camera.zoom=Math.max(.65,Math.min(1.5,camera.zoom-e.deltaY*.001));updateCamera();}},{passive:false});
       stage.addEventListener('keydown',e=>{if(busy)return;if((e.key==='Enter'||e.key===' ')&&e.target.dataset.object){e.preventDefault();activateObject(e.target.dataset.object);return;}const dirs={ArrowLeft:-15,ArrowRight:15};if(dirs[e.key]){e.preventDefault();clearSelectionOnLook();camera.yaw+=dirs[e.key];updateCamera();}if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();clearSelectionOnLook();camera.pitch+=e.key==='ArrowUp'?8:-8;updateCamera();}});
-      update();
+      update();if(entranceTalk)talk(intro);
     }
     function renderMirror(){
       s.mirror=window.B0Mirror.restore(s.mirror);mirrorUrl(true);save();

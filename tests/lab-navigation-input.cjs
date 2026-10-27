@@ -52,7 +52,7 @@ const pop=context.window.startLabNavigation({app,portrait:()=>'',state:popState,
 pop.act('menu');lastDialog.close(); // Native Escape emits close without the button action.
 pop.click({target:{closest(){return null}},detail:1,clientX:380,clientY:400});finish();
 assert.ok(pop.state().camera.z<0,'a floor click must still move after native Escape closes the dialog');
-pop.walkTo('storage');finish();pop.act('enter-storage');assert.equal(entered,'storage');
+pop.walkTo('storage');finish();pop.act('enter-storage');assert.equal(entered,undefined,'entry waits for the approach animation');finish();assert.equal(entered,'storage');
 pop.act('menu');pop.act('close');pop.act('turn-left');finish();pop.act('backward');finish();assert.ok(pop.state().camera.z>-320,'button close must also restore travel');
 pop.dispose();
 console.log('PASS: stair rejection returns safely, key unlock restores ascent, Escape/button popup close restores floor travel and room entry');
@@ -64,7 +64,7 @@ const gpu=context.window.startLabNavigation({app,portrait:()=>'',state:gpuState,
 gpu.click({target:{closest(){return null}},detail:1,clientX:380,clientY:240});finish();
 assert.equal(picked,1);assert.equal(gpuState.camera.z,-320,'a WebGL door hit must use the existing approach and entry rules');
 assert.equal(rendered.camera.z,-320);assert.equal(rendered.companion.x,gpu.state().companion.x);
-gpu.act('menu');lastDialog.close();gpu.act('enter-storage');assert.equal(entered,'storage');
+gpu.act('menu');lastDialog.close();gpu.act('enter-storage');finish();assert.equal(entered,'storage');
 const yawBefore=gpu.state().camera.yaw;
 const pointer=(x,y)=>({pointerId:7,button:0,clientX:x,clientY:y,target:{closest(){return null}}});
 gpu.down(pointer(400,150));gpu.move(pointer(300,170));gpu.up();

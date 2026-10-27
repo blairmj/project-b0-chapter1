@@ -27,3 +27,7 @@ console.log('PASS: exits lead to an explorable hall, map room selection, office-
 run('state.chapter=2;jumpLessonEnd()');assert.equal(rooms.get("reviewed-chapter"),"2","temporary end control in a corridor keeps the current lesson");
 run("showHall();reviewLesson(1)");assert.equal(JSON.parse(rooms.get("project-b0-lab-navigation-v1")).mode,"room","review start must resume the selected room after refresh");
 console.log("PASS: temporary lesson controls preserve corridor lesson and room resume mode");
+
+run('navigation.cleared.practice=false;navigation.cleared.storage=true;showHall();boot()');
+assert.equal(hall.state.mode,'hall','reloading a corridor reached from a direct lesson entry must preserve the corridor');
+console.log('PASS: direct-lesson corridor checkpoint survives reload');

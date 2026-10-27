@@ -49,13 +49,14 @@ function showHall(from){
   if(typeof location!=='undefined'){const url=new URL(location.href);url.searchParams.set('area','hall');url.searchParams.delete('room');url.searchParams.set('chapter',String(state.chapter||1));history.replaceState(null,'',url);}
   hallView=window.startLabNavigation({app,portrait,state:navigation,onSave:saveNavigation,onEnter:enterFromHall,onHome:campaignHome,muted:state.muted});
 }
-function enterFromHall(id){
+function enterFromHall(id,arriving=false){
   if(!window.B0LabNavigation.canEnter(navigation,id))return;
+  if(!arriving&&window.B0RoomTransit){window.B0RoomTransit.cross(app,()=>enterFromHall(id,true));return;}
   if(id==='practice'){stopAdventure();markRoom();state.chapter=1;save();chapterUrl(1);enterRoom(false,true);return;}
   if(id==='storage'){enterChapterTwo();return;}
-  if(id==='access'){enterChapterThree();return;}
-  if(id==='mirror'){enterChapterThree('mirror');return;}
-  if(id==='central')enterChapterFour();
+  if(id==='access'){enterChapterThree('access',true);return;}
+  if(id==='mirror'){enterChapterThree('mirror',true);return;}
+  if(id==='central')enterChapterFour(true);
 }
 function chapterUrl(number){if(typeof location==='undefined')return;const url=new URL(location.href);url.searchParams.delete('area');if(number!==3)url.searchParams.delete('room');if(number===1)url.searchParams.delete('chapter');else url.searchParams.set('chapter',String(number));history.replaceState(null,'',url);}
 function enterChapterTwo(){
@@ -66,22 +67,22 @@ function enterChapterTwo(){
   state.chapter=2;save();chapterUrl(2);
   chapterTwo=window.startChapterTwo({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),onNext:()=>showHall('storage'),onHome:campaignHome,onBack:()=>showHall('practice')});
 }
-function enterChapterThree(view='access'){
+function enterChapterThree(view='access',arrived=false){
   markRoom();
   if(typeof location!=='undefined'){const url=new URL(location.href);if(view==='mirror')url.searchParams.set('room','mirror');else url.searchParams.delete('room');history.replaceState(null,'',url);}
   chapterFour?.dispose();chapterFour=null;
   roomView?.dispose();roomView=null;chapterTwo?.dispose();chapterTwo=null;chapterThree?.dispose();
   token++;clearTimeout(timer);clearTimeout(speechTimer);clearTimeout(talkTimer);cancelAnimationFrame(walkFrame);moving=false;suppressClick=false;
   state.chapter=3;save();chapterUrl(3);
-  chapterThree=window.startChapterThree({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),onBack:()=>showHall('storage'),onNext:()=>showHall('mirror'),onCorridor:()=>showHall('access'),showCompleted:view==='summary',onHome:campaignHome});
+  chapterThree=window.startChapterThree({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),arrived,onBack:()=>showHall('storage'),onNext:()=>showHall('mirror'),onCorridor:()=>showHall('access'),showCompleted:view==='summary',onHome:campaignHome});
 }
-function enterChapterFour(){
+function enterChapterFour(arrived=false){
   if(!navigation.stairsUnlocked){navigation.floor=1;navigation.camera={x:0,z:window.B0LabNavigation.bound(navigation,0,-1665).z,yaw:0,pitch:-4};showHall();return;}
   markRoom();
   roomView?.dispose();roomView=null;chapterTwo?.dispose();chapterTwo=null;chapterThree?.dispose();chapterThree=null;chapterFour?.dispose();
   token++;clearTimeout(timer);clearTimeout(speechTimer);clearTimeout(talkTimer);cancelAnimationFrame(walkFrame);moving=false;suppressClick=false;
   state.chapter=4;save();chapterUrl(4);
-  chapterFour=window.startChapterFour({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),onBack:()=>showHall('central'),onHome:campaignHome});
+  chapterFour=window.startChapterFour({app,portrait,arrived,preview:location.pathname.endsWith('/preview-v2.html'),onBack:()=>showHall('central'),onHome:campaignHome});
 }
 const touchPoints=new Map();
 const reduced=()=>window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -125,6 +126,7 @@ function dialogue(who,text) { return `<div class="speech ${who}"><b>${who==="rob
 // Temporary review control; remove this helper and header calls after lesson review.
 window.B0LessonJumpButton=()=>`<span class="lesson-review-controls">${btn('차시 앞으로 (임시)','jump-lesson-next','quiet lesson-jump')}${btn('차시 끝으로 (임시)','jump-lesson-end','quiet lesson-jump','title="현재 차시의 마무리 장면으로 이동"')}</span>`;
 function reviewLesson(number){
+  window.B0RoomTransit?.cancel();
   stopAdventure();navigation.mode='room';saveNavigation();
   if(number===1){const muted=state.muted;state={...fresh(),muted,chapter:1};save();chapterUrl(1);opening();return;}
   state.phase='escaped';navigation.cleared.practice=true;
@@ -156,6 +158,7 @@ function stopAdventure(){
   app.querySelectorAll('dialog').forEach(d=>d.close());moving=false;suppressClick=false;drag=null;pinch=null;touchPoints.clear();
 }
 function campaignHome(){
+  window.B0RoomTransit?.cancel();
   stopAdventure();chapterUrl(1);const saved=hasAdventure(),chapter=Math.max(1,Math.min(4,state.chapter||1));
   app.innerHTML=`<main class="awakening campaign-home"><div class="face" role="img" aria-label="함께 탈출할 AI 로봇 B-0">${portrait()}</div><div class="wake-controls"><h1>PROJECT B-0</h1><p class="campaign-tagline">모르는 로봇과, 함께 길을 찾는 모험.</p><div class="campaign-buttons">${btn('처음부터 시작','campaign-start','primary')}${saved?btn('이어하기','campaign-continue','secondary'):''}</div>${saved?`<small class="muted">${chapter}차시 진행이 저장되어 있습니다.</small>`:''}</div></main>`;
 }
@@ -165,13 +168,14 @@ function resumeAdventure(chapter=state.chapter||1){
   state.chapter=1;save();if(state.phase==='intro')opening();else enterRoom();
 }
 function startAdventure(){
+  window.B0RoomTransit?.cancel();
   const muted=state.muted;stopAdventure();
   for(const key of campaignKeys)progressStore.removeItem(key);
   state=fresh();state.chapter=1;state.muted=muted;navigation=window.B0LabNavigation.fresh();navigation.mode='room';saveNavigation();save();chapterUrl(1);opening();
 }
 function boot() {
   const requested=typeof location!=="undefined"?new URLSearchParams(location.search).get('chapter'):null;
-  if(typeof location!=='undefined'&&new URLSearchParams(location.search).get('area')==='hall'&&navigation.cleared.practice){showHall();return;}
+  if(typeof location!=='undefined'&&new URLSearchParams(location.search).get('area')==='hall'&&Object.values(navigation.cleared).some(Boolean)){showHall();return;}
   if(['1','2','3','4'].includes(requested)){navigation.mode='room';resumeAdventure(Number(requested));}else campaignHome();
 }
 function opening() {

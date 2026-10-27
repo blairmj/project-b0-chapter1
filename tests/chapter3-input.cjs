@@ -49,3 +49,10 @@ console.log('PASS: corridor intro, factual B-0, direct drag vs orbit, home prese
 game.state().s.phase='mirror';game.state().s.mirror.phase='approach';game.jumpToEnd();
 const skipped=M.restore(JSON.parse(saved));assert.equal(skipped.phase,'complete');assert.equal(skipped.mirror.phase,'complete');assert.equal(skipped.realDoorOpen,true);
 console.log('PASS: temporary jump completes the whole third lesson including its mirror room');
+
+const arrival=context.window.startChapterThree({app,portrait:()=>'',onBack(){},preview:true,arrived:true});
+assert.equal(arrival.state().s.phase,'room');assert.match(app.innerHTML,/c3-world/);
+assert.match(node('.c3-speech').innerHTML,/기록 보관실이네/,'hall entry retains the introduction in the actual room');
+assert.equal(arrival.state().s.helper,false);assert.equal(arrival.state().s.realDoorOpen,false);
+arrival.act('back');
+console.log('PASS: hall arrival introduces the archive inside the 3D room with the original unsolved puzzle');

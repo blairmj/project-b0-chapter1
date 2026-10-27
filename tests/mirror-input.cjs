@@ -23,3 +23,10 @@ yaw=game.state().camera.yaw;game.down(event(200,200,true));game.move(event(200,3
 game.activateObject('door');assert.equal(complete,0,'cannot leave B-0 behind');game.act('reunite');flush();assert.equal(s.phase,'reunited');assert.ok(game.state().robot.x<0,'B-0 crosses into the student compartment');game.activateObject('door');assert.equal(complete,1);assert.equal(s.phase,'complete');assert.ok(saves>0);
 game.dispose();assert.equal(frames.size,0);
 console.log('PASS: split introduction, no early answer, momentary movement, persistent request, independent camera, direct hand drag, cooperation, reunited exit and cleanup');
+
+const nextState=M.fresh();nextState.phase='split';
+const parallel=context.window.startMirrorRoom({app,portrait:()=>'',state:nextState,onSave(){},onBack(){},onComplete(){}});
+parallel.act('command-triangle-hold');parallel.select('own');flush();
+assert.match(node('.mr-actions').innerHTML,/data-mr="pull"/,'B-0 finishing a walk must preserve the student current object controls');
+assert.equal(nextState.holding,'triangle');parallel.dispose();
+console.log('PASS: robot walk completion preserves a newer student object selection');
