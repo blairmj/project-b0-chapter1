@@ -50,6 +50,7 @@
       const f=Math.min(stage.clientWidth*.62,stage.clientHeight*.5)*camera.zoom;stage.style.perspective=f+'px';world.style.transform=`translateZ(${f}px) rotateX(${camera.pitch}deg) rotateY(${camera.yaw}deg) translate3d(${-camera.x*SPACE}px,0px,${-camera.z*SPACE}px)`;
       stage.dataset.yaw=camera.yaw;stage.dataset.pitch=camera.pitch;stage.dataset.cameraX=camera.x;app.querySelector('.mr-zoom').textContent=Math.round(camera.zoom*100)+'%';
       app.querySelector('.mr-robot').style.transform=`translate3d(${robot.x-48}px,24px,${robot.z}px) rotateY(${-camera.yaw}deg)`;window.B0RoomSpace?.sync(world);
+      window.B0RoomTransit?.bind(world,{read:()=>({...camera,x:camera.x*SPACE,z:camera.z*SPACE,height:0}),write:v=>{Object.assign(camera,v,{x:v.x/SPACE,z:v.z/SPACE});updateCamera();},stop:()=>{cancelAnimationFrame(camFrame);pointer=null;},door:{x:-150*SPACE,z:578,yaw:180},exit:{x:-167*SPACE,z:-570,yaw:0}});
     }
     function update(){
       if(dead||!stage?.isConnected)return;const solved=M.solved(s),up=s.phase==='approach'&&s.line<2||solved;

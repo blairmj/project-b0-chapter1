@@ -37,7 +37,7 @@
     }
     return {data,faces,quad,box};
   }
-  function buildScene(doors){
+  function buildScene(doors,{dynamicDoors=false}={}){
     const scene=mesh(),{quad,box}=scene,signs=[];
     // Continuous faces run the full length. Door openings are actual holes.
     for(const side of [-1,1]){
@@ -84,8 +84,8 @@
       const origin=[d.x,0,d.z],P=(u,y,n=0)=>[origin[0]+right[0]*u+normal[0]*n,y,origin[2]+right[2]*u+normal[2]*n];
       function panel(u1,y1,u2,y2,depth,m,tex=null){quad(P(u1,y1,depth),P(u2,y1,depth),P(u2,y2,depth),P(u1,y2,depth),m,id,'door',tex);}
       // Recessed double leaves, raised frame, real jamb depth and separate grips.
-      panel(-w/2-10,top-10,w/2+10,bottom,0,dark);
-      for(const side of [-1,1]){
+      if(!dynamicDoors)panel(-w/2-10,top-10,w/2+10,bottom,0,dark);
+      for(const side of dynamicDoors?[]:[-1,1]){
         const lo=side<0?-w/2:-1,hi=side<0?-1:w/2;
         panel(lo,top,hi,bottom,2,{color:[.45,.57,.66],kind:1});
         panel(lo+9,top+13,hi-9,bottom-13,3,{color:[.52,.62,.68],kind:1});
@@ -117,19 +117,54 @@
     for(let x=-49;x<55;x+=22)box(x,175.3,-121,3,.7,112,dark,null,'floor');
     return {...scene,signs,lights};
   }
+  // Sliding pocket leaves and a shallow room in the same world coordinates.
+  function doorway(target,id,d,progress=0,preview=true){
+    const wide=id==='central',w=wide?220:136,h=wide?260:235,bottom=180-(d.floor===2?360:0),top=bottom-h;
+    const yaw=-d.yaw*Math.PI/180,right=[Math.cos(yaw),0,-Math.sin(yaw)],normal=[Math.sin(yaw),0,Math.cos(yaw)];
+    const P=(u,y,n=0)=>[d.x+right[0]*u+normal[0]*n,y,d.z+right[2]*u+normal[2]*n];
+    const panel=(a,b,c,e,n,m,uv)=>target.quad(P(a,b,n),P(c,b,n),P(c,e,n),P(a,e,n),m,id,'door',uv);
+    for(const side of [-1,1]){
+      const shift=side*w*.52*progress,lo=Math.max(-w/2,(side<0?-w/2:0)+shift),hi=Math.min(w/2,(side<0?0:w/2)+shift);
+      if(hi-lo<.2)continue;
+      panel(lo,top,hi,bottom,2,{color:[.45,.57,.66],kind:1});
+      if(hi-lo>18)panel(lo+5,top+13,hi-5,bottom-13,3,{color:[.52,.62,.68],kind:1});
+      const grip=side*(wide?16:11)+shift;if(grip-2>=lo&&grip+2<=hi)panel(grip-2,top+h*.46,grip+2,top+h*.65,7,pale);
+    }
+    if(progress<=0||!preview)return;
+    const row={practice:0,storage:1,access:2,mirror:3,central:4}[id]??2;
+    panel(-310,top-150,310,bottom,-470,{color:[.85,.9,.94],kind:5},[[0,row/5],[1,row/5],[1,(row+1)/5],[0,(row+1)/5]]);
+    for(const side of [-1,1])target.quad(P(side*310,top-150,0),P(side*310,top-150,-470),P(side*310,bottom,-470),P(side*310,bottom,0),metal);
+    target.quad(P(-310,bottom,0),P(310,bottom,0),P(310,bottom,-470),P(-310,bottom,-470),{color:[.48,.60,.69],kind:1},null,'floor');
+    target.quad(P(-310,top-150,0),P(-310,top-150,-470),P(310,top-150,-470),P(310,top-150,0),metal);
+    // Familiar silhouettes make the space beyond the open door identifiable.
+    function crate(u,n,width,height,depth){
+      const material={color:id==='central'?[.20,.29,.40]:[.58,.65,.63],kind:1,glow:.28};
+      for(const [a,b] of [[0,1],[1,2],[2,3],[3,0]]){
+        const corners=[[u-width/2,n],[u+width/2,n],[u+width/2,n-depth],[u-width/2,n-depth]],A=corners[a],B=corners[b];
+        target.quad(P(A[0],bottom-height,A[1]),P(B[0],bottom-height,B[1]),P(B[0],bottom,B[1]),P(A[0],bottom,A[1]),material);
+      }
+      target.quad(P(u-width/2,bottom-height,n),P(u+width/2,bottom-height,n),P(u+width/2,bottom-height,n-depth),P(u-width/2,bottom-height,n-depth),material);
+    }
+    if(id==='storage'){crate(-155,-285,120,62,92);crate(125,-370,76,56,68);}
+    if(id==='access'){crate(-200,-320,115,205,70);crate(180,-370,130,90,75);}
+    if(id==='mirror'){for(const u of [-110,110])crate(u,-365,8,230,8);}
+    if(id==='central'){crate(0,-420,115,155,65);panel(-32,top+50,32,top+100,-352,{color:[.4,.85,1],glow:1});}
+    target.quad(P(-35,top-115,-200),P(35,top-115,-200),P(35,top-115,-310),P(-35,top-115,-310),{color:[.7,.9,1],glow:1});
+
+  }
   function create(canvas,{model,state,onFallback=()=>{}}){
     const gl=canvas.getContext('webgl',{alpha:false,antialias:true,depth:true,preserveDrawingBuffer:false});
     if(!gl)return null;
     let dead=false,raf=0,last=0,current=null,power=state.powerOut?0:1,shutter=state.barrierTriggered?1:0,keyOpen=state.keyboxOpen?1:0;
     const reduced=()=>root.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const vertex=`attribute vec3 aPosition;attribute vec3 aNormal;attribute vec2 aUV;attribute vec3 aColor;attribute float aKind;attribute float aGlow;
-      uniform vec3 uCamera;uniform vec2 uAngle;uniform vec2 uSize;uniform float uFocal;
+      uniform vec3 uCamera;uniform vec2 uAngle;uniform vec2 uSize;uniform vec2 uOffset;uniform float uFocal;
       varying vec3 vPosition;varying vec3 vNormal;varying vec2 vUV;varying vec3 vColor;varying float vKind;varying float vGlow;varying float vDepth;
       void main(){vec3 p=aPosition-uCamera;float cy=cos(uAngle.x),sy=sin(uAngle.x),cp=cos(uAngle.y),sp=sin(uAngle.y);
         p=vec3(cy*p.x+sy*p.z,p.y,-sy*p.x+cy*p.z);p=vec3(p.x,cp*p.y-sp*p.z,sp*p.y+cp*p.z);
-        gl_Position=vec4(p.x*2.*uFocal/uSize.x,-p.y*2.*uFocal/uSize.y,-1.0004*p.z-2.0004,-p.z);
+        gl_Position=vec4(p.x*2.*uFocal/uSize.x,-p.y*2.*uFocal/uSize.y-uOffset.y*p.z,-1.0004*p.z-2.0004,-p.z);
         vPosition=aPosition;vNormal=aNormal;vUV=aUV;vColor=aColor;vKind=aKind;vGlow=aGlow;vDepth=-p.z;}`;
-    const fragment=`precision highp float;uniform sampler2D uMetal;uniform sampler2D uSigns;uniform sampler2D uRobot;uniform sampler2D uWalk;
+    const fragment=`precision highp float;uniform sampler2D uMetal;uniform sampler2D uSigns;uniform sampler2D uRobot;uniform sampler2D uWalk;uniform sampler2D uRooms;
       uniform float uPower;uniform float uTime;uniform float uSpeaking;uniform vec3 uCamera;uniform vec3 uLights[10];
       varying vec3 vPosition;varying vec3 vNormal;varying vec2 vUV;varying vec3 vColor;varying float vKind;varying float vGlow;varying float vDepth;
       void main(){vec4 tex=vec4(1.);vec3 color=vColor;float emission=vGlow;
@@ -142,6 +177,7 @@
             color=mix(color,vec3(.025,.045,.06),eye*(1.-blink));
             vec2 m=(vUV-vec2(.495,.352))/vec2(.032,.006+uSpeaking*(.004+.006*abs(sin(uTime*13.))));float mouth=1.-smoothstep(.7,1.,length(m));color=mix(color,vec3(.25,.91,1.),mouth);}
           emission=.22;}
+        else if(vKind>4.5){color=texture2D(uRooms,vUV).rgb;emission=.75;}
         float illumination=mix(.20,.48,uPower),highlight=0.;vec3 n=normalize(vNormal),eye=normalize(uCamera-vPosition);
         for(int i=0;i<10;i++){vec3 delta=uLights[i]-vPosition;float d=length(delta),falloff=1./(1.+d*d/58000.);vec3 l=normalize(delta);
           illumination+=abs(dot(n,l))*falloff*mix(.008,.22,uPower);highlight+=pow(max(0.,abs(dot(n,normalize(l+eye)))),30.)*falloff*.065*uPower;}
@@ -155,7 +191,7 @@
     try{gl.attachShader(program,shader(gl.VERTEX_SHADER,vertex));gl.attachShader(program,shader(gl.FRAGMENT_SHADER,fragment));gl.linkProgram(program);if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(program));}
     catch(error){shaders.forEach(s=>gl.deleteShader(s));gl.deleteProgram(program);throw error;}
     gl.useProgram(program);gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.clearColor(.025,.045,.07,1);
-    const uniforms={};for(const name of ['Camera','Angle','Size','Focal','Power','Time','Speaking','Lights'])uniforms[name]=gl.getUniformLocation(program,'u'+name+(name==='Lights'?'[0]':''));
+    const uniforms={};for(const name of ['Camera','Angle','Size','Offset','Focal','Power','Time','Speaking','Lights'])uniforms[name]=gl.getUniformLocation(program,'u'+name+(name==='Lights'?'[0]':''));
     const attributes=[['Position',3],['Normal',3],['UV',2],['Color',3],['Kind',1],['Glow',1]].map(([name,size])=>({location:gl.getAttribLocation(program,'a'+name),size}));
     function texture(unit,path,repeat=false){
       const t=gl.createTexture();textures.push(t);gl.activeTexture(gl.TEXTURE0+unit);gl.bindTexture(gl.TEXTURE_2D,t);
@@ -169,7 +205,11 @@
     }
     texture(0,'./assets/chapter2-metal-v1.webp',true);const signTexture=texture(1);texture(2,'./assets/b0-body-v3.webp');texture(3,'./assets/b0-walk-back-v1.webp');
     for(const [i,name]of ['Metal','Signs','Robot','Walk'].entries())gl.uniform1i(gl.getUniformLocation(program,'u'+name),i);
-    const scene=buildScene(model.doors),dynamic=mesh();
+    const scene=buildScene(model.doors,{dynamicDoors:true}),dynamic=mesh();
+    const roomTexture=texture(4),roomAtlas=document.createElement('canvas');roomAtlas.width=1024;roomAtlas.height=2560;const roomCtx=roomAtlas.getContext('2d');roomCtx.fillStyle='#314555';roomCtx.fillRect(0,0,1024,2560);
+    function uploadRooms(){if(dead)return;gl.activeTexture(gl.TEXTURE0+4);gl.bindTexture(gl.TEXTURE_2D,roomTexture);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,roomAtlas);}
+    uploadRooms();gl.uniform1i(gl.getUniformLocation(program,'uRooms'),4);
+    ['sf-practice-panorama-v1.webp','sf-cargo-wall-v1.webp','sf-access-wall-v1.webp','sf-optical-wall-v1.webp','chapter4-navy-wall-v1.webp'].forEach((file,row)=>{const img=new Image();images.push(img);img.onload=()=>{if(dead)return;roomCtx.drawImage(img,0,row*512,1024,512);uploadRooms();};img.src='./assets/'+file;});
     function signs(){
       if(dead)return;const c=document.createElement('canvas');c.width=1024;c.height=1024;const ctx=c.getContext('2d');
       for(let i=0;i<scene.signs.length;i++){const s=scene.signs[i],y=i*128;ctx.fillStyle='#152c3b';ctx.fillRect(0,y,1024,128);ctx.strokeStyle='#82979c';ctx.lineWidth=4;ctx.strokeRect(2,y+2,1020,124);ctx.fillStyle='#d3e9ed';ctx.textAlign='center';ctx.font='72px "B0 Digital", "Malgun Gothic", sans-serif';ctx.fillText(s.label,512,y+84);ctx.fillStyle='#8fa8b0';ctx.font='17px monospace';ctx.fillText(s.sub,512,y+112);}
@@ -181,6 +221,7 @@
     function draw(b,count){gl.bindBuffer(gl.ARRAY_BUFFER,b);let offset=0;for(const a of attributes){gl.enableVertexAttribArray(a.location);gl.vertexAttribPointer(a.location,a.size,gl.FLOAT,false,52,offset*4);offset+=a.size;}gl.drawArrays(gl.TRIANGLES,0,count/13);}
     function buildDynamic(time){
       dynamic.data.length=0;dynamic.faces.length=0;const {box,quad}=dynamic;
+      for(const id of ['practice','storage','access','mirror','outside','central'])doorway(dynamic,id,model.doors[id],current?.passage?.id===id?current.passage.open:0,!current?.portal);
       if(!state.cleared.storage){
         const y=-290-(1-shutter)*490;
         box(-269,y,-613,538,470,8,{color:[.32,.42,.49],kind:1},'shutter');
@@ -217,11 +258,12 @@
       const targetPower=current.lit?1:0;power+=Math.sign(targetPower-power)*Math.min(Math.abs(targetPower-power),dt/(reduced()?.01:2.3));
       const targetShutter=state.barrierTriggered?1:0;shutter+=Math.sign(targetShutter-shutter)*Math.min(Math.abs(targetShutter-shutter),dt/(reduced()?.01:1.2));
       const targetKey=state.keyboxOpen?1:0;keyOpen+=Math.sign(targetKey-keyOpen)*Math.min(Math.abs(targetKey-keyOpen),dt/(reduced()?.01:.5));
-      const w=canvas.clientWidth,h=canvas.clientHeight,ratio=Math.min(root.devicePixelRatio||1,1.5,1600/Math.max(w,h)),width=Math.max(1,Math.round(w*ratio)),height=Math.max(1,Math.round(h*ratio));
+      const w=canvas.clientWidth,h=canvas.clientHeight,ratio=Math.min(current.portal?4:(root.devicePixelRatio||1),current.portal?4:1.5,1600/Math.max(w,h)),width=Math.max(1,Math.round(w*ratio)),height=Math.max(1,Math.round(h*ratio));
       if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height;}
       gl.viewport(0,0,width,height);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.useProgram(program);
-      const c=current.camera,f=Math.min(w*.65,h*.6)*c.zoom;
+      const c=current.camera,f=current.portal?.focal??Math.min(w*.65,h*.6)*c.zoom;
       gl.uniform3f(uniforms.Camera,c.x,-c.height,c.z);gl.uniform2f(uniforms.Angle,c.yaw*Math.PI/180,c.pitch*Math.PI/180);gl.uniform2f(uniforms.Size,w,h);gl.uniform1f(uniforms.Focal,f);
+      gl.uniform2f(uniforms.Offset,0,current.portal?.offsetY||0);
       gl.uniform1f(uniforms.Power,power);gl.uniform1f(uniforms.Time,now/1000);gl.uniform1f(uniforms.Speaking,current.speaking?1:0);gl.uniform3fv(uniforms.Lights,new Float32Array(scene.lights.flatMap(l=>[0,l.y+24,l.z])));
       draw(staticBuffer,scene.data.length);buildDynamic(now/1000);gl.bindBuffer(gl.ARRAY_BUFFER,movingBuffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(dynamic.data),gl.DYNAMIC_DRAW);draw(movingBuffer,dynamic.data.length);
       raf=requestAnimationFrame(render);
@@ -238,5 +280,5 @@
     return {update(camera,companion,options){current={...current,camera:{...camera},companion:{...companion},...options};if(!raf)raf=requestAnimationFrame(render);},pick,
       dispose(){dead=true;cancelAnimationFrame(raf);canvas.removeEventListener('webglcontextlost',lost);images.forEach(i=>{i.onload=i.onerror=null;});buffers.forEach(b=>gl.deleteBuffer(b));textures.forEach(t=>gl.deleteTexture(t));shaders.forEach(s=>gl.deleteShader(s));gl.deleteProgram(program);gl.getExtension('WEBGL_lose_context')?.loseContext();}};
   }
-  const api={create,ray,intersect,buildScene};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.B0LabWebGL=api;
+  const api={create,ray,intersect,buildScene,doorway};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.B0LabWebGL=api;
 })(typeof window!=='undefined'?window:globalThis);

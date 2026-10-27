@@ -4,7 +4,7 @@ function node(k){if(!nodes.has(k))nodes.set(k,{style:{},dataset:{},clientWidth:7
 let htmlWrites=0,clock=0,id=0,saves=0;const frames=new Map(),timers=new Map();
 const app={set innerHTML(v){htmlWrites++;},querySelector:node,addEventListener(){},removeEventListener(){}};
 const context={window:{B0LabNavigation:M,addEventListener(){},removeEventListener(){}},performance:{now:()=>clock},matchMedia:()=>({matches:false}),requestAnimationFrame:f=>{frames.set(++id,f);return id;},cancelAnimationFrame:n=>frames.delete(n),setTimeout:f=>{timers.set(++id,f);return id;},clearTimeout:n=>timers.delete(n)};
-vm.runInNewContext(fs.readFileSync(require.resolve('../lab-navigation.js'),'utf8').replace('render();save();return {dispose};','render();save();return {dispose,act,walkTo,click,down,move,up,state:()=>({camera,companion,s})};'),context);
+vm.runInNewContext(fs.readFileSync(require.resolve('../lab-navigation.js'),'utf8').replace('return {dispose};','return {dispose,act,walkTo,click,down,move,up,state:()=>({camera,companion,s})};'),context);
 function finish(){let limit=0;while(frames.size){assert.ok(limit++<100,'animation must finish');clock+=250;const pending=[...frames.values()];frames.clear();pending.forEach(f=>f(clock));}}
 const state=M.fresh();state.cleared.practice=true;
 const g=context.window.startLabNavigation({app,portrait:()=>'',state,onSave:()=>saves++,onEnter(){},onHome(){},muted:true});

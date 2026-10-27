@@ -8,11 +8,11 @@
     const markerY=Math.max(246,Math.min(458,458-(80-z)*.13));
     return `<div class="lab-map"><p><b>지도</b><span>● 현재 위치${current?' · '+esc(current):''}</span></p><svg viewBox="0 0 440 550" role="img" aria-label="위쪽 2층에 중앙관리실. 아래쪽 1층 복도에 출입 관리실, 물류 보관실, 기록 보관실, 유리 관찰실이 있으며 순서 없이 탐색할 수 있습니다."><g class="map-lines"><path d="M205 214h30v253h-30Z"/><path d="M220 110v104M150 280h55m30 0h55M235 424h55"/></g><g class="map-rooms"><rect x="110" y="45" width="220" height="65"/><rect x="20" y="245" width="140" height="70"/><rect x="280" y="245" width="140" height="70"/><rect x="150" y="467" width="140" height="65"/><rect x="280" y="389" width="140" height="70"/></g><g class="map-labels"><text x="40" y="26" class="map-floor-label">2층</text><text x="220" y="84">중앙관리실</text><text x="220" y="162" class="small">계단 · 열쇠 필요</text><text x="40" y="218" class="map-floor-label">1층</text><text x="90" y="286">기록 보관실</text><text x="350" y="286">유리 관찰실</text><text x="220" y="507">출입 관리실</text><text x="350" y="430">물류 보관실</text><text x="220" y="354" class="small">연구소 복도</text></g><circle class="map-you" cx="220" cy="${floor===2?78:markerY}" r="7"/></svg></div>`;
   };
-  window.startLabNavigation=function({app,portrait,state:s,onSave,onEnter,onHome,muted=false}){
+  window.startLabNavigation=function({app,portrait,state:s,onSave,onEnter,onHome,muted=false,arrival=null}){
     let dead=false,frame=0,pointer=null,walking=false,suppress=false,selection=null,world,stage,bar,notice,modalEl,audio,renderer=null;
     const timers=new Set(),camera={...s.camera,zoom:1,height:s.floor===2?360:0};let stairRejecting=false,powerTalkIndex=-1;
     function companionNear(c,floor){const wanted=c.z-240,limit=M.bound(s,c.x,wanted).z;return M.companionSpot(c.x+100,wanted<limit?c.z+240:wanted,floor);}
-    let companion=s.companion||companionNear(camera,s.floor),botMoving=false;
+    let companion=s.companion||companionNear(camera,s.floor),botMoving=false,passage=null;
     if(s.floor===1&&!s.stairsUnlocked&&companion.z<-1730)companion=companionNear(camera,s.floor);
     function saveCompanion(){s.companion={...companion};}
     const later=(fn,ms)=>{const id=setTimeout(()=>{timers.delete(id);if(!dead)fn();},ms);timers.add(id);};
@@ -69,7 +69,7 @@
       const bot=app.querySelector('.lab-b0');
       // A companion occupies one world position. Looking around never relocates him.
       bot.style.transform=`translate3d(${companion.x-42}px,${24-M.groundAt(companion.z)}px,${companion.z}px) rotateY(${-camera.yaw}deg)`;
-      renderer?.update(camera,companion,{lit:!stage.classList.contains('power-out'),walking:botMoving,speaking:!!app.querySelector('.lab-b0 .speaking')});
+      renderer?.update(camera,companion,{lit:!stage.classList.contains('power-out'),walking:botMoving,speaking:!!app.querySelector('.lab-b0 .speaking'),passage});
       bot.classList.toggle('walking',botMoving);bot.dataset.x=String(companion.x);bot.dataset.z=String(companion.z);
       if(!s.barrierTriggered&&!s.cleared.storage&&camera.z<=-60){s.barrierTriggered=true;app.querySelector('.lab-barrier').classList.remove('raised');save();}
       stage.classList.toggle('walking',walking);if(stage.dataset.floor!==String(s.floor)){app.querySelector('.lab-pocket').innerHTML=b('소지품','inventory','quiet')+(s.floor===2?b('1층 계단','downstairs','quiet'):'');}stage.dataset.floor=String(s.floor);stage.dataset.position=String(Math.round(camera.z));app.querySelector('.lab-location').textContent=`${s.floor}층 ${s.floor===2?'중앙관리실 앞 복도':camera.z<-1510?'계단 앞 복도':camera.z<-650?'연구 구역 복도':'출입 구역 복도'}`;
@@ -84,6 +84,39 @@
       let botTo=botMoving&&!stair&&candidate.z<limit.z?M.companionSpot(candidate.x,(to.z??from.z)+240,targetFloor):candidate;
       if(targetFloor===1&&!s.stairsUnlocked)botTo=M.companionSpot(botTo.x,Math.max(-1730,botTo.z),1);
       function tick(t){if(dead)return;const previousPosition={x:camera.x,z:camera.z},p=Math.min(1,(t-start)/duration),q=p*p*(3-2*p);for(const k of ['x','z','pitch','height'])camera[k]=from[k]+((to[k]??from[k])-from[k])*q;camera.yaw=from.yaw+turn*q;companion={x:botFrom.x+(botTo.x-botFrom.x)*q,z:botFrom.z+(botTo.z-botFrom.z)*q,floor:targetFloor};const count=Math.floor(p*duration/380);if(distance>40&&count!==lastStep){lastStep=count;stepSound();}if(s.floor===1&&!s.powerOut&&M.stepsOnPanel(previousPosition,camera))tripPower();update();if(p<1)frame=requestAnimationFrame(tick);else{walking=false;botMoving=false;update();save();done?.();}}frame=requestAnimationFrame(tick);
+    }
+    function doorTravel(id,inward,done){
+      if(walking)return;cancelPowerTalk();selection=null;actions('');notice.hidden=true;pointer=null;
+      const d=M.doors[id],a=d.yaw*Math.PI/180,forward={x:Math.sin(a),z:-Math.cos(a)},checkpoint={...camera};
+      passage={id,open:inward?0:1};walking=true;botMoving=false;
+      const doorEl=app.querySelector('.lab-door-'+id);
+      function phase(to,ms,opening,next){
+        const from={...camera},botFrom={...companion},start=performance.now(),turn=(((to.yaw??from.yaw)-from.yaw+540)%360)-180;
+        let lastStep=-1;const distance=Math.hypot((to.x??from.x)-from.x,(to.z??from.z)-from.z);botMoving=distance>8;
+        const endBot=inward?{x:d.x-forward.x*85,z:d.z-forward.z*85}:companionNear(checkpoint,s.floor);
+        function tick(t){if(dead)return;const p=Math.min(1,(t-start)/(matchMedia('(prefers-reduced-motion: reduce)').matches?1:ms)),q=p*p*(3-2*p);
+          for(const k of ['x','z','pitch','zoom'])camera[k]=from[k]+((to[k]??from[k])-from[k])*q;camera.yaw=from.yaw+turn*q;
+          if(opening)passage.open=opening[0]+(opening[1]-opening[0])*q;
+          if(botMoving)companion={x:botFrom.x+(endBot.x-botFrom.x)*q,z:botFrom.z+(endBot.z-botFrom.z)*q,floor:s.floor};
+          const step=Math.floor(p*ms/400);if(distance>40&&step!==lastStep){lastStep=step;stepSound();}
+          stage.dataset.passage=inward?(opening?'opening':'entering'):(opening?'closing':'leaving');
+          doorEl?.style.setProperty?.('--door-open',passage.open);update();
+          if(p<1)frame=requestAnimationFrame(tick);else next();
+        }frame=requestAnimationFrame(tick);
+      }
+      function finish(){walking=false;botMoving=false;delete stage.dataset.passage;passage=null;
+        // The doorway crossing itself is transient: saves retain a safe hall pose.
+        Object.assign(camera,checkpoint);update();save();done?.();}
+      if(inward){
+        phase({pitch:0,zoom:1},720,[0,1],()=>phase({x:d.x+forward.x*20,z:d.z+forward.z*20,pitch:0,zoom:1},1000,null,()=>{
+          walking=false;botMoving=false;delete stage.dataset.passage;onEnter(id);
+          if(!dead){passage=null;Object.assign(camera,checkpoint);update();}
+        }));
+      }else{
+        Object.assign(camera,{x:d.x-forward.x*22,z:d.z-forward.z*22,yaw:d.yaw+180,pitch:0,zoom:1});
+        companion={x:d.x-forward.x*85,z:d.z-forward.z*85,floor:s.floor};update();
+        phase(checkpoint,1000,null,()=>phase(checkpoint,650,[1,0],finish));
+      }
     }
     function walkTo(id){
       const d=M.doors[id];if(!d)return;
@@ -139,7 +172,7 @@
       if(a==='take-key'){if(M.takeKey(s)){save();app.querySelector('.lab-keybox-back').innerHTML='';app.querySelector('.lab-pocket').innerHTML=b('열쇠 1','inventory','quiet');showObject('keybox');say('작은 금속 열쇠를 집었다. 고리에 계단실이라고 적혀 있다.');}return;}
       if(a==='unlock-stairs'){if(M.unlock(s)){save();app.querySelector('.lab-stair-entry').classList.add('authorized');app.querySelector('.lab-stair-control').classList.add('authorized');showObject('stairs');say('열쇠를 돌리자 계단의 접근 차단이 해제됐다.');}return;}
       if(a==='upstairs'){s.stairsUnlocked?ascend():rejectStairs();return;}if(a==='downstairs'){descend();return;}
-      if(a.startsWith('enter-')){const id=a.slice(6);if(M.canEnter(s,id)){actions('');const angle=camera.yaw*Math.PI/180;animate({x:camera.x+Math.sin(angle)*80,z:camera.z-Math.cos(angle)*80,pitch:0},()=>{save();onEnter(id);},false,480);}return;}
+      if(a.startsWith('enter-')){const id=a.slice(6);if(M.canEnter(s,id))doorTravel(id,true);return;}
     }
     function click(e){
       if(suppress){suppress=false;return;}const action=e.target.closest('[data-lab]');if(action){e.preventDefault();act(action.dataset.lab);return;}
@@ -158,6 +191,6 @@
     function cancel(){pointer=null;suppress=false;}
     function key(e){if(walking||stairRejecting||modalEl||e.target.closest('input,textarea,select,dialog'))return;if(['ArrowUp','w','W'].includes(e.key)){e.preventDefault();travel(1);}else if(['ArrowDown','s','S'].includes(e.key)){e.preventDefault();travel(-1);}else if(['ArrowLeft','ArrowRight','a','A','d','D'].includes(e.key)){e.preventDefault();animate({yaw:camera.yaw+(['ArrowLeft','a','A'].includes(e.key)?-90:90)});}else if((e.key==='Enter'||e.key===' ')&&e.target.dataset.labObject){e.preventDefault();const id=e.target.dataset.labObject;M.doors[id]?walkTo(id):showObject(id);}}
     function dispose(){if(dead)return;dead=true;renderer?.dispose();renderer=null;cancelAnimationFrame(frame);timers.forEach(clearTimeout);close();audio?.close();app.removeEventListener('click',click);window.removeEventListener('resize',update);}
-    app.addEventListener('click',click);window.addEventListener('resize',update);render();save();return {dispose};
+    app.addEventListener('click',click);window.addEventListener('resize',update);render();save();if(arrival&&M.doors[arrival.from]){if(!arrival.completed)doorTravel(arrival.from,false);else{const destination={...camera};camera.z+=65;update();animate(destination,null,false,700);}}return {dispose};
   };
 })();

@@ -8,3 +8,8 @@
 /* The old narrow-corridor nav rule must not squeeze the location to zero. */
 .lab-game>.b0-hud .b0-hud-main nav{width:auto;justify-content:flex-end}
 .lab-game>.b0-hud .b0-location{flex:1 1 auto}
+
+/* Non-WebGL fallback retains the same opening sequence and keyboard targets. */
+.lab-door-leaf{overflow:hidden}
+.lab-door-leaf i:first-child{transform:translateX(calc(var(--door-open,0)*-104%))}
+.lab-door-leaf i:last-child{transform:translateX(calc(var(--door-open,0)*104%))}

@@ -54,6 +54,7 @@
       stage.dataset.eyeX=viewX;stage.dataset.eyeZ=viewZ;stage.dataset.eyeHeight=elevation;
       const r=app.querySelector('.c2-robot');r.style.transform=`translate3d(${robot.x-48}px,${24-robotLift}px,${robot.z}px) rotateY(${-camera.yaw}deg)${s.phase==='ledge'?` rotateX(${-camera.pitch}deg)`:''}`;
       window.B0RoomSpace?.sync(world);
+      window.B0RoomTransit?.bind(world,{read:()=>({...camera,x:viewX*SPACE,z:viewZ*SPACE,height:viewHeight+lift}),write:v=>{Object.assign(camera,v);viewX=v.x/SPACE;viewZ=v.z/SPACE;viewHeight=v.height||0;lift=0;updateCamera();},stop:()=>{cancelAnimationFrame(animation);cancelAnimationFrame(heightFrame);travelling=false;busy=false;pointer=null;},door:{x:0,z:578,yaw:180}});
       const zoom=app.querySelector('.c2-zoom'),down=app.querySelector('.c2-descend');if(zoom)zoom.textContent=Math.round(camera.zoom*100)+'%';if(down)down.hidden=!standing||s.phase!=='room';
     }
     const view=()=>({x:viewX,z:viewZ,height:viewHeight,yaw:camera.yaw,pitch:camera.pitch,zoom:camera.zoom});
@@ -307,7 +308,7 @@
       if(a==='campaign-home'){onHome?.();return;}
       if(a==='close-modal'){app.querySelector('.c2-modal')?.close();return;}
       if(a==='menu'){showModal('메뉴',window.B0UI.menuContent({namespace:'c2',close:'close-modal',home:'campaign-home',record:'record',extras:`${button('생각거리','hint')}${button('현재 공간 다시 시작','reset-confirm')}${button('복도로 나가기','back')}`}));return;}
-      if(a==='back'){dispose();onBack();return;}
+      if(a==='back'){app.querySelector('dialog')?.close?.();onBack();return;}
       if(a==='reset-confirm'){showModal('2차시를 다시 시작할까요?',`<p>이 방의 상자 배치와 진행만 초기화합니다. 1차시 진행은 유지됩니다.</p>${button('초기화하고 시작','reset','primary')}`);return;}
       if(a==='reset'){cancelAnimationFrame(animation);cancelAnimationFrame(heightFrame);viewX=0;viewZ=0;viewHeight=0;groundView=null;robotLift=0;travelling=false;busy=false;lift=0;s=M.fresh();standing=null;mode=null;selection=null;camera={yaw:-48,pitch:-12,zoom:1};robot={x:-120,z:-145};save();render();return;}
       if(a==='controls'){showModal('사용법','<p>상자를 누른 채 끌면 바로 옮길 수 있습니다. 빈 공간을 끌면 방을 둘러봅니다. 짧게 누르면 물건의 행동이 나타납니다.</p><p>상자는 다른 상자 위에도 놓을 수 있습니다. 옮기기를 누르면 앞·뒤·왼쪽·오른쪽 버튼과 시점 돌리기 버튼을 사용할 수 있습니다. 위치를 조절한 뒤 놓기를 누르세요.</p><p>상자 위에서는 화면 아래의 내려가기를 누르세요. B-0에게 부탁할 때는 행동을 고르고 대상 물건을 누릅니다. 처음 위치로는 시점과 배율을 되돌립니다.</p>');return;}

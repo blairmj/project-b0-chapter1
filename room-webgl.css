@@ -3,8 +3,21 @@
 .room-webgl-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;transform:translateZ(0)}
 .room-gpu-surface{background-image:none!important;background-color:transparent!important}
 .room-webgl-active>.c2-world{z-index:1}
-.b0-scene-crossing{position:fixed;z-index:10000;background:#07121c;pointer-events:all;opacity:0;transition:opacity .28s ease;will-change:opacity}
-.b0-scene-crossing.covered{opacity:1}
-.b0-room-arrival{animation:b0-room-arrive .65s ease-out both}
-@keyframes b0-room-arrive{from{opacity:.2;scale:1.035}to{opacity:1;scale:1}}
-@media(prefers-reduced-motion:reduce){.b0-scene-crossing{transition:none}.b0-room-arrival{animation:none}}
+/* A physical portal in the same CSS/WebGL world as the room. */
+.b0-passage-blocker{position:fixed;inset:0;z-index:10000;cursor:progress;background:transparent;touch-action:none}
+.b0-passage-travel .c2-speech,.b0-passage-travel .c2-actions,.b0-passage-travel .mr-actions{visibility:hidden}
+.b0-passage-door{position:absolute;transform-style:preserve-3d;pointer-events:none;--open:0}
+.b0-passage-view{position:absolute;inset:0;background:#122533 url('./assets/lab-corridor-v1.webp') center/cover;transform:translateZ(-2px);box-shadow:inset 0 0 22px #07101b77}
+.b0-passage-leaves{position:absolute;inset:0;overflow:hidden;transform:translateZ(3px)}
+.b0-passage-leaves i{position:absolute;top:0;bottom:0;width:50%;background:linear-gradient(#71869722,#172d4655),url('./assets/chapter2-metal-v1.webp') center/250px;border:3px solid #526875;box-sizing:border-box}
+.b0-passage-leaves i:first-child{left:0;transform:translateX(calc(var(--open)*-104%))}
+.b0-passage-leaves i:last-child{right:0;transform:translateX(calc(var(--open)*104%))}
+.b0-passage-leaves i:after{content:'';position:absolute;top:44%;right:5px;width:4px;height:38px;background:#afc4ca;box-shadow:0 0 0 2px #172b39}
+.b0-passage-leaves i:last-child:after{left:5px;right:auto}
+.b0-passage-jamb{position:absolute;inset:-9px;border:9px solid #3e5363;border-bottom-width:3px;box-shadow:0 0 0 2px #8b9b9d,inset 0 0 0 2px #172b39;transform:translateZ(5px)}
+.b0-passage-jamb:before{content:'';position:absolute;left:-5px;top:35px;width:3px;height:75px;background:#70dbed;box-shadow:0 0 8px #70dbed88}
+
+/* Existing decorative leaves must not remain behind the temporary open portal. */
+.b0-passage-travel .c2-entry,.b0-passage-travel .mr-entry,.b0-passage-travel .mr-door,.b0-passage-travel .c3-real-exit,.b0-passage-travel .c4-door{visibility:hidden}
+
+.b0-passage-canvas{display:block;position:absolute;inset:0;width:100%;height:100%;pointer-events:none}

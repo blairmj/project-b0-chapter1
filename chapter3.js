@@ -60,16 +60,17 @@
     }
     function renderMirror(){
       s.mirror=window.B0Mirror.restore(s.mirror);mirrorUrl(true);save();
-      mirrorView=window.startMirrorRoom({app,portrait,state:s.mirror,onSave:save,onHome,onBack:()=>{if(onMirrorBack){save();onMirrorBack();return;}s.phase=s.approval==='rejected'?'gate':'room';mirrorUrl(false);save();render();},onComplete:()=>{if(M.finish(s)){mirrorUrl(false);save();render();}}});
+      mirrorView=window.startMirrorRoom({app,portrait,state:s.mirror,onSave:save,onHome,onBack:()=>{if(onMirrorBack){save();onMirrorBack();return;}s.phase=s.approval==='rejected'?'gate':'room';mirrorUrl(false);save();render();},onComplete:()=>{if(M.finish(s)){mirrorUrl(false);save();if(onCorridor&&onNext){onNext();return;}render();}}});
     }
-    function updateCamera(){
-      if(s.phase!=='room'||!stage?.isConnected)return;
+    function updateCamera(transit=false){
+      if((s.phase!=='room'&&!transit)||!stage?.isConnected)return;
       camera.yaw=((camera.yaw+180)%360+360)%360-180;camera.pitch=Math.max(-65,Math.min(45,camera.pitch));
       const f=Math.min(stage.clientWidth*.62,stage.clientHeight*.5)*camera.zoom;stage.style.perspective=f+'px';
       world.style.transform=`translateZ(${f}px) rotateX(${camera.pitch}deg) rotateY(${camera.yaw}deg) translate3d(${-camera.x*SPACE}px,0px,${-camera.z*SPACE}px)`;
       stage.dataset.yaw=camera.yaw;stage.dataset.pitch=camera.pitch;
       app.querySelector('.c3-robot').style.transform=`translate3d(${robot.x-48}px,24px,${robot.z}px) rotateY(${-camera.yaw}deg)`;
       window.B0RoomSpace?.sync(world);
+      window.B0RoomTransit?.bind(world,{read:()=>({...camera,x:camera.x*SPACE,z:camera.z*SPACE,height:0}),write:v=>{Object.assign(camera,v,{x:v.x/SPACE,z:v.z/SPACE});updateCamera(true);},stop:()=>{cancelAnimationFrame(frame);cameraMoving=false;busy=false;pointer=null;},door:{x:0,z:578,yaw:180},exit:{x:-573,z:0,yaw:-90}});
       app.querySelector('.c3-zoom').textContent=Math.round(camera.zoom*100)+'%';
     }
     function update(){
@@ -159,7 +160,7 @@
       if(a==='chapter-four'&&s.phase==='complete'){dispose();onNext?.();return;}
       if(a==='close-modal'){app.querySelector('.c3-modal')?.close();return;}
       if(a==='menu'){modal('메뉴',window.B0UI.menuContent({namespace:'c3',close:'close-modal',home:'campaign-home',record:'record',extras:`${b('현재 공간 다시 시작','reset-confirm')}${b('복도로 나가기','back')}`}));return;}
-      if(a==='back'){dispose();onBack();return;}
+      if(a==='back'){app.querySelector('dialog')?.close?.();onBack();return;}
       if(a==='reset-confirm'){modal('3차시를 다시 시작할까요?',`<p>기록 보관실의 진행만 초기화합니다.</p>${b('초기화하고 시작','reset','primary')}`);return;}
       if(a==='reset'){cancelAnimationFrame(frame);busy=false;cameraMoving=false;s=M.fresh();mirrorUrl(false);camera={x:0,z:30,yaw:-12,pitch:-8,zoom:1};robot={x:120,z:-190};app.querySelector('.c3-modal')?.remove();save();render();return;}
       if(a==='controls'){modal('사용법','<p>빈 공간을 끌거나 방향키로 방을 둘러봅니다. 물건을 누르면 가까이 다가가 살펴볼 수 있습니다.</p><p>보관장은 직접 끌거나 밀기 버튼으로 움직입니다. 혼자 밀면 조금씩 움직이고, 함께 밀면 더 쉽게 움직입니다.</p><p>B-0에게 부탁할 때는 확인할 대상과 내용을 골라 주세요. 처음 위치로는 시점과 배율만 되돌립니다.</p>');return;}

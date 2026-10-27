@@ -43,17 +43,17 @@ syncCorridorPower();
 function saveNavigation(){syncCorridorPower();try{progressStore.setItem(NAV_KEY,JSON.stringify(navigation));}catch{}}
 function markRoom(){hallView?.dispose();hallView=null;navigation.mode='room';saveNavigation();}
 function showHall(from,completed=true,arriving=false){
-  if(from&&from!=='practice'&&!arriving&&window.B0RoomTransit&&app.querySelector('.c2-stage')){window.B0RoomTransit.cross(app,()=>showHall(from,completed,true));return;}
+  if(from&&from!=='practice'&&!arriving&&window.B0RoomTransit&&app.querySelector('.c2-stage')){window.B0RoomTransit.cross(app,()=>showHall(from,completed,true),{direction:'exit',completed,corridor:{state:navigation,from}});return;}
   stopAdventure();window.B0LabNavigation.merge(navigation,roomProgress());
   if(from)window.B0LabNavigation.returned(navigation,from,completed);
   navigation.mode='hall';saveNavigation();
   if(typeof location!=='undefined'){const url=new URL(location.href);url.searchParams.set('area','hall');url.searchParams.delete('room');url.searchParams.set('chapter',String(state.chapter||1));history.replaceState(null,'',url);}
-  hallView=window.startLabNavigation({app,portrait,state:navigation,onSave:saveNavigation,onEnter:enterFromHall,onHome:campaignHome,muted:state.muted});
+  hallView=window.startLabNavigation({app,portrait,state:navigation,onSave:saveNavigation,onEnter:enterFromHall,onHome:campaignHome,muted:state.muted,arrival:arriving&&from?{from,completed}:null});
 }
 function enterFromHall(id,arriving=false){
   if(!window.B0LabNavigation.canEnter(navigation,id))return;
   if(!arriving&&window.B0RoomTransit){window.B0RoomTransit.cross(app,()=>enterFromHall(id,true));return;}
-  if(id==='practice'){stopAdventure();markRoom();state.chapter=1;save();chapterUrl(1);enterRoom(false,true);return;}
+  if(id==='practice'){stopAdventure();markRoom();state.chapter=1;save();chapterUrl(1);enterRoom(false,true);panTo(167,-5);setZoom(1);return;}
   if(id==='storage'){enterChapterTwo();return;}
   if(id==='access'){enterChapterThree('access',true);return;}
   if(id==='mirror'){enterChapterThree('mirror',true);return;}

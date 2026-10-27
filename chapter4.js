@@ -64,7 +64,8 @@
     }
     function updateCamera(){if(!inRoom()||!world?.isConnected)return;camera.pitch=Math.max(-60,Math.min(40,camera.pitch));camera.yaw=((camera.yaw+540)%360)-180;
       const f=Math.min(stage.clientWidth*.62,stage.clientHeight*.5)*camera.zoom;stage.style.perspective=f+'px';world.style.transform=`translateZ(${f}px) rotateX(${camera.pitch}deg) rotateY(${camera.yaw}deg) translate3d(${-camera.x*SPACE}px,${camera.height||0}px,${-camera.z*SPACE}px)`;
-      app.querySelector('.c4-robot').style.transform=`translate3d(${robot.x-48}px,24px,${robot.z}px) rotateY(${-camera.yaw}deg)`;window.B0RoomSpace?.sync(world);app.querySelector('.c4-zoom').textContent=Math.round(camera.zoom*100)+'%';stage.dataset.yaw=Math.round(camera.yaw);}
+      app.querySelector('.c4-robot').style.transform=`translate3d(${robot.x-48}px,24px,${robot.z}px) rotateY(${-camera.yaw}deg)`;window.B0RoomSpace?.sync(world);
+      window.B0RoomTransit?.bind(world,{read:()=>({...camera,x:camera.x*SPACE,z:camera.z*SPACE,height:camera.height||0}),write:v=>{Object.assign(camera,v,{x:v.x/SPACE,z:v.z/SPACE});updateCamera();},stop:()=>{cancelAnimationFrame(camFrame);pointer=null;},door:{x:-85*SPACE,z:1150,yaw:180,wide:true}});app.querySelector('.c4-zoom').textContent=Math.round(camera.zoom*100)+'%';stage.dataset.yaw=Math.round(camera.yaw);}
     function update(){if(!inRoom())return;const stopped=s.met&&s.links.robot;
       stage.classList.toggle('c4-confrontation',s.boss&&!s.opened);app.querySelector('.c4-robot').classList.toggle('controlled',stopped);
       app.querySelector('.c4-door').classList.toggle('open',s.opened||s.met&&!s.boss);app.querySelector('.c4-exit-crossing').disabled=!(s.opened||s.met&&!s.boss);app.querySelector('.c4-exit-box').classList.toggle('available',M.ready(s));
@@ -163,7 +164,7 @@
       if(a==='controls'){modal('사용법','<p>빈 공간을 끌거나 방향키로 둘러보고, 물건을 눌러 가까이 살펴봅니다.</p><p>연결 단자는 옆으로 끌어 분리합니다. 닿을 수 있는 잠금쇠와 문 손잡이를 직접 끌어 조작할 수 있습니다. 각 물건의 조작 버튼도 사용할 수 있습니다.</p><p>B-0에게 부탁한 뒤 대상 물건을 직접 누릅니다. 처음 위치로는 시점과 배율만 초기화합니다. 진행은 자동 저장됩니다.</p>');return;}
       if(a==='reset-confirm'){modal('4차시를 다시 시작할까요?',`<p>다른 차시의 기록은 유지됩니다.</p>${b('4차시 초기화','reset')}`);return;}
       if(a==='reset'){s=M.fresh();r={handle:0,latch:0,lifted:false,high:0};robot={x:93,z:-140};wakeUntil=0;recoveryPending=false;carryingTransition=false;lastControlled=false;camera={x:0,z:60,yaw:-15,pitch:14,zoom:.7};save();render();return;}
-      if(a==='back'){dispose();onBack();return;}
+      if(a==='back'){app.querySelector('dialog')?.close?.();onBack();return;}
       if(a==='story-next'){if(s.phase==='farewell'){if(s.line<farewell.length-1){s.line++;save();farewellLine();}else startJourney('exit');return;}const lines=s.phase==='intro'?intro:ending;if(s.line<lines.length-1)s.line++;else{s.phase=s.phase==='intro'?'room':'complete';s.line=0;}save();render();return;}
       if(a==='revisit'){s.phase='room';s.line=0;robot={x:93,z:-140};camera={x:0,z:60,yaw:-15,pitch:14,zoom:.7};save();render();return;}
       if(a==='reflection'){modal('이번 모험 돌아보기',`<p>B-0에게 전에 가르친 행동이 이번에는 어디에 쓰였나요?</p><p>혼자 할 수 없었던 일을 어떻게 나누어 했나요?</p><p>완료라는 표시와 실제 문 상태는 같았나요?</p><small>정해진 답을 고르는 시험이 아닙니다. 함께 이야기해 보세요.</small>`);return;}

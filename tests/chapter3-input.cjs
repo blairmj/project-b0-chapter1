@@ -60,3 +60,11 @@ flush();arrival.act('home');node('.c3-stage').listeners.keydown({key:'ArrowRight
 const manualYaw=arrival.state().camera.yaw;flush();assert.equal(arrival.state().camera.yaw,manualYaw,'manual camera rotation interrupts automatic return');
 arrival.act('back');
 console.log('PASS: hall arrival introduces the archive inside the 3D room with the original unsolved puzzle');
+
+let transitView;
+context.window.B0RoomTransit={bind(world,view){transitView=view;}};
+const passage=context.window.startChapterThree({app,portrait:()=>'',onBack(){},preview:true,arrived:true,onCorridor(){}});
+passage.state().s.phase='gate'; // Opening the discovered exit changes puzzle phase first.
+transitView.write({...transitView.read(),x:-500,z:0,yaw:-90});
+assert.match(node('.c3-world').style.transform,/translate3d\(500px/,'completed archive exits still move the shared world camera');
+console.log('PASS: exit travel remains available after the archive puzzle changes phase');
