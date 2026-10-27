@@ -10,7 +10,7 @@
   };
   window.startLabNavigation=function({app,portrait,state:s,onSave,onEnter,onHome,muted=false,arrival=null}){
     let dead=false,frame=0,pointer=null,walking=false,suppress=false,selection=null,world,stage,bar,notice,modalEl,audio,renderer=null;
-    const timers=new Set(),camera={...s.camera,zoom:1,height:s.floor===2?360:0};let stairRejecting=false,powerTalkIndex=-1;
+    const timers=new Set(),camera={...s.camera,zoom:1,height:s.floor===2?360:0};let stairRejecting=false,talk=null,speechTicket=0;
     function companionNear(c,floor){const wanted=c.z-240,limit=M.bound(s,c.x,wanted).z;return M.companionSpot(c.x+100,wanted<limit?c.z+240:wanted,floor);}
     let companion=s.companion||companionNear(camera,s.floor),botMoving=false,passage=null;
     if(s.floor===1&&!s.stairsUnlocked&&companion.z<-1730)companion=companionNear(camera,s.floor);
@@ -21,27 +21,22 @@
     function pose(id){const d=M.doors[id];if(id==='practice')return {x:0,z:80,yaw:180,pitch:-3};return {x:0,z:d.floor===2?-2370:d.z+(id==='stairs'?145:0),yaw:d.yaw,pitch:-3};}
     function actions(title,items=[]){if(!items.length&&title==='문과 물건을 직접 눌러 살펴보세요.')title='';bar.innerHTML=`<strong>${esc(title)}</strong><div>${items.map(([t,a,c])=>b(t,a,c||'')).join('')}</div>`;}
     function say(text,who='system'){
-      notice.innerHTML=`<div class="speech ${who}"><b>${who==='robot'?'B-0':who==='student'?'나':'시설 안내'}</b><p>${esc(text)}</p></div>`;notice.hidden=false;
+      const ticket=++speechTicket;notice.innerHTML=`<div class="speech ${who}"><b>${who==='robot'?'B-0':who==='student'?'나':'시설 안내'}</b><p>${esc(text)}</p></div>`;notice.hidden=false;
       const actor=app.querySelector('.lab-b0 .robot-sprite');actor?.classList.toggle('speaking',who==='robot');
       if(renderer)renderer.update(camera,companion,{lit:!stage.classList.contains('power-out'),walking:botMoving,speaking:who==='robot'});
-      if(who==='robot')later(()=>{actor?.classList.remove('speaking');renderer?.update(camera,companion,{lit:!stage.classList.contains('power-out'),walking:botMoving,speaking:false});},Math.min(4500,text.length*85));
+      if(who==='robot')later(()=>{if(ticket!==speechTicket)return;actor?.classList.remove('speaking');renderer?.update(camera,companion,{lit:!stage.classList.contains('power-out'),walking:botMoving,speaking:false});},Math.min(4500,text.length*85));
     }
-    const powerTalk=[
-      ['student','B-0, 왜 미리 말 안 해줬어?'],
-      ['robot','저도 몰랐습니다. 이 바닥 덮개가 전원 장치와 연결된 건 밟은 뒤에야 알았습니다.'],
-      ['student','그럼 앞은 같이 살펴보자. 뭔가 알아내면 바로 알려 줘.']
-    ];
-    function showPowerTalk(){
-      const [who,text]=powerTalk[powerTalkIndex];say(text,who);
-      actions('',powerTalkIndex<powerTalk.length-1?[['다음','power-talk-next']]:[['닫기','power-talk-close']]);
+    function showTalk(){
+      const [who,text]=talk.lines[talk.index];say(text,who);
+      actions('',[...(talk.index<talk.lines.length-1?[['다음','talk-next']]:[]),['닫기','talk-close']]);
     }
-    function cancelPowerTalk(){if(powerTalkIndex<0)return;powerTalkIndex=-1;actions('');}
+    function cancelTalk(){if(!talk)return;talk=null;speechTicket++;app.querySelector('.lab-b0 .robot-sprite')?.classList.remove('speaking');renderer?.update(camera,companion,{speaking:false});actions('');}
     function relaySound(){if(muted)return;try{audio||=new(window.AudioContext||window.webkitAudioContext)();void audio.resume();for(let i=0;i<2;i++){const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime+i*.22;o.frequency.value=i?310:470;g.gain.setValueAtTime(.018,t);g.gain.exponentialRampToValueAtTime(.0001,t+.16);o.connect(g).connect(audio.destination);o.start(t);o.stop(t+.17);}}catch{}}
     function tripPower(){
       s.powerOut=true;save();app.querySelector('.lab-trip-panel')?.classList.add('tripped');
       stepSound();say('앗… 뭔가 밟았어.','student');
       later(()=>{stage.classList.add('power-out');renderer?.update(camera,companion,{lit:false,walking:botMoving});relaySound();},650);
-      later(()=>{if(powerTalkIndex<0&&!s.powerTalked)say('전원이 차단되었습니다. 비상 조명으로 전환합니다.');},1700);
+      later(()=>{if(!talk&&!s.powerTalked)say('전원이 차단되었습니다. 비상 조명으로 전환합니다.');},1700);
     }
     function door(id){const d=M.doors[id],h=d.floor===2?-360:0;return `<div class="lab-door lab-door-${id}" style="transform:translate3d(${d.x}px,${h}px,${d.z}px) rotateY(${-d.yaw}deg)" data-lab-object="${id}" role="button" tabindex="0" aria-label="${d.name}"><span class="lab-door-sign">${d.floor===2?'2F · ':''}${d.name}</span><div class="lab-door-leaf"><i></i><i></i></div><span class="lab-door-light"></span></div>`;}
     function render(){
@@ -75,7 +70,7 @@
       stage.classList.toggle('walking',walking);if(stage.dataset.floor!==String(s.floor)){app.querySelector('.lab-pocket').innerHTML=b('소지품','inventory','quiet')+(s.floor===2?b('1층 계단','downstairs','quiet'):'');}stage.dataset.floor=String(s.floor);stage.dataset.position=String(Math.round(camera.z));app.querySelector('.lab-location').textContent=`${s.floor}층 ${s.floor===2?'중앙관리실 앞 복도':camera.z<-1510?'계단 앞 복도':camera.z<-650?'연구 구역 복도':'출입 구역 복도'}`;
     }
     function animate(to,done,stair=false,durationMs){
-      if(walking)return;cancelPowerTalk();const from={...camera},start=performance.now(),turn=(((to.yaw??camera.yaw)-camera.yaw+540)%360)-180;const distance=Math.hypot((to.x??from.x)-from.x,(to.z??from.z)-from.z,(to.height??from.height)-from.height);const duration=matchMedia('(prefers-reduced-motion: reduce)').matches?1:durationMs??(stair?2300:Math.max(380,Math.min(1900,distance*3.7)));walking=true;notice.hidden=true;let lastStep=-1;
+      if(walking)return;cancelTalk();const from={...camera},start=performance.now(),turn=(((to.yaw??camera.yaw)-camera.yaw+540)%360)-180;const distance=Math.hypot((to.x??from.x)-from.x,(to.z??from.z)-from.z,(to.height??from.height)-from.height);const duration=matchMedia('(prefers-reduced-motion: reduce)').matches?1:durationMs??(stair?2300:Math.max(380,Math.min(1900,distance*3.7)));walking=true;notice.hidden=true;let lastStep=-1;
       const botFrom={...companion},dx=(to.x??from.x)-from.x,dz=(to.z??from.z)-from.z,travelLength=Math.hypot(dx,dz);
       botMoving=travelLength>8;
       const targetFloor=(to.height??camera.height)>180?2:s.floor===2&&(to.height??camera.height)===0?1:s.floor;
@@ -86,7 +81,7 @@
       function tick(t){if(dead)return;const previousPosition={x:camera.x,z:camera.z},p=Math.min(1,(t-start)/duration),q=p*p*(3-2*p);for(const k of ['x','z','pitch','height'])camera[k]=from[k]+((to[k]??from[k])-from[k])*q;camera.yaw=from.yaw+turn*q;companion={x:botFrom.x+(botTo.x-botFrom.x)*q,z:botFrom.z+(botTo.z-botFrom.z)*q,floor:targetFloor};const count=Math.floor(p*duration/380);if(distance>40&&count!==lastStep){lastStep=count;stepSound();}if(s.floor===1&&!s.powerOut&&M.stepsOnPanel(previousPosition,camera))tripPower();update();if(p<1)frame=requestAnimationFrame(tick);else{walking=false;botMoving=false;update();save();done?.();}}frame=requestAnimationFrame(tick);
     }
     function doorTravel(id,inward,done){
-      if(walking)return;cancelPowerTalk();selection=null;actions('');notice.hidden=true;pointer=null;
+      if(walking)return;cancelTalk();selection=null;actions('');notice.hidden=true;pointer=null;
       const d=M.doors[id],a=d.yaw*Math.PI/180,forward={x:Math.sin(a),z:-Math.cos(a)},checkpoint={...camera};
       passage={id,open:inward?0:1};walking=true;botMoving=false;
       const doorEl=app.querySelector('.lab-door-'+id);
@@ -126,7 +121,7 @@
       animate({...p,...limited},()=>{if(blocked){say(limited.z>-600?'안전 차단문이 복도를 가로막고 있다. 다른 길이 있을까?':'유리 차단문이 복도를 가로막고 있다.');actions('막힌 통로',[['다시 둘러보기','clear']]);return;}selection=id;if(!s.visited.includes(id))s.visited.push(id);save();showObject(id);});
     }
     function showObject(id){
-      cancelPowerTalk();selection=id;
+      cancelTalk();selection=id;
       if(id==='shutter'){say(s.cleared.storage?'반대편에서 안전 차단문을 해제했다.':'안전 차단문이 내려와 있다. 옆방과 다른 통로를 살펴봐야겠다.');actions('복도 차단문',[['돌아가기','clear']]);return;}
       if(id==='glass'){say(s.cleared.mirror?'유리 차단문이 올라가 북쪽 복도가 이어진다.':'유리 너머로 계단과 작은 보관함이 보인다. 이쪽에서는 열 수 없다.');actions('북쪽 유리 차단문',[['돌아가기','clear']]);return;}
       if(id==='keybox'){if(!s.cleared.mirror){say('유리 차단문 너머에 있다. 여기서는 손이 닿지 않는다.');actions('벽면 보관함',[['돌아가기','clear']]);return;}actions('벽면 열쇠 보관함',[[s.keyboxOpen?'닫기':'열어 보기','keybox-open'],...(s.keyboxOpen&&!s.keyTaken?[['열쇠 집기','take-key']]:[]),['돌아가기','clear']]);return;}
@@ -141,7 +136,7 @@
     function rejectStairs(){
       if(walking||stairRejecting||s.floor!==1)return;stairRejecting=true;selection=null;actions('');
       animate({x:0,z:-1860,height:55,yaw:0,pitch:-3},()=>{
-        stage.classList.add('stair-repel');relaySound();say('상층 접근 권한이 없습니다.');
+        s.stairRejected=true;save();stage.classList.add('stair-repel');relaySound();say('상층 접근 권한이 없습니다.');
         later(()=>animate({x:0,z:-1695,height:0,yaw:0,pitch:-3},()=>{stairRejecting=false;stage.classList.remove('stair-repel');say('문도 없는데… 다시 밀려 내려왔어.','student');showObject('stairs');},true,900),220);
       },true,850);
     }
@@ -157,16 +152,15 @@
       if(a==='view-home'){camera.zoom=1;selection=null;actions('');animate({x:0,z:s.floor===2?-2170:80,yaw:0,pitch:-4});return;}
       if(a==='zoom-in'||a==='zoom-out'){camera.zoom=Math.max(.65,Math.min(1.6,camera.zoom+(a==='zoom-in'?.15:-.15)));update();return;}
       if(a==='robot'){
-        if(s.powerOut&&!s.powerTalked){selection=null;if(powerTalkIndex<0)powerTalkIndex=0;showPowerTalk();}
-        else say('함께 살펴보겠습니다. 확인할 문이나 물건을 직접 골라 주세요.','robot');
-        return;
+        if(!talk){const context=window.B0LabDialogue.resolve(s,camera,selection,M.doors);talk={...context,index:0};selection=null;}
+        showTalk();return;
       }
-      if(a==='power-talk-next'){if(powerTalkIndex>=0){powerTalkIndex=Math.min(powerTalk.length-1,powerTalkIndex+1);showPowerTalk();}return;}
-      if(a==='power-talk-close'){if(powerTalkIndex===powerTalk.length-1){s.powerTalked=true;save();cancelPowerTalk();notice.hidden=true;}return;}
+      if(a==='talk-next'){if(talk){talk.index=Math.min(talk.lines.length-1,talk.index+1);showTalk();}return;}
+      if(a==='talk-close'){if(talk){if(talk.id==='power'&&talk.index===talk.lines.length-1){s.powerTalked=true;save();}cancelTalk();notice.hidden=true;}return;}
       if(a.startsWith('go-')){close();walkTo(a.slice(3));return;}
       if(a==='forward'||a==='backward'){travel(a==='forward'?1:-1);return;}
       if(a==='turn-left'||a==='turn-right'){animate({yaw:camera.yaw+(a==='turn-left'?-90:90)});return;}
-      if(a==='clear'){cancelPowerTalk();selection=null;notice.hidden=true;actions('문과 물건을 직접 눌러 살펴보세요.');return;}
+      if(a==='clear'){cancelTalk();selection=null;notice.hidden=true;actions('문과 물건을 직접 눌러 살펴보세요.');return;}
       if(a==='inspect-stairs'){say('문은 없다. 계단 옆 차단 제어기에 열쇠 구멍과 접근 제한 표시가 있다.');return;}
       if(a==='keybox-open'){s.keyboxOpen=!s.keyboxOpen;app.querySelector('.lab-keybox').classList.toggle('open',s.keyboxOpen);save();showObject('keybox');return;}
       if(a==='take-key'){if(M.takeKey(s)){save();app.querySelector('.lab-keybox-back').innerHTML='';app.querySelector('.lab-pocket').innerHTML=b('열쇠 1','inventory','quiet');showObject('keybox');say('작은 금속 열쇠를 집었다. 고리에 계단실이라고 적혀 있다.');}return;}

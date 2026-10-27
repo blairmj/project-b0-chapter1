@@ -10,11 +10,11 @@
     outside:{name:'외부 출입구',floor:1,x:-268,z:-1160,yaw:-90},
     central:{name:'중앙관리실',floor:2,x:0,z:-2540,yaw:0}
   };
-  const fresh=()=>({version:1,mode:'hall',floor:1,camera:{x:0,z:80,yaw:0,pitch:-4},cleared:{practice:false,storage:false,access:false,mirror:false},keyboxOpen:false,keyTaken:false,stairsUnlocked:false,barrierTriggered:false,powerOut:false,powerTalked:false,companion:null,visited:[]});
+  const fresh=()=>({version:1,mode:'hall',floor:1,camera:{x:0,z:80,yaw:0,pitch:-4},cleared:{practice:false,storage:false,access:false,mirror:false},keyboxOpen:false,keyTaken:false,stairsUnlocked:false,stairRejected:false,barrierTriggered:false,powerOut:false,powerTalked:false,companion:null,visited:[]});
   function restore(raw){
     const s=fresh();if(!raw||raw.version!==1)return s;
     for(const id of Object.keys(s.cleared))s.cleared[id]=raw.cleared?.[id]===true;
-    for(const id of ['keyboxOpen','keyTaken','stairsUnlocked','powerTalked'])s[id]=raw[id]===true;
+    for(const id of ['keyboxOpen','keyTaken','stairsUnlocked','stairRejected','powerTalked'])s[id]=raw[id]===true;
     if(s.stairsUnlocked)s.keyTaken=true;
     s.floor=raw.floor===2&&s.stairsUnlocked?2:1;s.mode=raw.mode==='room'?'room':'hall';
     const c=raw.camera||{};s.camera={x:Number.isFinite(c.x)?Math.max(-180,Math.min(180,c.x)):0,z:Number.isFinite(c.z)?c.z:80,yaw:Number.isFinite(c.yaw)?c.yaw:0,pitch:Number.isFinite(c.pitch)?Math.max(-35,Math.min(45,c.pitch)):-4};

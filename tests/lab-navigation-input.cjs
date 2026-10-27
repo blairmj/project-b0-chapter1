@@ -3,7 +3,7 @@ const nodes=new Map();
 function node(k){if(!nodes.has(k))nodes.set(k,{style:{},dataset:{},clientWidth:760,clientHeight:480,hidden:false,innerHTML:'',textContent:'',classList:{add(){},remove(){},toggle(){},contains(){return false}},addEventListener(){},setAttribute(){},contains(){return true},focus(){},getBoundingClientRect(){return {left:0,top:0,width:760,height:480}}});return nodes.get(k);}
 let htmlWrites=0,clock=0,id=0,saves=0;const frames=new Map(),timers=new Map();
 const app={set innerHTML(v){htmlWrites++;},querySelector:node,addEventListener(){},removeEventListener(){}};
-const context={window:{B0LabNavigation:M,addEventListener(){},removeEventListener(){}},performance:{now:()=>clock},matchMedia:()=>({matches:false}),requestAnimationFrame:f=>{frames.set(++id,f);return id;},cancelAnimationFrame:n=>frames.delete(n),setTimeout:f=>{timers.set(++id,f);return id;},clearTimeout:n=>timers.delete(n)};
+const context={window:{B0LabNavigation:M,B0LabDialogue:require('../lab-dialogue.js'),addEventListener(){},removeEventListener(){}},performance:{now:()=>clock},matchMedia:()=>({matches:false}),requestAnimationFrame:f=>{frames.set(++id,f);return id;},cancelAnimationFrame:n=>frames.delete(n),setTimeout:f=>{timers.set(++id,f);return id;},clearTimeout:n=>timers.delete(n)};
 vm.runInNewContext(fs.readFileSync(require.resolve('../lab-navigation.js'),'utf8').replace('return {dispose};','return {dispose,act,walkTo,click,down,move,up,state:()=>({camera,companion,s})};'),context);
 function finish(){let limit=0;while(frames.size){assert.ok(limit++<100,'animation must finish');clock+=250;const pending=[...frames.values()];frames.clear();pending.forEach(f=>f(clock));}}
 const state=M.fresh();state.cleared.practice=true;
@@ -14,20 +14,21 @@ g.walkTo('practice');finish();assert.equal(g.state().camera.z,80);assert.equal(M
 g.walkTo('storage');assert.doesNotMatch(node('.lab-actions').innerHTML,/data-lab="enter-/,'previous door actions disappear while walking to a new destination');finish();assert.equal(state.camera.z,-320);assert.ok(state.barrierTriggered,'the shutter descends after entering the corridor');
 assert.equal(state.powerOut,true,'stepping into the corridor records the outage');
 assert.match(node('.lab-notice').innerHTML,/뭔가 밟았어/,'the player notices the floor cover before the announcement');
+g.state().camera.z=-80; // Ask beside the plate, rather than beside the storage door.
 g.act('robot');
 assert.match(node('.lab-notice').innerHTML,/student.*왜 미리 말 안 해줬어/s,'the boy challenges B-0 after the outage');
 const outageTimers=[...timers.values()];timers.clear();outageTimers.forEach(f=>f());
 assert.match(node('.lab-notice').innerHTML,/왜 미리 말 안 해줬어/,'the delayed announcement must not overwrite an active conversation');
-g.act('power-talk-next');assert.match(node('.lab-notice').innerHTML,/robot.*저도 몰랐습니다/s);
+g.act('talk-next');assert.match(node('.lab-notice').innerHTML,/robot.*저도 몰랐습니다/s);
 g.act('robot');assert.match(node('.lab-notice').innerHTML,/저도 몰랐습니다/,'talk button resumes the current line');
-g.act('power-talk-next');assert.match(node('.lab-notice').innerHTML,/앞은 같이 살펴보자/);
-g.act('power-talk-close');assert.equal(state.powerTalked,true);assert.equal(node('.lab-notice').hidden,true);
+g.act('talk-next');assert.match(node('.lab-notice').innerHTML,/앞은 같이 살펴보자/);
+g.act('talk-close');assert.equal(state.powerTalked,true);assert.equal(node('.lab-notice').hidden,true);
 assert.equal(M.restore(state).powerTalked,true,'the completed conversation survives a reload');
-g.act('robot');assert.match(node('.lab-notice').innerHTML,/함께 살펴보겠습니다/);
+g.act('robot');assert.match(node('.lab-notice').innerHTML,/이 판을 밟아서/);g.act('talk-close');
 state.powerTalked=false;g.act('robot');g.act('turn-left');finish();
-assert.doesNotMatch(node('.lab-actions').innerHTML,/power-talk-next/,'walking or turning clears interrupted conversation buttons');
+assert.doesNotMatch(node('.lab-actions').innerHTML,/talk-next/,'walking or turning clears interrupted conversation buttons');
 g.act('robot');assert.match(node('.lab-notice').innerHTML,/왜 미리 말 안 해줬어/,'an interrupted conversation can be restarted');
-g.act('power-talk-next');g.act('power-talk-next');g.act('power-talk-close');
+g.act('talk-next');g.act('talk-next');g.act('talk-close');
 assert.ok(g.state().companion.z>=M.bound(state,0,-9999).z,'B-0 cannot stand beyond a closed barrier');
 M.returned(state,'mirror');state.cleared.storage=true;state.keyboxOpen=true;
 g.act('upstairs');finish();
@@ -35,8 +36,12 @@ assert.equal(state.floor,1);assert.ok(g.state().camera.height>0,'the player take
 const rejectDelay=[...timers.values()];timers.clear();rejectDelay.forEach(f=>f());finish();
 assert.equal(g.state().camera.z,-1695);assert.equal(g.state().camera.height,0,'rejection returns the player to the foot of the stairs');
 assert.match(node('.lab-notice').innerHTML,/밀려 내려왔어/);
+assert.equal(M.restore(state).stairRejected,true,'the rejected stair attempt survives reload');
+state.powerTalked=false;g.act('robot');assert.match(node('.lab-notice').innerHTML,/계단에서 왜 자꾸 튕기는/,'an unread outage dialogue must not override the current stair location');
+g.act('talk-next');assert.match(node('.lab-notice').innerHTML,/열쇠가 있어야/);g.act('talk-close');
 const writes=htmlWrites;g.act('take-key');assert.ok(state.keyTaken);assert.equal(htmlWrites,writes,'picking up a key must not rebuild the corridor or replace B-0');
-g.act('unlock-stairs');g.act('upstairs');finish();assert.equal(state.floor,2);assert.equal(state.companion.floor,2);assert.equal(M.groundAt(state.companion.z),360);
+g.walkTo('stairs');finish();g.act('robot');g.act('talk-next');g.act('talk-next');assert.match(node('.lab-notice').innerHTML,/우리가 주운 열쇠/);g.act('talk-close');
+g.act('unlock-stairs');g.act('robot');g.act('talk-next');assert.match(node('.lab-notice').innerHTML,/차단이 해제/);g.act('talk-close');g.act('upstairs');finish();assert.equal(state.floor,2);assert.equal(state.companion.floor,2);assert.equal(M.groundAt(state.companion.z),360);
 g.act('downstairs');finish();assert.equal(state.floor,1);assert.equal(M.groundAt(state.companion.z),0);assert.ok(state.stairsUnlocked);
 g.dispose();assert.equal(frames.size,0);assert.equal(timers.size,0);assert.ok(saves>5);
 const edge=M.fresh();edge.cleared={practice:true,storage:true,access:true,mirror:true};edge.camera.z=-1610;
