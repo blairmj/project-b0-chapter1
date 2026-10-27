@@ -1,6 +1,6 @@
 (function(){
   'use strict';
-  window.startChapterThree=function({app,portrait,onBack,onNext,onCorridor,onMirrorBack,onHome,showCompleted=false,preview=false,arrived=false}){
+  window.startChapterThree=function({app,portrait,onBack,onNext,onCorridor,onMirrorBack,onHome,showCompleted=false,preview=false,arrived=false,entryRoom=null}){
     const SPACE=1.95;
     const M=window.B0RoomThree,storage=preview?sessionStorage:localStorage,key='project-b0-room3-v1';
     let s;try{s=M.restore(JSON.parse(storage.getItem(key)));}catch{s=M.fresh();}
@@ -8,9 +8,10 @@
     const helperPosition=()=>({x:-195,z:s.shelfZ+(s.shelfZ>=0?-90:90)});
     let robot=s.helper?helperPosition():{x:120,z:-190},timers=[],mirrorView=null;
     if(typeof location!=='undefined'&&new URLSearchParams(location.search).get('room')==='mirror')s.phase='mirror';
-    else if(onCorridor&&!showCompleted&&['gate','complete'].includes(s.phase))s.phase='room';
+    else if((entryRoom==='access'&&s.phase==='mirror')||(onCorridor&&!showCompleted&&['gate','complete'].includes(s.phase)))s.phase='room';
     function mirrorUrl(active){if(typeof location==='undefined')return;const url=new URL(location.href);if(active)url.searchParams.set('room','mirror');else url.searchParams.delete('room');history.replaceState(null,'',url);}
-    const intro=[['student','기록 보관실이네. 출구에 관한 기록도 있을까?'],['robot','제 지도에는 이곳에 시설 출입 기록을 보관한다고 나옵니다.'],['student','지금도 그런지는 직접 봐야겠지.'],['robot','네. 함께 확인해 보겠습니다.']];
+    const carryingMemory=window.B0Education?.read(storage).memoryTaken===true&&!s.diaryRead;
+    const intro=carryingMemory?[['student','기록 보관실이네. 실습실에서 찾은 메모리를 여기서 열어 볼 수 있을까?'],['robot','기록을 열람하던 공간으로 표시되어 있습니다. 지금 사용할 수 있는 장치는 직접 확인해야 합니다.'],['student','메모리도 확인하고, 나갈 길도 찾아보자.'],['robot','네. 함께 확인해 보겠습니다.']]:[['student','기록 보관실이네. 출구에 관한 기록도 있을까?'],['robot','제 지도에는 이곳에 시설 출입 기록을 보관한다고 나옵니다.'],['student','지금도 그런지는 직접 봐야겠지.'],['robot','네. 함께 확인해 보겠습니다.']];
     const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const b=(label,action,cls='')=>`<button type="button" data-c3="${action}" class="${cls}">${label}</button>`;
     const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -225,6 +226,6 @@
       s.mirror={...window.B0Mirror.restore(s.mirror),phase:'complete'};
       M.finish(s);M.note(s,'temporary-skip');mirrorUrl(false);save();
     }
-    app.addEventListener('click',click);window.addEventListener('resize',updateCamera);render();return {dispose,jumpToEnd};
+    app.addEventListener('click',click);window.addEventListener('resize',updateCamera);render();if(entryRoom==='access')save();return {dispose,jumpToEnd};
   };
 })();

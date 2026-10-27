@@ -116,3 +116,11 @@ console.log('PASS: direct drag/orbit, walk-climb camera above fixed crate, desce
 const placedBeforeSkip=JSON.stringify(game.state().s.boxes);game.jumpToEnd();
 assert.equal(M.restore(game.state().s).phase,'complete');assert.equal(JSON.stringify(game.state().s.boxes),placedBeforeSkip);
 console.log('PASS: temporary lesson jump reaches a restorable ending without moving crates');
+
+const finishedSave=JSON.stringify(game.state().s);storage.getItem=()=>finishedSave;
+const revisit=context.window.startChapterTwo({app,portrait:()=>'',onBack(){},preview:true,visit:true});
+assert.equal(revisit.state().s.phase,'room');assert.equal(revisit.state().s.completed,true);
+assert.equal(JSON.stringify(revisit.state().s.boxes),placedBeforeSkip);
+assert.match(app.innerHTML,/sf-cargo-world/,'review destination opens the physical room, not its ending');
+assert.equal(M.restore(revisit.state().s).completed,true);
+console.log('PASS: completed cargo revisits retain crates and completion while opening the actual room');

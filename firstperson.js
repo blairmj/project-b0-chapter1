@@ -30,7 +30,7 @@ let faceId=0, talkTimer, camera={x:0,y:0}, drag=null, suppressClick=false, roomV
 let chapterTwo,chapterThree,chapterFour,hallView,educationView;
 const NAV_KEY='project-b0-lab-navigation-v1';
 function readProgress(key){try{return JSON.parse(progressStore.getItem(key));}catch{return null;}}
-function roomProgress(){const two=readProgress('project-b0-room2-v1'),three=readProgress('project-b0-room3-v1');return {practice:state.phase==='escaped',education:readProgress('project-b0-education-v1')?.memoryTaken===true,storage:two?.phase==='complete',access:['gate','mirror','complete'].includes(three?.phase),mirror:three?.phase==='complete'||three?.mirror?.phase==='complete'};}
+function roomProgress(){const two=readProgress('project-b0-room2-v1'),three=readProgress('project-b0-room3-v1');return {practice:state.phase==='escaped',education:readProgress('project-b0-education-v1')?.memoryTaken===true,storage:two?.completed===true||two?.phase==='complete',access:['gate','mirror','complete'].includes(three?.phase)&&Math.abs(three?.shelfZ||0)>=150&&three?.realDoorOpen===true,mirror:three?.phase==='complete'||three?.mirror?.phase==='complete'};}
 function loadNavigation(){
   const raw=readProgress(NAV_KEY),n=window.B0LabNavigation.restore(raw);window.B0LabNavigation.merge(n,roomProgress());
   // Existing players already in the final room keep their checkpoint after the map update.
@@ -53,27 +53,31 @@ function showHall(from,completed=true,arriving=false){
 function enterFromHall(id,arriving=false){
   if(!window.B0LabNavigation.canEnter(navigation,id))return;
   if(!arriving&&window.B0RoomTransit){window.B0RoomTransit.cross(app,()=>enterFromHall(id,true));return;}
-  if(id==='practice'){stopAdventure();markRoom();state.chapter=1;save();chapterUrl(1);enterRoom(false,true);panTo(167,-5);setZoom(1);return;}
+  if(id==='practice'){enterPracticeVisit();panTo(167,-5);setZoom(1);return;}
   if(id==='education'){enterEducation();return;}
-  if(id==='storage'){enterChapterTwo();return;}
+  if(id==='storage'){enterChapterTwo(true);return;}
   if(id==='access'){enterChapterThree('access',true);return;}
   if(id==='mirror'){enterChapterThree('mirror',true);return;}
   if(id==='central')enterChapterFour(true);
 }
 function chapterUrl(number){if(typeof location==='undefined')return;const url=new URL(location.href);url.searchParams.delete('area');if(number!==3)url.searchParams.delete('room');if(number===1)url.searchParams.delete('chapter');else url.searchParams.set('chapter',String(number));history.replaceState(null,'',url);}
+function enterPracticeVisit(){
+  stopAdventure();markRoom();state.chapter=1;if(state.phase==='intro')state.phase='room';save();chapterUrl(1);
+  navigation.room='practice';saveNavigation();const url=new URL(location.href);url.searchParams.set('room','practice');history.replaceState(null,'',url);enterRoom(false,true);
+}
 function enterEducation(){
   stopAdventure();markRoom();navigation.room='education';saveNavigation();state.chapter=2;save();chapterUrl(2);
   const url=new URL(location.href);url.searchParams.set('room','education');history.replaceState(null,'',url);
   educationView=window.startEducationRoom({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),onHome:campaignHome,onBack:done=>showHall('education',done)});
 }
-function enterChapterTwo(){
+function enterChapterTwo(visit=false){
   educationView?.dispose();educationView=null;
   markRoom();
   chapterFour?.dispose();chapterFour=null;
   roomView?.dispose();roomView=null;chapterTwo?.dispose();chapterThree?.dispose();chapterThree=null;
   token++;clearTimeout(timer);clearTimeout(speechTimer);clearTimeout(talkTimer);cancelAnimationFrame(walkFrame);moving=false;suppressClick=false;
   state.chapter=2;save();chapterUrl(2);
-  chapterTwo=window.startChapterTwo({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),onNext:()=>showHall('storage'),onHome:campaignHome,onBack:()=>showHall('storage',false)});
+  chapterTwo=window.startChapterTwo({app,portrait,visit,preview:location.pathname.endsWith('/preview-v2.html'),onNext:()=>showHall('storage'),onHome:campaignHome,onBack:()=>showHall('storage',false)});
 }
 function enterChapterThree(view='access',arrived=false){
   educationView?.dispose();educationView=null;
@@ -83,11 +87,11 @@ function enterChapterThree(view='access',arrived=false){
   roomView?.dispose();roomView=null;chapterTwo?.dispose();chapterTwo=null;chapterThree?.dispose();
   token++;clearTimeout(timer);clearTimeout(speechTimer);clearTimeout(talkTimer);cancelAnimationFrame(walkFrame);moving=false;suppressClick=false;
   state.chapter=3;save();chapterUrl(3);
-  chapterThree=window.startChapterThree({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),arrived,onBack:()=>showHall('access',false),onMirrorBack:()=>showHall('mirror',false),onNext:()=>showHall('mirror'),onCorridor:()=>showHall('access'),showCompleted:view==='summary',onHome:campaignHome});
+  chapterThree=window.startChapterThree({app,portrait,entryRoom:view,preview:location.pathname.endsWith('/preview-v2.html'),arrived,onBack:()=>showHall('access',false),onMirrorBack:()=>showHall('mirror',false),onNext:()=>showHall('mirror'),onCorridor:()=>showHall('access'),showCompleted:view==='summary',onHome:campaignHome});
 }
 function enterChapterFour(arrived=false){
   educationView?.dispose();educationView=null;
-  if(!navigation.stairsUnlocked){navigation.floor=1;navigation.camera={x:0,z:window.B0LabNavigation.bound(navigation,0,-1665).z,yaw:0,pitch:-4};showHall();return;}
+  if(!navigation.stairsUnlocked&&!(navigation.reviewMode&&navigation.floor===2)){navigation.floor=1;navigation.camera={x:0,z:window.B0LabNavigation.bound(navigation,0,-1665).z,yaw:0,pitch:-4};showHall();return;}
   markRoom();
   roomView?.dispose();roomView=null;chapterTwo?.dispose();chapterTwo=null;chapterThree?.dispose();chapterThree=null;chapterFour?.dispose();
   token++;clearTimeout(timer);clearTimeout(speechTimer);clearTimeout(talkTimer);cancelAnimationFrame(walkFrame);moving=false;suppressClick=false;
@@ -175,9 +179,10 @@ function campaignHome(){
   app.innerHTML=`<main class="awakening campaign-home"><div class="face" role="img" aria-label="함께 탈출할 AI 로봇 B-0">${portrait()}</div><div class="wake-controls"><h1>PROJECT B-0</h1><p class="campaign-tagline">모르는 로봇과, 함께 길을 찾는 모험.</p><div class="campaign-buttons">${btn('처음부터 시작','campaign-start','primary')}${saved?btn('이어하기','campaign-continue','secondary'):''}</div>${saved?`<small class="muted">${chapter}차시 진행이 저장되어 있습니다.</small>`:''}</div></main>`;
 }
 function resumeAdventure(chapter=state.chapter||1){
-  if(navigation.mode==='hall'&&navigation.cleared.practice){showHall();return;}
+  if(navigation.mode==='hall'&&(navigation.cleared.practice||navigation.reviewMode)){showHall();return;}
+  if(new URLSearchParams(location.search).get('room')==='practice'||navigation.room==='practice'){enterPracticeVisit();return;}
   if(new URLSearchParams(location.search).get('room')==='education'||navigation.room==='education'){enterEducation();return;}
-  if(chapter===4){enterChapterFour();return;}if(chapter===3){enterChapterThree(new URLSearchParams(location.search).get('room')==='mirror'?'mirror':'access');return;}if(chapter===2){enterChapterTwo();return;}
+  if(chapter===4){enterChapterFour();return;}if(chapter===3){enterChapterThree(new URLSearchParams(location.search).get('room')==='mirror'||readProgress('project-b0-room3-v1')?.phase==='mirror'?'mirror':'access');return;}if(chapter===2){enterChapterTwo();return;}
   state.chapter=1;save();if(state.phase==='intro')opening();else enterRoom();
 }
 function startAdventure(){
@@ -188,7 +193,8 @@ function startAdventure(){
 }
 function boot() {
   const requested=typeof location!=="undefined"?new URLSearchParams(location.search).get('chapter'):null;
-  if(typeof location!=='undefined'&&new URLSearchParams(location.search).get('area')==='hall'&&Object.values(navigation.cleared).some(Boolean)){showHall();return;}
+  if(typeof location!=='undefined'&&new URLSearchParams(location.search).get('area')==='hall'&&(Object.values(navigation.cleared).some(Boolean)||navigation.reviewMode)){showHall();return;}
+  if(typeof location!=='undefined'&&new URLSearchParams(location.search).get('room')==='practice'){enterPracticeVisit();return;}
   if(['1','2','3','4'].includes(requested)){navigation.mode='room';if(new URLSearchParams(location.search).get('room')!=='education')delete navigation.room;resumeAdventure(Number(requested));}else campaignHome();
 }
 function opening() {
@@ -451,5 +457,20 @@ app.addEventListener("click",e=>{
 });
 window.addEventListener("resize",()=>panTo(camera.x,camera.y));
 app.addEventListener("keydown",e=>{if(e.target.id==="code"&&e.key==="Enter"){e.preventDefault();submitCode();}});
-window.B0CampaignUI={location:()=>({floor:app.querySelector('.lab-game')?navigation.floor:state.chapter===4?2:1,z:navigation.camera.z,stairsUnlocked:navigation.stairsUnlocked,current:app.querySelector('.b0-location')?.textContent||'출입 관리실'})};
+function travelReviewLocation(id){
+  const rooms=['practice','education','storage','access','mirror','central'];
+  if(!rooms.includes(id)&&id!=='hall'&&id!=='hall2')return;
+  window.B0RoomTransit?.cancel();stopAdventure();navigation.reviewMode=true;navigation.companion=null;delete navigation.room;
+  navigation.floor=(id==='hall2'||id==='central')?2:1;
+  navigation.camera={x:0,z:navigation.floor===2?-2350:id==='hall'?80:window.B0LabNavigation.doors[id].z,yaw:0,pitch:-4};
+  if(id==='hall'||id==='hall2'){showHall();return;}
+  // Review travel bypasses only entry distance/access; it never completes a puzzle or grants an item.
+  if(id==='practice'){enterPracticeVisit();return;}
+  if(id==='education'){enterEducation();return;}
+  if(id==='storage'){enterChapterTwo(true);return;}
+  if(id==='access'){enterChapterThree('access',true);return;}
+  if(id==='mirror'){enterChapterThree('mirror',true);return;}
+  enterChapterFour(true);
+}
+window.B0CampaignUI={travel:travelReviewLocation,location:()=>({floor:app.querySelector('.lab-game')?navigation.floor:state.chapter===4?2:1,z:navigation.camera.z,stairsUnlocked:navigation.stairsUnlocked,current:app.querySelector('.b0-location')?.textContent||'출입 관리실'})};
 boot();

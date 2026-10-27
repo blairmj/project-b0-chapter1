@@ -86,3 +86,11 @@ for(let i=0;i<6;i++)story.act('talk-next');
 assert.equal(story.state().s.axiomHeard,true);assert.equal(story.state().busy,false);assert.equal(story.state().s.memoryConnected,false);
 story.act('close-modal');story.select('shelf');flush();assert.match(node('.c3-actions').innerHTML,/밀어 보기/);
 console.log('PASS: computer power, memory inventory guard, hidden diary, single close, AXIOM broadcast and immediate puzzle interaction');
+
+const mirrorSave={...M.fresh(),phase:'mirror',mirror:{phase:'approach',triangle:0}};
+storage.getItem=()=>JSON.stringify(mirrorSave);
+const explicitArchive=context.window.startChapterThree({app,portrait:()=>'',onBack(){},preview:true,arrived:true,onCorridor(){},entryRoom:'access'});
+assert.equal(explicitArchive.state().s.phase,'room');assert.match(app.innerHTML,/c3-world/);
+assert.equal(explicitArchive.state().s.mirror.phase,'approach','switching rooms retains mirror puzzle progress');
+assert.equal(JSON.parse(saved).phase,'room','reloading an explicit archive visit must stay in the archive');
+console.log('PASS: explicit archive travel overrides a saved mirror view without erasing the mirror state');

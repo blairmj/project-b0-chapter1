@@ -2,7 +2,7 @@
 (function(root){
   'use strict';
   const sizes={wide:{w:118,d:92,h:62,name:'넓은 상자'},small:{w:76,d:68,h:56,name:'작은 상자'}};
-  const fresh=()=>({version:1,boxes:{wide:{x:-175,z:-60,on:null},small:{x:160,z:125,on:null}},assisted:null,ventOpen:false,fakeWindowOpen:false,cabinetOpen:false,windowOpen:false,phase:'room',hint:0,observations:{seen:{},last:''},logs:[]});
+  const fresh=()=>({version:1,boxes:{wide:{x:-175,z:-60,on:null},small:{x:160,z:125,on:null}},assisted:null,ventOpen:false,fakeWindowOpen:false,cabinetOpen:false,windowOpen:false,phase:'room',completed:false,hint:0,observations:{seen:{},last:''},logs:[]});
   const other=id=>id==='wide'?'small':'wide';
   function top(s,id){return sizes[id].h+(s.boxes[id].on?sizes[s.boxes[id].on].h:0);}
   function position(s,id){return s.boxes[id].on?s.boxes[s.boxes[id].on]:s.boxes[id];}
@@ -44,7 +44,7 @@
   }
   function openWindow(s,id){if(reach(s,id)!=='ready')return false;s.windowOpen=true;s.logs.push({action:'window'});return true;}
   function exit(s,id){if(!s.windowOpen||reach(s,id)!=='ready')return false;s.phase='ledge';s.logs.push({action:'climb-out'});return true;}
-  function finish(s){if(s.phase!=='ledge')return false;s.phase='complete';s.assisted=null;s.logs.push({action:'help-b0'});return true;}
+  function finish(s){if(s.phase!=='ledge')return false;s.phase='complete';s.completed=true;s.assisted=null;s.logs.push({action:'help-b0'});return true;}
   function restore(raw){
     const f=fresh();if(!raw||raw.version!==1)return f;
     for(const id of Object.keys(sizes)){const b=raw.boxes?.[id];if(!b||!Number.isFinite(b.x)||!Number.isFinite(b.z)||Math.abs(b.x)>300||Math.abs(b.z)>300)return f;f.boxes[id]={x:b.x,z:b.z,on:id==='small'&&b.on==='wide'?'wide':null};}
@@ -53,7 +53,7 @@
       outer:for(let x=-220;x<=220;x+=40)for(let z=-230;z<=190;z+=40){const d=destination(f,'small',x,z);if(d.ok){f.boxes.small={x:d.x,z:d.z,on:null};break outer;}}
     }
     for(const k of ['ventOpen','fakeWindowOpen','cabinetOpen','windowOpen'])f[k]=raw[k]===true;
-    f.phase=['room','ledge','complete'].includes(raw.phase)?raw.phase:'room';
+    f.phase=['room','ledge','complete'].includes(raw.phase)?raw.phase:'room';f.completed=raw.completed===true||f.phase==='complete';
     f.hint=Math.max(0,Math.min(4,Number(raw.hint)||0));f.logs=Array.isArray(raw.logs)?raw.logs.slice(-100):[];
     if(raw.observations&&typeof raw.observations==='object')f.observations={seen:{...raw.observations.seen},last:raw.observations.last};return f;
   }

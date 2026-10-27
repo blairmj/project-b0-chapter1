@@ -24,7 +24,7 @@
     function say(who,text,next=false){speech.hidden=false;speech.innerHTML=`<div class="speech ${who}"><b>${who==='robot'?'B-0':'나'}</b><p>${esc(text)}</p></div>${next?b('다음','intro-next','quiet'):''}`;const el=app.querySelector('.mr-robot');el.classList.toggle('speaking',who==='robot');later(()=>el.classList.remove('speaking'),Math.min(4500,text.length*80));}
     function render(){
       const approaching=s.phase==='approach',glassUp=approaching&&s.line<2||M.solved(s);
-      app.innerHTML=`<main class="game c2-game mr-game">${window.B0UI?.header({place:`거울 관찰실`,namespace:"mr",reset:"home",zoomClass:"mr-zoom",active:true})||""}
+      app.innerHTML=`<main class="game c2-game mr-game">${window.B0UI?.header({place:`유리 관찰실`,namespace:"mr",reset:"home",zoomClass:"mr-zoom",active:true})||""}
       <section class="c2-stage mr-stage" tabindex="0" aria-label="유리벽으로 나뉜 관찰실. 빈 공간을 끌어 둘러보고 물건을 눌러 살펴보세요."><div class="c2-world mr-world">
       ${['front','left','right','back'].map(f=>`<div class="c2-wall c2-wall-${f}"><div class="c3-conduit"></div><div class="c2-light"></div></div>`).join('')}<div class="c2-floor"></div><div class="c2-ceiling"></div><div class="sf-optical-apparatus" aria-hidden="true"></div>
       <div class="mr-room-sign" aria-hidden="true"><small>VISUAL PERCEPTION LAB</small><strong>시각 인식 관찰실</strong></div>

@@ -18,13 +18,15 @@
     for(const id of ['keyboxOpen','keyTaken','stairsUnlocked','stairRejected','powerTalked'])s[id]=raw[id]===true;
     if(s.stairsUnlocked)s.keyTaken=true;
     s.floor=raw.floor===2&&s.stairsUnlocked?2:1;s.mode=raw.mode==='room'?'room':'hall';
+    s.reviewMode=raw.reviewMode===true;
+    if(raw.floor===2&&s.reviewMode)s.floor=2;
     const c=raw.camera||{};s.camera={x:Number.isFinite(c.x)?Math.max(-180,Math.min(180,c.x)):0,z:Number.isFinite(c.z)?c.z:80,yaw:Number.isFinite(c.yaw)?c.yaw:0,pitch:Number.isFinite(c.pitch)?Math.max(-35,Math.min(45,c.pitch)):-4};
     const p=bound(s,s.camera.x,s.camera.z);s.camera.x=p.x;s.camera.z=p.z;
     s.barrierTriggered=raw.barrierTriggered===true||s.camera.z<=-60||s.cleared.storage;
     s.powerOut=raw.powerOut===true||(raw.powerOut===undefined&&(s.barrierTriggered||s.cleared.access||s.cleared.mirror));
     s.emergencyOn=s.powerOut&&raw.emergencyOn===true;
     if(raw.companion&&Number.isFinite(raw.companion.x)&&Number.isFinite(raw.companion.z)&&raw.companion.floor===s.floor)s.companion=companionSpot(raw.companion.x,raw.companion.z,s.floor);
-    if(raw.room==='education')s.room='education';
+    if(['education','practice'].includes(raw.room))s.room=raw.room;
     s.visited=Array.isArray(raw.visited)?raw.visited.filter(id=>doors[id]):[];return s;
   }
   function merge(s,p){for(const id of Object.keys(s.cleared))s.cleared[id]||=p[id]===true;return s;}
@@ -34,7 +36,7 @@
     const min=!s.cleared.mirror?-1460:-1700;
     return {x,z:Math.max(min,Math.min(160,z))};
   }
-  function canEnter(s,id){if(['practice','education','storage','access','mirror'].includes(id))return true;if(id==='central')return s.floor===2&&s.stairsUnlocked;return false;}
+  function canEnter(s,id){if(['practice','education','storage','access','mirror'].includes(id))return true;if(id==='central')return s.floor===2&&(s.stairsUnlocked||s.reviewMode);return false;}
   function returned(s,from,completed=true){
     // Backtracking uses the same doorway without marking its puzzle complete.
     // Solved rooms retain their distinct exits (window / hidden passage).
@@ -49,7 +51,7 @@
     if(from==='education'){s.cleared.education=true;s.camera.z=doors.education.z;}
     if(from==='storage'){s.cleared.storage=true;s.camera.z=-790;}
     if(from==='access'){s.cleared.access=true;s.camera.z=-1100;}
-    if(from==='mirror'){s.cleared.access=s.cleared.mirror=true;s.camera.z=-1610;s.camera.yaw=-22;}
+    if(from==='mirror'){s.cleared.mirror=true;s.camera.z=-1610;s.camera.yaw=-22;}
     if(from==='central'){s.floor=2;s.camera.z=-2350;s.camera.yaw=0;}
     if(from==='practice')s.cleared.practice=true;
     return s;

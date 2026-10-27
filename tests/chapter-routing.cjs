@@ -31,3 +31,25 @@ console.log("PASS: temporary lesson controls preserve corridor lesson and room r
 run('navigation.cleared.practice=false;navigation.cleared.storage=true;showHall();boot()');
 assert.equal(hall.state.mode,'hall','reloading a corridor reached from a direct lesson entry must preserve the corridor');
 console.log('PASS: direct-lesson corridor checkpoint survives reload');
+
+// Location review moves without clearing puzzle saves or manufacturing keys.
+context.window.startEducationRoom=options=>({dispose(){disposed++;}});
+run('startAdventure()');
+const originalRooms=[...rooms.entries()].filter(([key])=>key.includes('room2')||key.includes('room3'));
+run('window.B0CampaignUI.travel("education")');assert.equal(new URL(location.href).searchParams.get('room'),'education');
+run('window.B0CampaignUI.travel("central")');assert.equal(JSON.parse(stored).chapter,4);assert.equal(four.preview,true);
+let reviewNav=JSON.parse(rooms.get('project-b0-lab-navigation-v1'));
+assert.equal(reviewNav.keyTaken,false);assert.equal(reviewNav.stairsUnlocked,false);assert.equal(reviewNav.reviewMode,true);assert.equal(reviewNav.floor,2);
+assert.equal(M.restore(reviewNav).floor,2,'temporary floor survives reload without a real key');
+run('window.B0CampaignUI.travel("hall2")');assert.equal(hall.state.floor,2);assert.equal(hall.state.keyTaken,false);
+run('window.B0CampaignUI.travel("mirror")');run('window.B0CampaignUI.travel("hall")');assert.equal(hall.state.cleared.access,false,'visiting the mirror room for review must not solve the archive');assert.equal(hall.state.floor,1);run('boot()');assert.equal(hall.state.mode,'hall');
+run('window.B0CampaignUI.travel("access")');assert.equal(new URL(location.href).searchParams.get('chapter'),'3');assert.equal(three.arrived,true);
+assert.deepEqual([...rooms.entries()].filter(([key])=>key.includes('room2')||key.includes('room3')),originalRooms);
+run('startAdventure()');assert.equal(JSON.parse(rooms.get('project-b0-lab-navigation-v1')).reviewMode,undefined);
+console.log('PASS: temporary location travel preserves puzzle saves and inventory, floor checkpoint and restart');
+
+const practiceViews=[];context.openPractice=(...args)=>practiceViews.push(args);
+run('enterRoom=(...args)=>openPractice(...args);window.B0CampaignUI.travel("practice");boot()');
+assert.equal(new URL(location.href).searchParams.get('room'),'practice');assert.equal(practiceViews.length,2);
+assert.equal(practiceViews[0][1],true);assert.equal(practiceViews[1][1],true,'a first-room revisit survives refresh without falling into an ending');
+console.log('PASS: first room review and reload retain the real room view');

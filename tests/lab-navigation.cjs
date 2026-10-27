@@ -50,3 +50,5 @@ for(const id of ['storage','access','mirror','central']){
   const same=M.restore(back);assert.equal(same.camera.z,back.camera.z,'doorway position survives reload');
 }
 console.log('PASS: every room backtracks through its own doorway without granting completion');
+
+const mirrorOnly=M.fresh();M.returned(mirrorOnly,'mirror');assert.equal(mirrorOnly.cleared.mirror,true);assert.equal(mirrorOnly.cleared.access,false,'a separate mirror visit must not fabricate archive completion');

@@ -1,9 +1,10 @@
 (function(){
   'use strict';
-  window.startChapterTwo=function({app,portrait,onBack,onNext,onHome,preview=false}){
+  window.startChapterTwo=function({app,portrait,onBack,onNext,onHome,preview=false,visit=false}){
     const SPACE=1.95;
     const M=window.B0RoomTwo,storage=preview?sessionStorage:localStorage,key='project-b0-room2-v1';
     let s;try{s=M.restore(JSON.parse(storage.getItem(key)));}catch{s=M.fresh();}
+    if(visit&&s.phase==='complete')s.phase='room';
     let camera={yaw:-48,pitch:-12,zoom:1},standing=null,selection=null,mode=null,pointer=null,suppress=false,dead=false;
     let room,stage,world,actionbar,speech,helpText,focal=330,animation=0,busy=false;
     let robot={x:-120,z:-145},timers=[],lift=0,viewHeight=0,heightFrame=0;
@@ -18,8 +19,8 @@
     }
     function render(){
       if(s.phase==='complete'){ending();return;}
-      app.innerHTML=`<main class="game c2-game">${window.B0UI?.header({place:`폐쇄 보관실`,namespace:"c2",reset:"home",zoomClass:"c2-zoom",active:true})||""}
-      <section class="c2-stage" tabindex="0" aria-label="폐쇄 보관실. 빈 공간을 끌거나 방향키로 둘러보세요. 물건을 누르면 조사할 수 있습니다.">
+      app.innerHTML=`<main class="game c2-game">${window.B0UI?.header({place:`물류 보관실`,namespace:"c2",reset:"home",zoomClass:"c2-zoom",active:true})||""}
+      <section class="c2-stage" tabindex="0" aria-label="물류 보관실. 빈 공간을 끌거나 방향키로 둘러보세요. 물건을 누르면 조사할 수 있습니다.">
       <div class="c2-world sf-cargo-world">
         <div class="c2-wall c2-wall-front"><div class="c2-light"></div></div><div class="c2-wall c2-wall-left"><div class="c2-light"></div></div><div class="c2-wall c2-wall-right"><div class="c2-light"></div></div><div class="c2-wall c2-wall-back"><div class="c2-light"></div></div><div class="c2-floor"></div><div class="c2-ceiling"></div><div class="sf-cargo-gantry" aria-hidden="true"><i></i><i></i><span></span></div>
         <button class="c2-entry c2-object" data-object="entry" aria-label="닫힌 입구"><span></span></button>
@@ -348,7 +349,7 @@
     }
     function click(e){const b=e.target.closest('[data-c2]');if(b){e.preventDefault();act(b.dataset.c2);}}
     function dispose(){if(dead)return;dead=true;timers.forEach(clearTimeout);cancelAnimationFrame(animation);cancelAnimationFrame(heightFrame);app.removeEventListener('click',click);window.removeEventListener('resize',updateCamera);app.querySelector('.c2-modal')?.remove();}
-    app.addEventListener('click',click);window.addEventListener('resize',updateCamera);render();
+    app.addEventListener('click',click);window.addEventListener('resize',updateCamera);if(visit)save();render();
     function jumpToEnd(){s.windowOpen=true;s.phase='ledge';M.finish(s);s.logs.push({action:'temporary-skip'});save();}
     return {dispose,jumpToEnd};
   };

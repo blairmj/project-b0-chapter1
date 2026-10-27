@@ -52,3 +52,8 @@
 }
 
 @media(max-width:360px){.b0-hud .zoom-controls button{width:24px}.game>.b0-hud nav>button,.awakening>.b0-hud nav>button{min-width:28px;font-size:9px}.game>.b0-hud .b0-hud-tools>button,.awakening>.b0-hud .b0-hud-tools>button{font-size:7px}.game>.b0-hud .lesson-jump,.awakening>.b0-hud .lesson-jump{font-size:7px!important}}
+/* Temporary destination selector replaces the location label in the same row. */
+.b0-location-control{min-width:0;width:100%}.b0-location-control>h1[hidden]{display:none!important}
+.b0-location-select{display:block;box-sizing:border-box;width:100%;max-width:210px;min-width:0;height:38px;min-height:38px;border:1px dashed #638494;border-radius:6px;background:#142b3a;color:#c9e6ee;padding:5px 20px 5px 7px;font:12px 'B0 Digital',monospace;text-overflow:ellipsis;cursor:pointer}
+.b0-location-select option{background:#132733;color:#e3f4f5;font-size:13px}
+@media(max-width:560px){.b0-location-select{font-size:9px;padding-left:3px;padding-right:12px;height:34px;min-height:34px;border-radius:4px}}
