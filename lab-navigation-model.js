@@ -10,7 +10,7 @@
     outside:{name:'외부 출입구',floor:1,x:-268,z:-1160,yaw:-90},
     central:{name:'중앙관리실',floor:2,x:0,z:-2540,yaw:0}
   };
-  const fresh=()=>({version:1,mode:'hall',floor:1,camera:{x:0,z:80,yaw:0,pitch:-4},cleared:{practice:false,storage:false,access:false,mirror:false},keyboxOpen:false,keyTaken:false,stairsUnlocked:false,stairRejected:false,barrierTriggered:false,powerOut:false,powerTalked:false,companion:null,visited:[]});
+  const fresh=()=>({version:1,mode:'hall',floor:1,camera:{x:0,z:80,yaw:0,pitch:-4},cleared:{practice:false,storage:false,access:false,mirror:false},keyboxOpen:false,keyTaken:false,stairsUnlocked:false,stairRejected:false,barrierTriggered:false,powerOut:false,powerTalked:false,emergencyOn:false,companion:null,visited:[]});
   function restore(raw){
     const s=fresh();if(!raw||raw.version!==1)return s;
     for(const id of Object.keys(s.cleared))s.cleared[id]=raw.cleared?.[id]===true;
@@ -21,6 +21,7 @@
     const p=bound(s,s.camera.x,s.camera.z);s.camera.x=p.x;s.camera.z=p.z;
     s.barrierTriggered=raw.barrierTriggered===true||s.camera.z<=-60||s.cleared.storage;
     s.powerOut=raw.powerOut===true||(raw.powerOut===undefined&&(s.barrierTriggered||s.cleared.access||s.cleared.mirror));
+    s.emergencyOn=s.powerOut&&raw.emergencyOn===true;
     if(raw.companion&&Number.isFinite(raw.companion.x)&&Number.isFinite(raw.companion.z)&&raw.companion.floor===s.floor)s.companion=companionSpot(raw.companion.x,raw.companion.z,s.floor);
     s.visited=Array.isArray(raw.visited)?raw.visited.filter(id=>doors[id]):[];return s;
   }
@@ -50,6 +51,7 @@
     if(from==='practice')s.cleared.practice=true;
     return s;
   }
+  function setEmergency(s,on){if(!s.powerOut)return false;s.emergencyOn=on===true;return true;}
   function takeKey(s){if(s.floor!==1||!s.cleared.mirror||!s.keyboxOpen||s.keyTaken)return false;s.keyTaken=true;return true;}
   function unlock(s){if(!s.keyTaken||s.floor!==1)return false;s.stairsUnlocked=true;return true;}
   function floor(s,n){if(n===2&&!s.stairsUnlocked)return false;s.floor=n===2?2:1;s.companion=null;s.camera={x:0,z:s.floor===2?-2170:-1700,yaw:s.floor===2?0:180,pitch:-4};return true;}
@@ -79,6 +81,6 @@
     return true;
   }
   function groundAt(z){return Math.max(0,Math.min(360,(-z-1810)/308*360));}
-  const api={doors,fresh,restore,merge,bound,canEnter,returned,takeKey,unlock,floor,companionSpot,floorTarget,stepsOnPanel,groundAt};
+  const api={doors,fresh,restore,merge,bound,canEnter,returned,setEmergency,takeKey,unlock,floor,companionSpot,floorTarget,stepsOnPanel,groundAt};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.B0LabNavigation=api;
 })(typeof window!=='undefined'?window:globalThis);

@@ -37,6 +37,7 @@ assert.equal(M.stepsOnPanel({x:0,z:80},{x:0,z:-200}),true);
 assert.equal(M.stepsOnPanel({x:150,z:80},{x:150,z:-200}),false,'walking beside the plate cannot trigger it');
 assert.equal(M.stepsOnPanel({x:0,z:80},{x:0,z:80}),false,'turning in place cannot trip power');
 assert.equal(M.stepsOnPanel({x:-130,z:-60},{x:130,z:-60}),true,'a sideways crossing steps on the actual plate');
+const emergency=M.fresh();assert.equal(M.setEmergency(emergency,true),false);emergency.powerOut=true;assert.ok(M.setEmergency(emergency,true));assert.equal(M.restore(JSON.parse(JSON.stringify(emergency))).emergencyOn,true);M.returned(emergency,'storage',false);assert.equal(emergency.emergencyOn,true,'backtracking retains emergency supply');assert.equal(M.restore({version:1,powerOut:true}).emergencyOn,false,'old saves do not auto-enable light');assert.equal(M.restore({version:1,powerOut:false,emergencyOn:true}).emergencyOn,false);
 console.log('PASS: classroom endcap and physical loose-plate contact');
 
 for(const id of ['storage','access','mirror','central']){

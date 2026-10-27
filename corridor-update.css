@@ -53,3 +53,7 @@
 #app[data-corridor-power="out"] .c2-window-glass{background-image:linear-gradient(#020611b0,#020611b0),url('./assets/lab-corridor-v1.webp')}
 #app[data-corridor-power="out"] :is(.c2-window.open,.c2-outside,.c3-world .c3-observation-frame){background-image:linear-gradient(#020611aa,#020611aa),url('./assets/lab-corridor-v1.webp')}
 #app[data-corridor-power="out"] .c4-story-intro .c4-story-scene{background-image:linear-gradient(#020611aa,#020611aa),url('./assets/lab-corridor-v1.webp')}
+
+/* B-0's manual emergency supply leaves ceiling tubes off. */
+.lab-stage.power-out.emergency-on:not(.webgl-active):before,.lab-stage.power-out.emergency-on:not(.webgl-active):after{opacity:.48}
+.power-out.emergency-on .lab-wall-light{opacity:.85;background:#66c8d7;box-shadow:0 0 28px #62c7dc99}

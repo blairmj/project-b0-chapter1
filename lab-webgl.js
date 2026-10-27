@@ -155,7 +155,7 @@
   function create(canvas,{model,state,onFallback=()=>{}}){
     const gl=canvas.getContext('webgl',{alpha:false,antialias:true,depth:true,preserveDrawingBuffer:false});
     if(!gl)return null;
-    let dead=false,raf=0,last=0,current=null,power=state.powerOut?0:1,shutter=state.barrierTriggered?1:0,keyOpen=state.keyboxOpen?1:0;
+    let dead=false,raf=0,last=0,current=null,power=state.powerOut?0:1,emergency=state.emergencyOn?1:0,shutter=state.barrierTriggered?1:0,keyOpen=state.keyboxOpen?1:0;
     const reduced=()=>root.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const vertex=`attribute vec3 aPosition;attribute vec3 aNormal;attribute vec2 aUV;attribute vec3 aColor;attribute float aKind;attribute float aGlow;
       uniform vec3 uCamera;uniform vec2 uAngle;uniform vec2 uSize;uniform vec2 uOffset;uniform float uFocal;
@@ -165,7 +165,7 @@
         gl_Position=vec4(p.x*2.*uFocal/uSize.x,-p.y*2.*uFocal/uSize.y-uOffset.y*p.z,-1.0004*p.z-2.0004,-p.z);
         vPosition=aPosition;vNormal=aNormal;vUV=aUV;vColor=aColor;vKind=aKind;vGlow=aGlow;vDepth=-p.z;}`;
     const fragment=`precision highp float;uniform sampler2D uMetal;uniform sampler2D uSigns;uniform sampler2D uRobot;uniform sampler2D uWalk;uniform sampler2D uRooms;
-      uniform float uPower;uniform float uTime;uniform float uSpeaking;uniform vec3 uCamera;uniform vec3 uLights[10];
+      uniform float uPower;uniform float uEmergency;uniform float uTime;uniform float uSpeaking;uniform vec3 uCamera;uniform vec3 uLights[10];
       varying vec3 vPosition;varying vec3 vNormal;varying vec2 vUV;varying vec3 vColor;varying float vKind;varying float vGlow;varying float vDepth;
       void main(){vec4 tex=vec4(1.);vec3 color=vColor;float emission=vGlow;
         if(vKind>.5&&vKind<1.5){tex=texture2D(uMetal,vUV);color*=mix(vec3(.57,.65,.71),tex.rgb, .76)*1.48;
@@ -178,12 +178,12 @@
             vec2 m=(vUV-vec2(.495,.352))/vec2(.032,.006+uSpeaking*(.004+.006*abs(sin(uTime*13.))));float mouth=1.-smoothstep(.7,1.,length(m));color=mix(color,vec3(.25,.91,1.),mouth);}
           emission=.22;}
         else if(vKind>4.5){color=texture2D(uRooms,vUV).rgb;emission=.75;}
-        float illumination=mix(.20,.48,uPower),highlight=0.;vec3 n=normalize(vNormal),eye=normalize(uCamera-vPosition);
+        float illumination=mix(.20,.48,uPower)+uEmergency*.18,highlight=0.;vec3 n=normalize(vNormal),eye=normalize(uCamera-vPosition);
         for(int i=0;i<10;i++){vec3 delta=uLights[i]-vPosition;float d=length(delta),falloff=1./(1.+d*d/58000.);vec3 l=normalize(delta);
           illumination+=abs(dot(n,l))*falloff*mix(.008,.22,uPower);highlight+=pow(max(0.,abs(dot(n,normalize(l+eye)))),30.)*falloff*.065*uPower;}
         if(vKind>2.5&&vKind<4.5)illumination=max(illumination,.75);
-        vec3 lit=color*mix(illumination,1.,emission)+vec3(.62,.82,.92)*highlight;
-        float fog=smoothstep(450.,2700.,vDepth)*mix(.78,.56,uPower);lit=mix(lit,mix(vec3(.018,.035,.056),vec3(.065,.105,.145),uPower),fog);
+        vec3 lit=color*mix(illumination,1.,emission)+vec3(.62,.82,.92)*highlight;lit+=color*vec3(.02,.055,.07)*uEmergency;
+        float fog=smoothstep(450.,2700.,vDepth)*(mix(.78,.56,uPower)-uEmergency*.12);lit=mix(lit,mix(vec3(.018,.035,.056),vec3(.065,.105,.145),uPower),fog);
         gl_FragColor=vec4(lit,1.);}`;
     const shaders=[],textures=[],images=[],buffers=[];
     function shader(type,source){const s=gl.createShader(type);shaders.push(s);gl.shaderSource(s,source);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(s));return s;}
@@ -191,7 +191,7 @@
     try{gl.attachShader(program,shader(gl.VERTEX_SHADER,vertex));gl.attachShader(program,shader(gl.FRAGMENT_SHADER,fragment));gl.linkProgram(program);if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(program));}
     catch(error){shaders.forEach(s=>gl.deleteShader(s));gl.deleteProgram(program);throw error;}
     gl.useProgram(program);gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.clearColor(.025,.045,.07,1);
-    const uniforms={};for(const name of ['Camera','Angle','Size','Offset','Focal','Power','Time','Speaking','Lights'])uniforms[name]=gl.getUniformLocation(program,'u'+name+(name==='Lights'?'[0]':''));
+    const uniforms={};for(const name of ['Camera','Angle','Size','Offset','Focal','Power','Emergency','Time','Speaking','Lights'])uniforms[name]=gl.getUniformLocation(program,'u'+name+(name==='Lights'?'[0]':''));
     const attributes=[['Position',3],['Normal',3],['UV',2],['Color',3],['Kind',1],['Glow',1]].map(([name,size])=>({location:gl.getAttribLocation(program,'a'+name),size}));
     function texture(unit,path,repeat=false){
       const t=gl.createTexture();textures.push(t);gl.activeTexture(gl.TEXTURE0+unit);gl.bindTexture(gl.TEXTURE_2D,t);
@@ -245,6 +245,10 @@
         for(let y=-280;y<180;y+=22)quad([-262,y,-1806],[262,y,-1806],[262,y+2,-1806],[-262,y+2,-1806],amber,'stairs');
       }
       for(const l of scene.lights)box(-16,l.y+12.1,l.z-52,32,.8,104,{color:power>.03?[.62+.32*power,.76+.24*power,.85+.15*power]:[.12,.18,.23],glow:power});
+      if(emergency>.01)for(const side of [-1,1])for(const [from,to,up] of [[180,-1800,0],[-2170,-2500,360]])for(let z=from;z>to;z-=250){
+        if(Object.values(model.doors).some(d=>Math.sign(d.x)===side&&Math.abs(d.z-z)<100))continue;
+        box(side<0?-268:264,112-up,z-30,4,7,60,{color:[.18,.52*emergency,.65*emergency],glow:emergency});
+      }
       if(current){
         const c=current.companion,ground=model.groundAt(c.z),theta=-current.camera.yaw*Math.PI/180,right=[Math.cos(theta),0,-Math.sin(theta)];
         const moving=current.walking,w=104,h=156,bob=moving?Math.sin(time*9)*2:0,top=180-ground-h+bob,bottom=180-ground+bob;
@@ -256,6 +260,7 @@
     function render(now){
       if(dead||!current)return;const dt=Math.min(.05,(now-last)/1000||.016);last=now;
       const targetPower=current.lit?1:0;power+=Math.sign(targetPower-power)*Math.min(Math.abs(targetPower-power),dt/(reduced()?.01:2.3));
+      const targetEmergency=state.powerOut&&state.emergencyOn?1:0;emergency+=Math.sign(targetEmergency-emergency)*Math.min(Math.abs(targetEmergency-emergency),dt/(reduced()?.01:1.1));
       const targetShutter=state.barrierTriggered?1:0;shutter+=Math.sign(targetShutter-shutter)*Math.min(Math.abs(targetShutter-shutter),dt/(reduced()?.01:1.2));
       const targetKey=state.keyboxOpen?1:0;keyOpen+=Math.sign(targetKey-keyOpen)*Math.min(Math.abs(targetKey-keyOpen),dt/(reduced()?.01:.5));
       const w=canvas.clientWidth,h=canvas.clientHeight,ratio=Math.min(current.portal?4:(root.devicePixelRatio||1),current.portal?4:1.5,1600/Math.max(w,h)),width=Math.max(1,Math.round(w*ratio)),height=Math.max(1,Math.round(h*ratio));
@@ -264,7 +269,7 @@
       const c=current.camera,f=current.portal?.focal??Math.min(w*.65,h*.6)*c.zoom;
       gl.uniform3f(uniforms.Camera,c.x,-c.height,c.z);gl.uniform2f(uniforms.Angle,c.yaw*Math.PI/180,c.pitch*Math.PI/180);gl.uniform2f(uniforms.Size,w,h);gl.uniform1f(uniforms.Focal,f);
       gl.uniform2f(uniforms.Offset,0,current.portal?.offsetY||0);
-      gl.uniform1f(uniforms.Power,power);gl.uniform1f(uniforms.Time,now/1000);gl.uniform1f(uniforms.Speaking,current.speaking?1:0);gl.uniform3fv(uniforms.Lights,new Float32Array(scene.lights.flatMap(l=>[0,l.y+24,l.z])));
+      gl.uniform1f(uniforms.Power,power);gl.uniform1f(uniforms.Emergency,emergency);gl.uniform1f(uniforms.Time,now/1000);gl.uniform1f(uniforms.Speaking,current.speaking?1:0);gl.uniform3fv(uniforms.Lights,new Float32Array(scene.lights.flatMap(l=>[0,l.y+24,l.z])));
       draw(staticBuffer,scene.data.length);buildDynamic(now/1000);gl.bindBuffer(gl.ARRAY_BUFFER,movingBuffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(dynamic.data),gl.DYNAMIC_DRAW);draw(movingBuffer,dynamic.data.length);
       raf=requestAnimationFrame(render);
     }

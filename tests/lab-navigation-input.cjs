@@ -24,6 +24,7 @@ g.act('robot');assert.match(node('.lab-notice').innerHTML,/저도 몰랐습니�
 g.act('talk-next');assert.match(node('.lab-notice').innerHTML,/앞은 같이 살펴보자/);
 g.act('talk-close');assert.equal(state.powerTalked,true);assert.equal(node('.lab-notice').hidden,true);
 assert.equal(M.restore(state).powerTalked,true,'the completed conversation survives a reload');
+g.act('robot');assert.match(node('.lab-actions').innerHTML,/비상 조명 켜기/);g.act('emergency-light');assert.equal(state.emergencyOn,true);assert.equal(node('.lab-stage').dataset.emergency,'on');assert.match(node('.lab-actions').innerHTML,/비상 조명 끄기/);assert.equal(M.restore(state).emergencyOn,true);g.act('robot-observe');assert.match(node('.lab-notice').innerHTML,/천장/);g.act('talk-close');assert.equal(node('.lab-notice').hidden,true);g.act('robot');g.act('emergency-light');assert.equal(state.emergencyOn,false);g.act('talk-close');
 g.act('robot');assert.match(node('.lab-notice').innerHTML,/이 판을 밟아서/);g.act('talk-close');
 state.powerTalked=false;g.act('robot');g.act('turn-left');finish();
 assert.doesNotMatch(node('.lab-actions').innerHTML,/talk-next/,'walking or turning clears interrupted conversation buttons');

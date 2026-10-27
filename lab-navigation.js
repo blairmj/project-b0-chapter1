@@ -29,7 +29,7 @@
     }
     function showTalk(){
       const [who,text]=talk.lines[talk.index];say(text,who);
-      actions('',[...(talk.index<talk.lines.length-1?[['다음','talk-next']]:[]),['닫기','talk-close']]);
+      actions(s.powerOut?'B-0가 할 수 있는 일':'',[...(s.powerOut?[[s.emergencyOn?'비상 조명 끄기':'비상 조명 켜기','emergency-light'],['주변 살펴봐 줘','robot-observe']]:[]),...(talk.index<talk.lines.length-1?[['다음','talk-next']]:[]),['닫기','talk-close']]);
     }
     function cancelTalk(){if(!talk)return;talk=null;speechTicket++;app.querySelector('.lab-b0 .robot-sprite')?.classList.remove('speaking');renderer?.update(camera,companion,{speaking:false});actions('');}
     function relaySound(){if(muted)return;try{audio||=new(window.AudioContext||window.webkitAudioContext)();void audio.resume();for(let i=0;i<2;i++){const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime+i*.22;o.frequency.value=i?310:470;g.gain.setValueAtTime(.018,t);g.gain.exponentialRampToValueAtTime(.0001,t+.16);o.connect(g).connect(audio.destination);o.start(t);o.stop(t+.17);}}catch{}}
@@ -37,7 +37,7 @@
       s.powerOut=true;save();app.querySelector('.lab-trip-panel')?.classList.add('tripped');
       stepSound();say('앗… 뭔가 밟았어.','student');
       later(()=>{stage.classList.add('power-out');renderer?.update(camera,companion,{lit:false,walking:botMoving});relaySound();},650);
-      later(()=>{if(!talk&&!s.powerTalked)say('전원이 차단되었습니다. 비상 조명으로 전환합니다.');},1700);
+      later(()=>{if(!talk&&!s.powerTalked)say('전원이 차단되었습니다.');},1700);
     }
     function door(id){const d=M.doors[id],h=d.floor===2?-360:0;return `<div class="lab-door lab-door-${id}" style="transform:translate3d(${d.x}px,${h}px,${d.z}px) rotateY(${-d.yaw}deg)" data-lab-object="${id}" role="button" tabindex="0" aria-label="${d.name}"><span class="lab-door-sign">${d.floor===2?'2F · ':''}${d.name}</span><div class="lab-door-leaf"><i></i><i></i></div><span class="lab-door-light"></span></div>`;}
     function render(){
@@ -61,7 +61,7 @@
     }
     function rendererFallback(message){const previous=renderer;renderer=null;stage.classList.remove('webgl-active');previous?.dispose();say(message);}
     function update(){
-      if(dead)return;const f=Math.min(stage.clientWidth*.65,stage.clientHeight*.6)*camera.zoom;stage.style.perspective=f+'px';world.style.transform=`translateZ(${f}px) rotateX(${camera.pitch}deg) rotateY(${camera.yaw}deg) translate3d(${-camera.x}px,${camera.height}px,${-camera.z}px)`;
+      if(dead)return;stage.classList.toggle('emergency-on',!!s.emergencyOn);stage.dataset.emergency=s.emergencyOn?'on':'off';const f=Math.min(stage.clientWidth*.65,stage.clientHeight*.6)*camera.zoom;stage.style.perspective=f+'px';world.style.transform=`translateZ(${f}px) rotateX(${camera.pitch}deg) rotateY(${camera.yaw}deg) translate3d(${-camera.x}px,${camera.height}px,${-camera.z}px)`;
       const bot=app.querySelector('.lab-b0');
       // A companion occupies one world position. Looking around never relocates him.
       bot.style.transform=`translate3d(${companion.x-42}px,${24-M.groundAt(companion.z)}px,${companion.z}px) rotateY(${-camera.yaw}deg)`;
@@ -156,6 +156,11 @@
         if(!talk){const context=window.B0LabDialogue.resolve(s,camera,selection,M.doors);talk={...context,index:0};selection=null;}
         showTalk();return;
       }
+      if(a==='emergency-light'){
+        if(!M.setEmergency(s,!s.emergencyOn))return;cancelTalk();save();update();relaySound();
+        talk={id:'abilities',index:0,lines:[['robot',s.emergencyOn?'비상 전원으로 벽면 조명을 켰습니다. 발밑과 문 표지를 확인해 보세요.':'비상 조명을 껐습니다. 필요하면 다시 켤 수 있습니다.']]};showTalk();return;
+      }
+      if(a==='robot-observe'){cancelTalk();talk={id:'abilities',index:0,lines:[['robot',window.B0LabDialogue.observe(s,camera,M.doors)]]};showTalk();return;}
       if(a==='talk-next'){if(talk){talk.index=Math.min(talk.lines.length-1,talk.index+1);showTalk();}return;}
       if(a==='talk-close'){if(talk){if(talk.id==='power'&&talk.index===talk.lines.length-1){s.powerTalked=true;save();}cancelTalk();notice.hidden=true;}return;}
       if(a.startsWith('go-')){close();walkTo(a.slice(3));return;}

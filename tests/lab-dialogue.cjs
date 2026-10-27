@@ -19,6 +19,7 @@ s.floor=2;assert.equal(at(-2170).id,'upper-hall');assert.equal(at(-2400).id,'roo
 assert.equal(M.restore({...s,stairRejected:true}).stairRejected,true);assert.equal(M.restore({version:1}).stairRejected,false);
 console.log('PASS: local outage dialogue, distinct corridor places, observed knowledge, stair rejection/key/unlock states and old-save compatibility');
 
+s.floor=1;s.powerOut=true;s.emergencyOn=true;assert.equal(at(-65).id,'plate-emergency');assert.match(D.observe(s,{x:0,z:-65},M.doors),/천장/);assert.doesNotMatch(D.observe(s,{x:0,z:-320},M.doors),/상자|쌓|쪽지|비밀번호/);
 const fs=require('node:fs');
 for(const page of ['index.html','preview-v2.html']){
  const html=fs.readFileSync(require.resolve('../'+page),'utf8');

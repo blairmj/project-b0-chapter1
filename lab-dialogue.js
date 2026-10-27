@@ -38,6 +38,7 @@
     if(['practice','storage','access','mirror','outside'].includes(selected)&&at(selected))return room(s,selected);
     if(nearPlate(c)){
       if(!s.powerOut)return conversation('plate-before',['student','바닥 판이 조금 들떠 있네?'],['robot','네. 어디에 연결된 판인지는 아직 확인하지 못했습니다.']);
+      if(s.emergencyOn)return conversation('plate-emergency',['student','이제 바닥이 좀 보이네.'],['robot','비상 전원으로 벽면 조명만 켰습니다. 천장 형광등은 아직 꺼져 있습니다.']);
       if(s.powerTalked)return conversation('plate-after',['student','이 판을 밟아서 불이 꺼진 거지?'],['robot','네. 판을 밟은 직후 전원이 차단됐습니다. 저도 그때 연결되어 있다는 걸 알았습니다.']);
       return conversation('power',['student','B-0, 왜 미리 말 안 해줬어?'],['robot','저도 몰랐습니다. 이 바닥 덮개가 전원 장치와 연결된 건 밟은 뒤에야 알았습니다.'],['student','그럼 앞은 같이 살펴보자. 뭔가 알아내면 바로 알려 줘.']);
     }
@@ -51,5 +52,12 @@
     if(Math.abs(c.z-doors[nearest].z)<=145)return room(s,nearest);
     return conversation('hall',['student','어디부터 살펴보는 게 좋을까?'],['robot','문 옆 이름과 눈에 보이는 장치를 확인할 수 있습니다. 아직 살펴보지 않은 곳은 저도 어떤 상태인지 모릅니다.']);
   }
-  const api={resolve,nearPlate};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.B0LabDialogue=api;
+  function observe(s,c,doors){
+    if(s.floor===2)return '복도 끝 문 위에 중앙관리실이라고 적혀 있습니다. 안쪽은 아직 확인하지 않았습니다.';
+    if(nearPlate(c))return '발밑에 밟았던 덮개가 있고, 천장 형광등은 꺼져 있습니다. 양옆에는 방으로 들어가는 문이 보입니다.';
+    if(c.z<=-1550)return s.stairsUnlocked?'계단의 접근 차단이 해제되어 있습니다.':'계단 옆 제어기에 접근 제한 표시와 열쇠 구멍이 보입니다.';
+    const nearest=['storage','access','mirror','outside'].sort((a,b)=>Math.abs(c.z-doors[a].z)-Math.abs(c.z-doors[b].z))[0];
+    return Math.abs(c.z-doors[nearest].z)<=180?'가까운 문 옆에 '+doors[nearest].name+'이라고 적혀 있습니다. 안쪽 상태는 문 밖에서 단정할 수 없습니다.':'복도 양옆에 문이 있습니다. 문 위 이름과 눈앞의 바닥부터 확인할 수 있습니다.';
+  }
+  const api={resolve,nearPlate,observe};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.B0LabDialogue=api;
 })(typeof window!=='undefined'?window:globalThis);
