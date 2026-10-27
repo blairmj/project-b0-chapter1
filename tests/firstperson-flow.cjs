@@ -44,7 +44,7 @@ console.log('PASS: face-first intro, no student avatar, guide mission, B-0 compa
 run('panTo(380,-9999)');assert.equal(run('camera.x'),20);assert.equal(run('camera.y'),-18);
 run('panTo(-380,9999)');assert.equal(run('camera.x'),-20);assert.equal(run('camera.y'),18);
 assert.match(el('.room-rig').style.transform,/rotateY\(-20deg\)/);
-assert.match(app.innerHTML,/교육 실습실/);assert.match(app.innerHTML,/처음 위치로/);assert.doesNotMatch(app.innerHTML,/view-direction|room-goal/);
+assert.match(app.innerHTML,/출입 관리실/);assert.match(app.innerHTML,/처음 위치로/);assert.doesNotMatch(app.innerHTML,/view-direction|room-goal/);
 for(const wall of ['wall-left','wall-right'])assert.ok(app.innerHTML.includes(wall));
 assert.doesNotMatch(app.innerHTML,/방 전체 보기/);
 console.log('PASS: bounded camera and removal of full-room navigation button');

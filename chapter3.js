@@ -10,7 +10,7 @@
     if(typeof location!=='undefined'&&new URLSearchParams(location.search).get('room')==='mirror')s.phase='mirror';
     else if(onCorridor&&!showCompleted&&['gate','complete'].includes(s.phase))s.phase='room';
     function mirrorUrl(active){if(typeof location==='undefined')return;const url=new URL(location.href);if(active)url.searchParams.set('room','mirror');else url.searchParams.delete('room');history.replaceState(null,'',url);}
-    const intro=[['student','출입 관리실이네. 여기에 나가는 길이 있을까?'],['robot','제 지도에는 이곳에 출입 관리 장치가 있다고 나옵니다.'],['student','지금도 그런지는 직접 봐야겠지.'],['robot','네. 함께 확인해 보겠습니다.']];
+    const intro=[['student','기록 보관실이네. 출구에 관한 기록도 있을까?'],['robot','제 지도에는 이곳에 시설 출입 기록을 보관한다고 나옵니다.'],['student','지금도 그런지는 직접 봐야겠지.'],['robot','네. 함께 확인해 보겠습니다.']];
     const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const b=(label,action,cls='')=>`<button type="button" data-c3="${action}" class="${cls}">${label}</button>`;
     const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -27,17 +27,17 @@
     }
     function talk(lines,done){conversation={lines,index:0,done};say(...lines[0]);}
     function nextTalk(){if(!conversation)return;const c=conversation;c.index++;if(c.index<c.lines.length)say(...c.lines[c.index]);else{conversation=null;speech.hidden=true;c.done?.();}}
-    function mapArt(){return `<svg class="c3-map-art" viewBox="0 0 260 200" role="img" aria-label="옛 배치도. 출입 관리실 앞쪽 문에서 외부 통로로 이어지는 기록"><rect x="44" y="62" width="172" height="115" fill="#b9c4bf" stroke="#394f58" stroke-width="5"/><path d="M114 62h32" stroke="#dce6cf" stroke-width="9"/><path d="M130 139V28m-14 15 14-15 14 15" fill="none" stroke="#387b82" stroke-width="7"/><circle cx="130" cy="145" r="8" fill="#a75e44"/><text x="130" y="19" text-anchor="middle">외부 통로</text><text x="130" y="94" text-anchor="middle">출입 관리실</text><text x="130" y="168" text-anchor="middle">들어온 곳</text></svg>`;}
+    function mapArt(){return `<svg class="c3-map-art" viewBox="0 0 260 200" role="img" aria-label="옛 배치도. 기록 보관실 앞쪽 문에서 외부 통로로 이어지는 기록"><rect x="44" y="62" width="172" height="115" fill="#b9c4bf" stroke="#394f58" stroke-width="5"/><path d="M114 62h32" stroke="#dce6cf" stroke-width="9"/><path d="M130 139V28m-14 15 14-15 14 15" fill="none" stroke="#387b82" stroke-width="7"/><circle cx="130" cy="145" r="8" fill="#a75e44"/><text x="130" y="19" text-anchor="middle">외부 통로</text><text x="130" y="94" text-anchor="middle">기록 보관실</text><text x="130" y="168" text-anchor="middle">들어온 곳</text></svg>`;}
     function cube(w,h,d,cls='',id=''){return `<div class="c2-cube ${cls}" style="--w:${w}px;--h:${h}px;--d:${d}px;width:${w}px;height:${h}px">${['front','back','left','right','top'].map(f=>`<div class="c2-face c2-${f}" ${f==='front'&&id?`data-object="${id}" role="button" tabindex="0" aria-label="${id==='shelf'?'바퀴 달린 보관장':'기록 서랍이 있는 책상'}"`:''}>${f==='front'?'<i></i>':''}</div>`).join('')}</div>`;}
     function render(){
       mirrorView?.dispose();mirrorView=null;
       conversation=null;pointer=null;selection=null;mode=null;
       if(s.phase==='mirror'){renderMirror();return;}
       if(s.phase==='intro'){renderIntro();return;}if(s.phase==='gate'){renderGate();return;}if(s.phase==='complete'){renderEnd();return;}
-      app.innerHTML=`<main class="game c2-game c3-game">${window.B0UI?.header({place:`출입 관리실`,namespace:"c3",reset:"home",zoomClass:"c3-zoom",active:true})||""}
-      <section class="c2-stage c3-stage" tabindex="0" aria-label="출입 관리실. 빈 공간을 끌어 둘러보고 물건을 눌러 살펴보세요."><div class="c2-world c3-world">
+      app.innerHTML=`<main class="game c2-game c3-game">${window.B0UI?.header({place:`기록 보관실`,namespace:"c3",reset:"home",zoomClass:"c3-zoom",active:true})||""}
+      <section class="c2-stage c3-stage" tabindex="0" aria-label="기록 보관실. 빈 공간을 끌어 둘러보고 물건을 눌러 살펴보세요."><div class="c2-world c3-world">
       ${['front','left','right','back'].map(f=>`<div class="c2-wall c2-wall-${f}"><div class="c3-conduit" aria-hidden="true"></div><div class="c3-riser" aria-hidden="true"></div><div class="c2-light"></div></div>`).join('')}<div class="c2-floor"></div><div class="c2-ceiling"></div><div class="sf-archive-console" aria-hidden="true"><i></i><i></i><i></i></div>
-      <div class="c3-junction" aria-hidden="true"><i></i><i></i><span></span></div><div class="c3-room-plaque" aria-hidden="true"><small>ACCESS CONTROL</small><strong>출입 관리실</strong></div><div class="c3-clock" aria-hidden="true"><i></i><i></i></div>
+      <div class="c3-junction" aria-hidden="true"><i></i><i></i><span></span></div><div class="c3-room-plaque" aria-hidden="true"><small>RECORD ARCHIVE</small><strong>기록 보관실</strong></div><div class="c3-clock" aria-hidden="true"><i></i><i></i></div>
       <div class="c3-observation" aria-hidden="true"><div class="c3-observation-frame"><span></span><span></span><span></span><small>관찰창</small></div></div>
       <div class="c3-record-wall" aria-hidden="true"><div class="c3-record-window"><span>출입 기록 보관</span><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
       <div class="c3-old-exit" data-object="oldDoor" role="button" tabindex="0" aria-label="출구 표지판이 있는 문"><span class="c3-exit-sign">출구</span><span class="c3-brick-wall"></span><span class="c3-old-leaf"><i></i></span></div>
@@ -133,12 +133,12 @@
       if(id==='record'&&!s.drawerOpen)return;
       M.inspect(s,id);save();
       if(id==='map')modal('시설 배치 기록 01',`<div class="c3-paper">${mapArt()}<p>외부 통로는 앞쪽 출입문과 연결되어 있다.</p><small>시설 배치 기록 01</small></div>`,true);
-      else if(id==='record'){modal('개조 기록 07','<article class="c3-paper"><h3>출입 관리실 개조 기록</h3><p>기존 외부 통로: 폐쇄</p><p>이동 통로 재배치: 완료</p><p>기존 안내 표지 철거: 미완료</p><hr><p>새 배치도: 첨부 누락</p><small>시설 관리 기록 07</small></article>',true);}
+      else if(id==='record'){modal('개조 기록 07','<article class="c3-paper"><h3>기록 보관실 개조 기록</h3><p>기존 외부 통로: 폐쇄</p><p>이동 통로 재배치: 완료</p><p>기존 안내 표지 철거: 미완료</p><hr><p>새 배치도: 첨부 누락</p><small>시설 관리 기록 07</small></article>',true);}
       else say('student',({oldDoor:s.oldDoorOpen?'문 뒤가 벽으로 막혀 있어. 표지판은 그대로인데…….':'문 위에는 출구라고 적혀 있어. 안쪽은 아직 보이지 않아.',desk:'출입 기록을 보던 책상인가 봐. 모니터는 연결이 끊겨 있고, 아래에는 서랍이 있어.',shelf:'서류 상자가 가득 실린 보관장이다. 아래에 작은 바퀴가 달려 있다.',floor:'보관장 옆으로 길게 바퀴 자국이 남아 있어.',gap:'아래쪽 틈으로 빛이 들어와. 뒤쪽은 잘 안 보여.',exit:'보관장 뒤에 문이 있었어. 이쪽은 막혀 있지 않은 것 같아.'})[id]||'직접 확인해 보자.');
     }
     function renderIntro(){
       s.line=Math.min(intro.length-1,s.line);const [who,text]=intro[s.line];
-      app.innerHTML=`<main class="game c3-intro">${window.B0UI?.header({place:`출입 관리실 앞`,namespace:"c3",reset:"home",zoomClass:"c3-zoom",active:false})||""}<section class="corridor-scene"><div class="corridor-view"></div><div class="corridor-b0 walking"><div class="robot-sprite live-body ${who==='robot'?'speaking':''}">${portrait()}</div></div><div class="corridor-dialogue"><div class="speech ${who}"><b>${who==='robot'?'B-0':'나'}</b><p>${esc(text)}</p></div>${b(s.line===intro.length-1?'출입 관리실로':'다음','intro-next','next')}</div></section><footer><small>출입 관리실 문 앞에서 B-0와 잠시 숨을 돌린다.</small></footer></main>`;
+      app.innerHTML=`<main class="game c3-intro">${window.B0UI?.header({place:`기록 보관실 앞`,namespace:"c3",reset:"home",zoomClass:"c3-zoom",active:false})||""}<section class="corridor-scene"><div class="corridor-view"></div><div class="corridor-b0 walking"><div class="robot-sprite live-body ${who==='robot'?'speaking':''}">${portrait()}</div></div><div class="corridor-dialogue"><div class="speech ${who}"><b>${who==='robot'?'B-0':'나'}</b><p>${esc(text)}</p></div>${b(s.line===intro.length-1?'기록 보관실로':'다음','intro-next','next')}</div></section><footer><small>기록 보관실 문 앞에서 B-0와 잠시 숨을 돌린다.</small></footer></main>`;
     }
     function renderGate(){
       app.innerHTML=`<main class="game c3-gate-game">${window.B0UI?.header({place:`외부 출입구`,namespace:"c3",reset:"home",zoomClass:"c3-zoom",active:false})||""}<section class="c3-gate-scene"><div class="c3-gate-door"><span>외부 출입구</span><i></i></div><div class="c3-gate-terminal"><small>출입 관리</small><p>${s.approval==='rejected'?'외부 이동 보류':'외부 이동에는 중앙관리실의 승인이 필요합니다.'}</p>${s.approval==='rejected'?'<small>중앙관리실에서 직접 확인</small>':''}</div><div class="c3-gate-b0"><div class="robot-sprite live-body">${portrait()}</div></div><div class="c2-speech c3-speech" hidden></div></section><section class="c2-actions c3-actions"></section><footer><small>문 너머로는 바깥 불빛이 보인다.</small></footer></main>`;
@@ -158,7 +158,7 @@
       if(a==='close-modal'){app.querySelector('.c3-modal')?.close();return;}
       if(a==='menu'){modal('메뉴',window.B0UI.menuContent({namespace:'c3',close:'close-modal',home:'campaign-home',record:'record',extras:`${b('현재 공간 다시 시작','reset-confirm')}${b('복도로 나가기','back')}`}));return;}
       if(a==='back'){dispose();onBack();return;}
-      if(a==='reset-confirm'){modal('3차시를 다시 시작할까요?',`<p>출입 관리실의 진행만 초기화합니다.</p>${b('초기화하고 시작','reset','primary')}`);return;}
+      if(a==='reset-confirm'){modal('3차시를 다시 시작할까요?',`<p>기록 보관실의 진행만 초기화합니다.</p>${b('초기화하고 시작','reset','primary')}`);return;}
       if(a==='reset'){cancelAnimationFrame(frame);busy=false;cameraMoving=false;s=M.fresh();mirrorUrl(false);camera={x:0,z:30,yaw:-12,pitch:-8,zoom:1};robot={x:120,z:-190};app.querySelector('.c3-modal')?.remove();save();render();return;}
       if(a==='controls'){modal('사용법','<p>빈 공간을 끌거나 방향키로 방을 둘러봅니다. 물건을 누르면 가까이 다가가 살펴볼 수 있습니다.</p><p>보관장은 직접 끌거나 밀기 버튼으로 움직입니다. 혼자 밀면 조금씩 움직이고, 함께 밀면 더 쉽게 움직입니다.</p><p>B-0에게 부탁할 때는 확인할 대상과 내용을 골라 주세요. 처음 위치로는 시점과 배율만 되돌립니다.</p>');return;}
       if(a==='record'){const labels={map:'배치 기록 01',oldDoor:'출구 표지판의 문',wall:'문 뒤의 벽',record:'개조 기록 07',shelf:'보관장',floor:'바퀴 자국',gap:'아래쪽 빛',exit:'새로 발견한 문',desk:'기록 책상'};modal('직접 확인한 것',`<ul>${Object.keys(s.seen).map(id=>`<li>${labels[id]}</li>`).join('')||'<li>아직 살펴본 기록이 없습니다.</li>'}</ul><p>어떤 사실이 기록과 달랐나요? 그 근거는 직접 본 것인가요, B-0에게 들은 것인가요?</p>`);return;}

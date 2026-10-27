@@ -1,0 +1,10 @@
+.lab-webgl-canvas{display:none;position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+.lab-stage.webgl-active .lab-webgl-canvas{display:block}
+/* Keep native targets for Tab/Enter and screen readers; pointer picking uses
+   the very same triangles and camera as the WebGL image. */
+.lab-stage.webgl-active .lab-world{opacity:0;pointer-events:none}
+.lab-stage.webgl-active:before,.lab-stage.webgl-active:after{display:none}
+.lab-stage.webgl-active{background:#08121b}
+/* The old narrow-corridor nav rule must not squeeze the location to zero. */
+.lab-game>.b0-hud .b0-hud-main nav{width:auto;justify-content:flex-end}
+.lab-game>.b0-hud .b0-location{flex:1 1 auto}

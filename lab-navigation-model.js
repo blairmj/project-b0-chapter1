@@ -1,9 +1,9 @@
 (function(root){
   'use strict';
   const doors={
-    practice:{name:'교육 실습실',floor:1,x:0,z:236,yaw:180},
+    practice:{name:'출입 관리실',floor:1,x:0,z:236,yaw:180},
     storage:{name:'물류 보관실',floor:1,x:268,z:-320,yaw:90},
-    access:{name:'출입 관리실',floor:1,x:-268,z:-950,yaw:-90},
+    access:{name:'기록 보관실',floor:1,x:-268,z:-950,yaw:-90},
     mirror:{name:'유리 관찰실',floor:1,x:268,z:-1320,yaw:90},
     keybox:{name:'열쇠 보관함',floor:1,x:-268,z:-1640,yaw:-90},
     stairs:{name:'2층 계단',floor:1,x:0,z:-1810,yaw:0},

@@ -141,7 +141,7 @@
       if(a==='menu'){modal('메뉴',window.B0UI.menuContent({namespace:'mr',close:'close-modal',home:'campaign-home',record:'record',extras:`${b('현재 공간 다시 시작','reset-confirm')}${b('복도로 나가기','back')}`}));return;}
       if(a==='controls'){modal('사용법','<p>빈 공간을 끌거나 방향키로 둘러봅니다. 물건을 누르면 조사하거나 행동할 수 있습니다.</p><p>유리 너머 물건도 눌러 B-0에게 부탁할 수 있습니다. 대상과 행동은 직접 골라 주세요.</p><p>자기 쪽 손잡이는 잡은 채 아래로 끌거나, 선택 후 당기기 버튼을 사용합니다. 처음 위치로는 시점과 배율만 되돌립니다.</p>');return;}
       if(a==='record'){modal('관찰실 탐색 기록',`<p>조사 ${s.logs.filter(x=>x.action==='inspect').length}회 · B-0에게 요청 ${s.logs.filter(x=>x.action==='request').length}회</p><p>어떤 장치가 움직였나요? 처음 부탁한 것에 빠진 조건이 있었나요?</p>`);return;}
-      if(a==='reset-confirm'){modal('관찰실을 다시 시작할까요?',`<p>출입 관리실의 진행은 유지됩니다.</p>${b('관찰실만 초기화','reset','primary')}`);return;}
+      if(a==='reset-confirm'){modal('관찰실을 다시 시작할까요?',`<p>기록 보관실의 진행은 유지됩니다.</p>${b('관찰실만 초기화','reset','primary')}`);return;}
       if(a==='reset'){cancelAnimationFrame(camFrame);cancelAnimationFrame(botFrame);cancelAnimationFrame(handFrame);timers.forEach(clearTimeout);clearTimeout(pulse);robotBusy=false;pointer=null;selection=null;targetMode=false;suppress=false;Object.assign(s,M.fresh());camera={x:-150,z:35,yaw:58,pitch:-8,zoom:1};robot=robotPosition();save();app.querySelector('.mr-modal')?.remove();render();return;}
       if(a==='back'){onBack();return;}
       if(a==='intro-next'){nextIntro();return;}if(a==='dismiss'){speech.hidden=true;return;}

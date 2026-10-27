@@ -1,10 +1,10 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),M=require('../lab-navigation-model.js');
 const nodes=new Map();
-function node(k){if(!nodes.has(k))nodes.set(k,{style:{},dataset:{},clientWidth:760,clientHeight:480,hidden:false,innerHTML:'',textContent:'',classList:{add(){},remove(){},toggle(){}},addEventListener(){},setAttribute(){},contains(){return true},focus(){},getBoundingClientRect(){return {left:0,top:0,width:760,height:480}}});return nodes.get(k);}
+function node(k){if(!nodes.has(k))nodes.set(k,{style:{},dataset:{},clientWidth:760,clientHeight:480,hidden:false,innerHTML:'',textContent:'',classList:{add(){},remove(){},toggle(){},contains(){return false}},addEventListener(){},setAttribute(){},contains(){return true},focus(){},getBoundingClientRect(){return {left:0,top:0,width:760,height:480}}});return nodes.get(k);}
 let htmlWrites=0,clock=0,id=0,saves=0;const frames=new Map(),timers=new Map();
 const app={set innerHTML(v){htmlWrites++;},querySelector:node,addEventListener(){},removeEventListener(){}};
 const context={window:{B0LabNavigation:M,addEventListener(){},removeEventListener(){}},performance:{now:()=>clock},matchMedia:()=>({matches:false}),requestAnimationFrame:f=>{frames.set(++id,f);return id;},cancelAnimationFrame:n=>frames.delete(n),setTimeout:f=>{timers.set(++id,f);return id;},clearTimeout:n=>timers.delete(n)};
-vm.runInNewContext(fs.readFileSync(require.resolve('../lab-navigation.js'),'utf8').replace('render();save();return {dispose};','render();save();return {dispose,act,walkTo,click,state:()=>({camera,companion,s})};'),context);
+vm.runInNewContext(fs.readFileSync(require.resolve('../lab-navigation.js'),'utf8').replace('render();save();return {dispose};','render();save();return {dispose,act,walkTo,click,down,move,up,state:()=>({camera,companion,s})};'),context);
 function finish(){let limit=0;while(frames.size){assert.ok(limit++<100,'animation must finish');clock+=250;const pending=[...frames.values()];frames.clear();pending.forEach(f=>f(clock));}}
 const state=M.fresh();state.cleared.practice=true;
 const g=context.window.startLabNavigation({app,portrait:()=>'',state,onSave:()=>saves++,onEnter(){},onHome(){},muted:true});
@@ -56,3 +56,19 @@ pop.walkTo('storage');finish();pop.act('enter-storage');assert.equal(entered,'st
 pop.act('menu');pop.act('close');pop.act('turn-left');finish();pop.act('backward');finish();assert.ok(pop.state().camera.z>-320,'button close must also restore travel');
 pop.dispose();
 console.log('PASS: stair rejection returns safely, key unlock restores ascent, Escape/button popup close restores floor travel and room entry');
+
+let rendered,picked=0,rendererDisposed=false;
+context.window.B0LabWebGL={create(){return {update(camera,companion,options){rendered={camera:{...camera},companion:{...companion},...options};},pick(){picked++;return {id:'storage',surface:'door'};},dispose(){rendererDisposed=true;}};}};
+const gpuState=M.fresh();gpuState.cleared.practice=true;
+const gpu=context.window.startLabNavigation({app,portrait:()=>'',state:gpuState,onSave(){},onEnter:id=>entered=id,onHome(){},muted:true});
+gpu.click({target:{closest(){return null}},detail:1,clientX:380,clientY:240});finish();
+assert.equal(picked,1);assert.equal(gpuState.camera.z,-320,'a WebGL door hit must use the existing approach and entry rules');
+assert.equal(rendered.camera.z,-320);assert.equal(rendered.companion.x,gpu.state().companion.x);
+gpu.act('menu');lastDialog.close();gpu.act('enter-storage');assert.equal(entered,'storage');
+const yawBefore=gpu.state().camera.yaw;
+const pointer=(x,y)=>({pointerId:7,button:0,clientX:x,clientY:y,target:{closest(){return null}}});
+gpu.down(pointer(400,150));gpu.move(pointer(300,170));gpu.up();
+assert.notEqual(gpu.state().camera.yaw,yawBefore,'dragging empty WebGL space must still rotate the view');
+assert.equal(rendered.camera.yaw,gpu.state().camera.yaw,'WebGL and navigation must receive the same camera');
+gpu.dispose();assert.equal(rendererDisposed,true,'leaving the corridor must release the WebGL renderer');
+console.log('PASS: WebGL picking, camera/companion synchronization, popup close, room entry, pointer rotation and renderer cleanup');

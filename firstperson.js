@@ -199,9 +199,9 @@ function enterRoom(reveal=false,restoreView=false) {
   roomView?.dispose();roomView=null;
   token++;clearTimeout(timer);clearTimeout(speechTimer);target="";moving=false;
   camera={x:0,y:-5};zoom=1;drag=null;pinch=null;touchPoints.clear();suppressClick=false;
-  app.innerHTML=`<main class="game${reveal?" revealing":""}">${window.B0UI?.header({place:`교육 실습실`,namespace:"action",reset:"view-home",zoomClass:"zoom-value",active:true})||""}<section class="scene" tabindex="0" aria-label="교육 실습실. 드래그하거나 방향키로 시선을 돌려 네 벽과 구석을 살펴보세요."><canvas class="panorama-canvas" role="img" aria-label="벽과 바닥이 하나로 이어진 교육 실습실"></canvas><p class="render-error" hidden role="alert"></p><div class="room-rig"><div class="room-wall world${state.unlocked?" unlocked":""}" data-yaw="0">
+  app.innerHTML=`<main class="game${reveal?" revealing":""}">${window.B0UI?.header({place:`출입 관리실`,namespace:"action",reset:"view-home",zoomClass:"zoom-value",active:true})||""}<section class="scene" tabindex="0" aria-label="출입 관리실. 드래그하거나 방향키로 시선을 돌려 네 벽과 구석을 살펴보세요."><canvas class="panorama-canvas" role="img" aria-label="벽과 바닥이 하나로 이어진 출입 관리실"></canvas><p class="render-error" hidden role="alert"></p><div class="room-rig"><div class="room-wall world${state.unlocked?" unlocked":""}" data-yaw="0">
     <div class="door-art" aria-hidden="true"><div class="device door-left"></div><div class="device door-right"></div></div><span class="lock-led" aria-hidden="true"></span>
-    <div class="device terminal-art" aria-hidden="true"></div><div class="map-board" aria-hidden="true"><small>지도</small><strong>연구소 전체 지도</strong>${window.B0LabNavigation.mapMarkup?.({current:"교육 실습실"})||""}<small>비상 출입 안내</small></div><div class="device light-art" aria-hidden="true"></div>
+    <div class="device terminal-art" aria-hidden="true"></div><div class="map-board" aria-hidden="true"><small>지도</small><strong>연구소 전체 지도</strong>${window.B0LabNavigation.mapMarkup?.({current:"출입 관리실"})||""}<small>비상 출입 안내</small></div><div class="device light-art" aria-hidden="true"></div>
     <div class="targets">${Object.keys(places).filter(id=>places[id].wall===0&&id!=="robot").map(wallTarget).join("")}</div></div>${otherWalls()}<div class="robot-anchor"><div class="robot-sprite live-body" role="img" aria-label="함께 있는 AI 로봇 B-0">${portrait()}</div>${wallTarget("robot")}</div></div>
     <p class="look-hint">끌어서 둘러보기 · 휠/두 손가락으로 확대·축소</p><div class="room-speech" aria-live="polite" hidden></div><div class="arrival sr-only" role="status"></div>
     </section><footer>${btn("B-0에게 말하기","talk-","secondary")}${btn("소지품 <span class=\"item-count\">"+(state.noteTaken?"1":"0")+"</span>","inventory","secondary")}</footer></main>`;
@@ -319,13 +319,13 @@ function door(tried=false) {
 }
 function guide() {
   state.guide=true;save("발견","벽면 지도의 비상 출입 지침");
-  modal("벽면 지도",`<section class="map-preview"><h3>연구소 전체 지도</h3>${window.B0LabNavigation.mapMarkup?.({current:"교육 실습실"})||""}</section><div class="notice-paper"><h3>비상 출입 안내</h3><p>출입 시스템 정지 시<br>관리용 쪽지의 비밀번호를 사용하십시오.</p></div>`);
+  modal("벽면 지도",`<section class="map-preview"><h3>연구소 전체 지도</h3>${window.B0LabNavigation.mapMarkup?.({current:"출입 관리실"})||""}</section><div class="notice-paper"><h3>비상 출입 안내</h3><p>출입 시스템 정지 시<br>관리용 쪽지의 비밀번호를 사용하십시오.</p></div>`);
 }
 const robotQuestions={identity:"넌 어떤 로봇이야?",where:"여기는 어떤 곳이야?",exit:"여기서 어떻게 나가?",password:"비밀번호 쪽지를 알아?",limits:"AI인데 왜 모르는 게 있어?",belongings:"네가 갖고 있는 건 뭐야?"};
 function robotAnswer(topic){
   switch(topic){
     case "identity":return "저는 교육용 AI 로봇 B-0입니다. 함께 살펴보고 알아낸 정보를 정리할 수 있어요.";
-    case "where":return "폐쇄된 AI 교육 연구소의 교육 실습실입니다. 지금은 대부분의 장비가 꺼져 있어요.";
+    case "where":return "폐쇄된 AI 교육 연구소의 출입 관리실입니다. 지금은 대부분의 장비가 꺼져 있어요.";
     case "exit":return state.unlocked?"출입문의 잠금이 풀렸습니다. 이제 문을 열 수 있어요.":state.noteTaken?"받은 쪽지와 도어락을 함께 살펴보면 나가는 방법을 확인할 수 있을 것 같아요.":"아직 출입 방법을 확인하지 못했습니다. 출입문과 주변 물건을 함께 살펴볼까요?";
     case "password":return state.noteTaken?"제 보관함에서 찾은 쪽지를 건네드렸어요. 적힌 번호는 소지품에서 다시 확인할 수 있습니다.":state.noteFound?"제 보관함 안에서 관리용 쪽지를 찾았습니다. 아직 가져가지 않으셨네요.":"아직 비밀번호가 적힌 쪽지는 보지 못했습니다. 확인하지 않은 번호를 답할 수는 없어요.";
     case "limits":return state.noteFound?"쪽지가 제 보관함에 있어도, 안을 확인하기 전에는 무엇인지 몰랐어요. AI도 확인한 정보가 있어야 답할 수 있습니다.":"저도 확인하지 않은 정보는 모릅니다. 함께 찾아보고 확인하면 더 정확하게 답할 수 있어요.";
@@ -431,5 +431,5 @@ app.addEventListener("click",e=>{
 });
 window.addEventListener("resize",()=>panTo(camera.x,camera.y));
 app.addEventListener("keydown",e=>{if(e.target.id==="code"&&e.key==="Enter"){e.preventDefault();submitCode();}});
-window.B0CampaignUI={location:()=>({floor:app.querySelector('.lab-game')?navigation.floor:state.chapter===4?2:1,z:navigation.camera.z,stairsUnlocked:navigation.stairsUnlocked,current:app.querySelector('.b0-location')?.textContent||'교육 실습실'})};
+window.B0CampaignUI={location:()=>({floor:app.querySelector('.lab-game')?navigation.floor:state.chapter===4?2:1,z:navigation.camera.z,stairsUnlocked:navigation.stairsUnlocked,current:app.querySelector('.b0-location')?.textContent||'출입 관리실'})};
 boot();
