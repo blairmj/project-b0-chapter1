@@ -21,7 +21,7 @@ const world={parentElement:stage,css:{...css,transform:'translation:0,0,300'}};
 const crate={parentElement:world,offsetParent:world,offsetLeft:0,offsetTop:0,css:{...css,transform:'translation:10,50,-100'}};
 const face={parentElement:crate,offsetParent:crate,offsetLeft:0,offsetTop:0,offsetWidth:118,offsetHeight:62,classList:classes(),css:{...css}};
 world.querySelectorAll=()=>[face];
-const canvas={className:'',setAttribute(){},getContext:()=>gl,addEventListener:(k,f)=>handlers[k]=f,removeEventListener:k=>delete handlers[k],remove(){this.removed=true;}};
+const canvas={className:'',dataset:{},setAttribute(){},getContext:()=>gl,addEventListener:(k,f)=>handlers[k]=f,removeEventListener:k=>delete handlers[k],remove(){this.removed=true;}};
 const context={window:{devicePixelRatio:1},DOMMatrix:Matrix,Image:class{},Float32Array,Map,Set,Math,Number,
  getComputedStyle:e=>e.css,requestAnimationFrame:f=>{frames.set(++next,f);return next;},cancelAnimationFrame:n=>frames.delete(n),
  document:{hidden:false,addEventListener(){},createElement(tag){return tag==='canvas'?{...canvas}:{};}}};
@@ -31,8 +31,11 @@ vm.runInNewContext(fs.readFileSync(require.resolve('../room-webgl.js'),'utf8'),c
 const view=context.window.B0RoomWebGL.create(stage,world);
 function tick(t){const q=[...frames.values()];frames.clear();q.forEach(f=>f(t));}
 tick(100);assert.ok(stage.classList.contains('room-webgl-active'));assert.ok(face.classList.contains('room-gpu-surface'));assert.deepEqual(vertices.at(-1).slice(0,3),[10,50,-100]);
-crate.css.transform='translation:75,10,-190';crate.css.translate='25px 0px -15px';tick(150);
+crate.css.transform='translation:75,10,-190';crate.css.translate='25px 0px -15px';view.sync();
 assert.deepEqual(vertices.at(-1).slice(0,3),[100,10,-205],'nested surface transforms and independent offsets share GPU coordinates');
-const draws=vertices.length;face.hidden=true;tick(200);assert.equal(vertices.length,draws,'hidden puzzle surfaces do not remain in the GPU scene');face.hidden=false;
+world.css.transform='translation:90,-15,410';stage.style.perspective='410px';context.window.B0RoomWebGL.sync(world);
+assert.equal(canvas.dataset.worldMatrix,world.css.transform,'the GPU receives the camera before a second animation frame');
+assert.equal(canvas.dataset.focal,'410','zoom uses the same focal length immediately');
+const draws=vertices.length;face.hidden=true;view.sync();assert.equal(vertices.length,draws,'hidden puzzle surfaces do not remain in the GPU scene');face.hidden=false;
 handlers.webglcontextlost({preventDefault(){}});assert.equal(stage.dataset.renderer,'css-fallback');assert.ok(!face.classList.contains('room-gpu-surface'),'context loss restores the original CSS artwork and hit targets');assert.equal(lost,1);assert.equal(deleted,1);assert.equal(frames.size,0);view.dispose();assert.equal(lost,1,'cleanup is idempotent');
 console.log('PASS: nested surface geometry, shared camera, transformed parents, visibility, context fallback and GPU cleanup');

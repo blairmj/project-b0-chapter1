@@ -16,6 +16,9 @@
       el.style.translate=`${(item.x+item.w/2+m.m41)*(roomScale-1)}px 0px ${m.m43*(roomScale-1)}px`;
     }
     world.dataset.roomWidth=String(600*roomScale);
+    // Draw after the shared camera/prop transforms change, before this frame
+    // is presented. A separate throttled GPU frame used to trail CSS objects.
+    window.B0RoomWebGL?.sync(world);
   }
   window.B0RoomSpace={scale,scaleFor,sync};
 })();

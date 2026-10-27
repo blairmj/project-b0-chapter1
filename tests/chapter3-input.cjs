@@ -54,5 +54,9 @@ const arrival=context.window.startChapterThree({app,portrait:()=>'',onBack(){},p
 assert.equal(arrival.state().s.phase,'room');assert.match(app.innerHTML,/c3-world/);
 assert.match(node('.c3-speech').innerHTML,/기록 보관실이네/,'hall entry retains the introduction in the actual room');
 assert.equal(arrival.state().s.helper,false);assert.equal(arrival.state().s.realDoorOpen,false);
+arrival.act('home');arrival.activateObject('map');
+assert.match(node('.c3-actions').innerHTML,/가까이 읽기/,'selecting a clue during camera return must not lose the input');
+flush();arrival.act('home');node('.c3-stage').listeners.keydown({key:'ArrowRight',target:{dataset:{}},preventDefault(){}});
+const manualYaw=arrival.state().camera.yaw;flush();assert.equal(arrival.state().camera.yaw,manualYaw,'manual camera rotation interrupts automatic return');
 arrival.act('back');
 console.log('PASS: hall arrival introduces the archive inside the 3D room with the original unsolved puzzle');

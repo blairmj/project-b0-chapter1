@@ -1,6 +1,6 @@
 (function(){
   'use strict';
-  window.startChapterThree=function({app,portrait,onBack,onNext,onCorridor,onHome,showCompleted=false,preview=false,arrived=false}){
+  window.startChapterThree=function({app,portrait,onBack,onNext,onCorridor,onMirrorBack,onHome,showCompleted=false,preview=false,arrived=false}){
     const SPACE=1.95;
     const M=window.B0RoomThree,storage=preview?sessionStorage:localStorage,key='project-b0-room3-v1';
     let s;try{s=M.restore(JSON.parse(storage.getItem(key)));}catch{s=M.fresh();}
@@ -20,7 +20,7 @@
     function clearSelection(){
       if(cameraMoving){cancelAnimationFrame(frame);cameraMoving=false;busy=false;}mode=null;selection=null;conversation=null;if(speech)speech.hidden=true;actions('');
     }
-    function clearSelectionOnLook(){if(selection&&!mode&&!conversation)clearSelection();}
+    function clearSelectionOnLook(){if((selection||cameraMoving)&&!mode&&!conversation)clearSelection();}
     function say(who,text){
       if(!speech)return;speech.hidden=false;speech.innerHTML=`<div class="speech ${who}"><b>${who==='robot'?'B-0':'나'}</b><p>${esc(text)}</p></div>${b(conversation?'다음':'대화 닫기',conversation?'talk-next':'dismiss','quiet')}`;
       const actor=app.querySelector('.robot-sprite');if(actor){actor.classList.toggle('speaking',who==='robot');later(()=>actor.classList.remove('speaking'),Math.min(4500,text.length*85));}
@@ -53,14 +53,14 @@
       <section class="c2-actions c3-actions" aria-label="선택한 물건의 행동"><p>방 안을 자유롭게 살펴보세요.</p></section><footer>${b('B-0에게 말하기','robot','secondary')}${window.B0UI?.inventoryButton()||''}</footer></main>`;
       stage=app.querySelector('.c3-stage');world=app.querySelector('.c3-world');bar=app.querySelector('.c3-actions');speech=app.querySelector('.c3-speech');
       stage.addEventListener('pointerdown',down);stage.addEventListener('pointermove',move);stage.addEventListener('pointerup',up);stage.addEventListener('pointercancel',cancelPointer);
-      stage.addEventListener('click',e=>{if(suppress){suppress=false;return;}if(busy||e.target.closest('[data-c3]'))return;const id=e.target.closest('[data-object]')?.dataset.object;if(id)activateObject(id);else if(!mode&&!conversation)clearSelection();});
+      stage.addEventListener('click',e=>{if(suppress){suppress=false;return;}if((busy&&!cameraMoving)||e.target.closest('[data-c3]'))return;const id=e.target.closest('[data-object]')?.dataset.object;if(id)activateObject(id);else if(!mode&&!conversation)clearSelection();});
       stage.addEventListener('wheel',e=>{e.preventDefault();if(!busy){camera.zoom=Math.max(.65,Math.min(1.5,camera.zoom-e.deltaY*.001));updateCamera();}},{passive:false});
-      stage.addEventListener('keydown',e=>{if(busy)return;if((e.key==='Enter'||e.key===' ')&&e.target.dataset.object){e.preventDefault();activateObject(e.target.dataset.object);return;}const dirs={ArrowLeft:-15,ArrowRight:15};if(dirs[e.key]){e.preventDefault();clearSelectionOnLook();camera.yaw+=dirs[e.key];updateCamera();}if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();clearSelectionOnLook();camera.pitch+=e.key==='ArrowUp'?8:-8;updateCamera();}});
+      stage.addEventListener('keydown',e=>{if(busy&&!cameraMoving)return;if((e.key==='Enter'||e.key===' ')&&e.target.dataset.object){e.preventDefault();activateObject(e.target.dataset.object);return;}const dirs={ArrowLeft:-15,ArrowRight:15};if(dirs[e.key]){e.preventDefault();clearSelectionOnLook();camera.yaw+=dirs[e.key];updateCamera();}if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();clearSelectionOnLook();camera.pitch+=e.key==='ArrowUp'?8:-8;updateCamera();}});
       update();if(entranceTalk)talk(intro);
     }
     function renderMirror(){
       s.mirror=window.B0Mirror.restore(s.mirror);mirrorUrl(true);save();
-      mirrorView=window.startMirrorRoom({app,portrait,state:s.mirror,onSave:save,onHome,onBack:()=>{s.phase=s.approval==='rejected'?'gate':'room';mirrorUrl(false);save();render();},onComplete:()=>{if(M.finish(s)){mirrorUrl(false);save();render();}}});
+      mirrorView=window.startMirrorRoom({app,portrait,state:s.mirror,onSave:save,onHome,onBack:()=>{if(onMirrorBack){save();onMirrorBack();return;}s.phase=s.approval==='rejected'?'gate':'room';mirrorUrl(false);save();render();},onComplete:()=>{if(M.finish(s)){mirrorUrl(false);save();render();}}});
     }
     function updateCamera(){
       if(s.phase!=='room'||!stage?.isConnected)return;
@@ -88,7 +88,7 @@
       const targets={oldDoor:{x:45,z:-120,yaw:12,pitch:-8},map:{x:-80,z:-100,yaw:-22,pitch:10},shelf:{x:-75,z:0,yaw:-90,pitch:-10},floor:{x:-75,z:0,yaw:-90,pitch:-48},gap:{x:-75,z:0,yaw:-90,pitch:-36},desk:{x:65,z:85,yaw:90,pitch:-20},record:{x:65,z:85,yaw:90,pitch:-28},exit:{x:-85,z:0,yaw:-90,pitch:-8}};
       if(targets[id])animateCamera(targets[id]);
     }
-    function activateObject(id){if(busy)return;if(!mode&&id==='exit'&&s.realDoorOpen){leaveRoom();return;}select(id);}
+    function activateObject(id){if(busy&&!cameraMoving)return;if(!mode&&id==='exit'&&s.realDoorOpen){leaveRoom();return;}select(id);}
     function select(id){
       if(id==='exit'&&!M.clear(s))return;if(id==='record'&&!s.drawerOpen)return;
       if(mode==='check'){mode=null;M.inspect(s,id);save();say('robot',M.reply(s,'check',id));showActions(id);return;}
@@ -121,7 +121,7 @@
       const zz=-Math.sin(p)*sy-Math.cos(p),xx=Math.cos(a)*sx-Math.sin(a)*zz,z=Math.sin(a)*sx+Math.cos(a)*zz;
       if(Math.abs(xx)<.02)return null;const t=(-245-camera.x)*SPACE/xx;return t>0?camera.z+z*t/SPACE:null;
     }
-    function down(e){if(busy||e.button!==0||e.isPrimary===false||e.target.closest('[data-c3]'))return;const id=e.target.closest('[data-object]')?.dataset.object;pointer={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:camera.yaw,pitch:camera.pitch,object:id,shelfZ:s.shelfZ,hit:shelfRay(e.clientX,e.clientY),moved:false};suppress=false;}
+    function down(e){if((busy&&!cameraMoving)||e.button!==0||e.isPrimary===false||e.target.closest('[data-c3]'))return;if(cameraMoving){cancelAnimationFrame(frame);cameraMoving=false;busy=false;}const id=e.target.closest('[data-object]')?.dataset.object;pointer={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:camera.yaw,pitch:camera.pitch,object:id,shelfZ:s.shelfZ,hit:shelfRay(e.clientX,e.clientY),moved:false};suppress=false;}
     function move(e){
       if(!pointer||e.pointerId!==pointer.id)return;const dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;if(!pointer.moved&&Math.hypot(dx,dy)<7)return;
       pointer.moved=true;stage.setPointerCapture(e.pointerId);

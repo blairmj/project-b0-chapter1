@@ -42,9 +42,10 @@ function syncCorridorPower(){app.setAttribute?.('data-corridor-power',navigation
 syncCorridorPower();
 function saveNavigation(){syncCorridorPower();try{progressStore.setItem(NAV_KEY,JSON.stringify(navigation));}catch{}}
 function markRoom(){hallView?.dispose();hallView=null;navigation.mode='room';saveNavigation();}
-function showHall(from){
+function showHall(from,completed=true,arriving=false){
+  if(from&&from!=='practice'&&!arriving&&window.B0RoomTransit&&app.querySelector('.c2-stage')){window.B0RoomTransit.cross(app,()=>showHall(from,completed,true));return;}
   stopAdventure();window.B0LabNavigation.merge(navigation,roomProgress());
-  if(from)window.B0LabNavigation.returned(navigation,from);
+  if(from)window.B0LabNavigation.returned(navigation,from,completed);
   navigation.mode='hall';saveNavigation();
   if(typeof location!=='undefined'){const url=new URL(location.href);url.searchParams.set('area','hall');url.searchParams.delete('room');url.searchParams.set('chapter',String(state.chapter||1));history.replaceState(null,'',url);}
   hallView=window.startLabNavigation({app,portrait,state:navigation,onSave:saveNavigation,onEnter:enterFromHall,onHome:campaignHome,muted:state.muted});
@@ -65,7 +66,7 @@ function enterChapterTwo(){
   roomView?.dispose();roomView=null;chapterTwo?.dispose();chapterThree?.dispose();chapterThree=null;
   token++;clearTimeout(timer);clearTimeout(speechTimer);clearTimeout(talkTimer);cancelAnimationFrame(walkFrame);moving=false;suppressClick=false;
   state.chapter=2;save();chapterUrl(2);
-  chapterTwo=window.startChapterTwo({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),onNext:()=>showHall('storage'),onHome:campaignHome,onBack:()=>showHall('practice')});
+  chapterTwo=window.startChapterTwo({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),onNext:()=>showHall('storage'),onHome:campaignHome,onBack:()=>showHall('storage',false)});
 }
 function enterChapterThree(view='access',arrived=false){
   markRoom();
@@ -74,7 +75,7 @@ function enterChapterThree(view='access',arrived=false){
   roomView?.dispose();roomView=null;chapterTwo?.dispose();chapterTwo=null;chapterThree?.dispose();
   token++;clearTimeout(timer);clearTimeout(speechTimer);clearTimeout(talkTimer);cancelAnimationFrame(walkFrame);moving=false;suppressClick=false;
   state.chapter=3;save();chapterUrl(3);
-  chapterThree=window.startChapterThree({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),arrived,onBack:()=>showHall('storage'),onNext:()=>showHall('mirror'),onCorridor:()=>showHall('access'),showCompleted:view==='summary',onHome:campaignHome});
+  chapterThree=window.startChapterThree({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),arrived,onBack:()=>showHall('access',false),onMirrorBack:()=>showHall('mirror',false),onNext:()=>showHall('mirror'),onCorridor:()=>showHall('access'),showCompleted:view==='summary',onHome:campaignHome});
 }
 function enterChapterFour(arrived=false){
   if(!navigation.stairsUnlocked){navigation.floor=1;navigation.camera={x:0,z:window.B0LabNavigation.bound(navigation,0,-1665).z,yaw:0,pitch:-4};showHall();return;}
@@ -82,7 +83,7 @@ function enterChapterFour(arrived=false){
   roomView?.dispose();roomView=null;chapterTwo?.dispose();chapterTwo=null;chapterThree?.dispose();chapterThree=null;chapterFour?.dispose();
   token++;clearTimeout(timer);clearTimeout(speechTimer);clearTimeout(talkTimer);cancelAnimationFrame(walkFrame);moving=false;suppressClick=false;
   state.chapter=4;save();chapterUrl(4);
-  chapterFour=window.startChapterFour({app,portrait,arrived,preview:location.pathname.endsWith('/preview-v2.html'),onBack:()=>showHall('central'),onHome:campaignHome});
+  chapterFour=window.startChapterFour({app,portrait,arrived,preview:location.pathname.endsWith('/preview-v2.html'),onBack:()=>showHall('central',false),onHome:campaignHome});
 }
 const touchPoints=new Map();
 const reduced=()=>window.matchMedia("(prefers-reduced-motion: reduce)").matches;

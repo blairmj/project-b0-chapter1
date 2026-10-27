@@ -38,3 +38,13 @@ assert.equal(M.stepsOnPanel({x:150,z:80},{x:150,z:-200}),false,'walking beside t
 assert.equal(M.stepsOnPanel({x:0,z:80},{x:0,z:80}),false,'turning in place cannot trip power');
 assert.equal(M.stepsOnPanel({x:-130,z:-60},{x:130,z:-60}),true,'a sideways crossing steps on the actual plate');
 console.log('PASS: classroom endcap and physical loose-plate contact');
+
+for(const id of ['storage','access','mirror','central']){
+  const back=M.fresh();back.cleared.practice=true;if(id==='central'){back.keyTaken=back.stairsUnlocked=true;back.floor=2;}
+  const before={...back.cleared};M.returned(back,id,false);
+  assert.deepEqual(back.cleared,before,'backtracking cannot complete a room');
+  assert.equal(back.floor,M.doors[id].floor);assert.equal(back.camera.z,id==='central'?-2435:M.doors[id].z);
+  assert.equal(Math.sign(back.camera.x),Math.sign(M.doors[id].x),'return through the same side of the corridor');
+  const same=M.restore(back);assert.equal(same.camera.z,back.camera.z,'doorway position survives reload');
+}
+console.log('PASS: every room backtracks through its own doorway without granting completion');

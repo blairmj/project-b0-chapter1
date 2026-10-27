@@ -32,7 +32,14 @@
     return {x,z:Math.max(min,Math.min(160,z))};
   }
   function canEnter(s,id){if(['practice','storage','access','mirror'].includes(id))return true;if(id==='central')return s.floor===2&&s.stairsUnlocked;return false;}
-  function returned(s,from){
+  function returned(s,from,completed=true){
+    // Backtracking uses the same doorway without marking its puzzle complete.
+    // Solved rooms retain their distinct exits (window / hidden passage).
+    if(!completed&&doors[from]){
+      const d=doors[from];s.mode='hall';s.floor=d.floor;s.companion=null;
+      s.camera={x:d.x?Math.sign(d.x)*140:0,z:from==='practice'?140:from==='central'?-2435:d.z,yaw:((d.yaw+360)%360)-180,pitch:-4};
+      return s;
+    }
     s.mode='hall';s.floor=1;s.companion=null;s.camera={x:0,z:80,yaw:0,pitch:-4};
     if(from==='storage'){s.cleared.storage=true;s.camera.z=-790;}
     if(from==='access'){s.cleared.access=true;s.camera.z=-1100;}
