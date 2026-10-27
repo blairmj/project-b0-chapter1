@@ -66,7 +66,7 @@
 - assets/b0-awakening-v1.webp: 기존 B-0를 참조한 새 얼굴 근접 이미지.
 - assets/b0-awakening-manifest.json: 생성 프롬프트 및 제작 정보.
 - assets/practice-room-v2.png / b0-poses-v2.png / devices-v2.png: 기존 애셋 그대로 사용.
-- lesson1.js / lesson1.css / game.js / style.css: 이전 구현 보관.
+- 현재 진입점에서 사용하지 않는 이전 구현 4개와 구형 이미지·영상 11개 정리. 이전 파일은 Git 커밋 기록에서 복원 가능.
 - 저장 키: project-b0-firstperson-v4. 이전 버전 저장은 유지. 브라우저에만 저장, 외부 전송 없음.
 - 정적 HTML/CSS/JS, 빌드나 API 키 불필요. main 변경 시 GitHub Pages 자동 배포.
 - 검사: node tests/firstperson-flow.cjs.
@@ -76,6 +76,6 @@
 ## 연속 공간 및 투명 캐릭터
 
 - panorama.js: 외부 의존성 없는 WebGL 구면 렌더러. 오브젝트와 같은 카메라 각도 사용. 배경을 단일 텍스처로 렌더링.
-- assets/room-panorama-v2.webp: 하나의 연결된 방 배경.
+- assets/sf-practice-panorama-v1.webp: 현재 교육 실습실의 연결된 파노라마 배경.
 - assets/b0-body-v3.webp: 도입 확대와 탐색 전신에 공동 사용되는 투명 이미지.
 - assets/seamless-room-manifest.json: 내장 image_gen 프롬프트·원본·출력 기록.
