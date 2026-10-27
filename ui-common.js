@@ -28,7 +28,7 @@
     d.innerHTML=`<header><h2>${title}</h2></header><div class="b0-modal-body">${dialogBody(body+(back&&returnMenu?common('메뉴로','back-menu'):''),'ui','close')}</div>`;
     document.querySelector('#app').append(d);d.addEventListener('close',()=>d.remove());d.showModal();
   }
-  function read(key){try{const storage=location.pathname.endsWith('/preview-v2.html')?sessionStorage:localStorage;return JSON.parse(storage.getItem(key));}catch{return null;}}
+  function read(key){try{return JSON.parse(localStorage.getItem(key));}catch{return null;}}
   function inventory(){
     const one=read('project-b0-firstperson-v4'),nav=read('project-b0-lab-navigation-v1');
     const memory=read('project-b0-education-v1'),archive=read('project-b0-room3-v1');

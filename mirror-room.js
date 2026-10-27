@@ -17,7 +17,7 @@
     function symbol(id,cls=''){return `<svg class="mr-symbol ${cls}" viewBox="0 0 40 40" aria-hidden="true">${glyph(id)}</svg>`;}
     function actions(title,items=[]){bar.innerHTML=`<strong>${esc(title)}</strong><div>${items.map(([label,a,c])=>b(label,a,c||'')).join('')}</div>`;if(robotBusy)bar.querySelectorAll('[data-mr^="command-"]').forEach(el=>el.disabled=true);}
     function sound(kind){
-      try{if(JSON.parse((location.pathname.endsWith('/preview-v2.html')?sessionStorage:localStorage).getItem('project-b0-firstperson-v4')||'{}').muted)return;
+      try{if(JSON.parse(localStorage.getItem('project-b0-firstperson-v4')||'{}').muted)return;
         audio||=new(window.AudioContext||window.webkitAudioContext)();void audio.resume();const o=audio.createOscillator(),g=audio.createGain();o.type='triangle';o.frequency.setValueAtTime(kind==='unlock'?460:125,audio.currentTime);o.frequency.exponentialRampToValueAtTime(kind==='unlock'?690:60,audio.currentTime+.18);g.gain.setValueAtTime(.018,audio.currentTime);g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+.25);o.connect(g).connect(audio.destination);o.start();o.stop(audio.currentTime+.26);
       }catch{}
     }

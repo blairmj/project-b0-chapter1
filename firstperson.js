@@ -2,7 +2,7 @@
 
 // Static, first-person chapter. B-0 owns the note but has not checked his compartment.
 const SAVE_KEY = "project-b0-firstperson-v4";
-const progressStore = typeof location !== "undefined" && location.pathname.endsWith("/preview-v2.html") ? sessionStorage : localStorage;
+const progressStore = localStorage;
 const app = document.querySelector("#app");
 const intro = [
   ["student", "넌, 넌 누구야?"],
@@ -68,7 +68,7 @@ function enterPracticeVisit(){
 function enterEducation(){
   stopAdventure();markRoom();navigation.room='education';saveNavigation();state.chapter=2;save();chapterUrl(2);
   const url=new URL(location.href);url.searchParams.set('room','education');history.replaceState(null,'',url);
-  educationView=window.startEducationRoom({app,portrait,preview:location.pathname.endsWith('/preview-v2.html'),onHome:campaignHome,onBack:done=>showHall('education',done)});
+  educationView=window.startEducationRoom({app,portrait,onHome:campaignHome,onBack:done=>showHall('education',done)});
 }
 function enterChapterTwo(visit=false){
   educationView?.dispose();educationView=null;
@@ -77,7 +77,7 @@ function enterChapterTwo(visit=false){
   roomView?.dispose();roomView=null;chapterTwo?.dispose();chapterThree?.dispose();chapterThree=null;
   token++;clearTimeout(timer);clearTimeout(speechTimer);clearTimeout(talkTimer);cancelAnimationFrame(walkFrame);moving=false;suppressClick=false;
   state.chapter=2;save();chapterUrl(2);
-  chapterTwo=window.startChapterTwo({app,portrait,visit,preview:location.pathname.endsWith('/preview-v2.html'),onNext:()=>showHall('storage'),onHome:campaignHome,onBack:()=>showHall('storage',false)});
+  chapterTwo=window.startChapterTwo({app,portrait,visit,onNext:()=>showHall('storage'),onHome:campaignHome,onBack:()=>showHall('storage',false)});
 }
 function enterChapterThree(view='access',arrived=false){
   educationView?.dispose();educationView=null;
@@ -87,7 +87,7 @@ function enterChapterThree(view='access',arrived=false){
   roomView?.dispose();roomView=null;chapterTwo?.dispose();chapterTwo=null;chapterThree?.dispose();
   token++;clearTimeout(timer);clearTimeout(speechTimer);clearTimeout(talkTimer);cancelAnimationFrame(walkFrame);moving=false;suppressClick=false;
   state.chapter=3;save();chapterUrl(3);
-  chapterThree=window.startChapterThree({app,portrait,entryRoom:view,preview:location.pathname.endsWith('/preview-v2.html'),arrived,onBack:()=>showHall('access',false),onMirrorBack:()=>showHall('mirror',false),onNext:()=>showHall('mirror'),onCorridor:()=>showHall('access'),showCompleted:view==='summary',onHome:campaignHome});
+  chapterThree=window.startChapterThree({app,portrait,entryRoom:view,arrived,onBack:()=>showHall('access',false),onMirrorBack:()=>showHall('mirror',false),onNext:()=>showHall('mirror'),onCorridor:()=>showHall('access'),showCompleted:view==='summary',onHome:campaignHome});
 }
 function enterChapterFour(arrived=false){
   educationView?.dispose();educationView=null;
@@ -96,7 +96,7 @@ function enterChapterFour(arrived=false){
   roomView?.dispose();roomView=null;chapterTwo?.dispose();chapterTwo=null;chapterThree?.dispose();chapterThree=null;chapterFour?.dispose();
   token++;clearTimeout(timer);clearTimeout(speechTimer);clearTimeout(talkTimer);cancelAnimationFrame(walkFrame);moving=false;suppressClick=false;
   state.chapter=4;save();chapterUrl(4);
-  chapterFour=window.startChapterFour({app,portrait,arrived,preview:location.pathname.endsWith('/preview-v2.html'),onBack:()=>showHall('central',false),onHome:campaignHome});
+  chapterFour=window.startChapterFour({app,portrait,arrived,onBack:()=>showHall('central',false),onHome:campaignHome});
 }
 const touchPoints=new Map();
 const reduced=()=>window.matchMedia("(prefers-reduced-motion: reduce)").matches;

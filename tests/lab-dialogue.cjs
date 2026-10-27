@@ -21,7 +21,7 @@ console.log('PASS: local outage dialogue, distinct corridor places, observed kno
 
 s.floor=1;s.powerOut=true;s.emergencyOn=true;assert.equal(at(-65).id,'plate-emergency');assert.match(D.observe(s,{x:0,z:-65},M.doors),/천장/);assert.doesNotMatch(D.observe(s,{x:0,z:-320},M.doors),/상자|쌓|쪽지|비밀번호/);
 const fs=require('node:fs');
-for(const page of ['index.html','preview-v2.html']){
+for(const page of ['index.html']){
  const html=fs.readFileSync(require.resolve('../'+page),'utf8');
  assert.ok(html.indexOf('lab-dialogue.js?')>0&&html.indexOf('lab-dialogue.js?')<html.indexOf('lab-navigation.js?'),page+': dialogue data loads before its controller');
 }

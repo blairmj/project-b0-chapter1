@@ -66,30 +66,15 @@
 - 임시 2층 이동은 실제 열쇠 획득·계단 해제를 대신 기록하지 않음.
 - 정상적인 플레이 흐름 검토는 임시 기능을 사용하지 않고 **처음부터 시작**으로 진행.
 
-## 4. 실행과 저장
-
-### 온라인
+## 4. 플레이와 저장
 
 [GitHub Pages에서 플레이](https://blairmj.github.io/project-b0-chapter1/)
 
 시작 화면에서 **처음부터 시작** 또는 **이어하기** 선택.
 
-### 로컬 실행
-
-저장소 루트에서 Python 정적 서버 실행:
-
-```sh
-python -m http.server 8000
-```
-
-- 일반 실행: <http://localhost:8000/>
-- 진행을 분리한 검토용 실행: <http://localhost:8000/preview-v2.html>
-- 빌드 과정·서버 애플리케이션·API 키 불필요. Python은 로컬 파일 제공에만 사용.
-
 ### 저장 방식
 
-- 일반 게임 진행은 브라우저의 `localStorage`에 자동 저장.
-- `preview-v2.html`의 게임 진행은 `sessionStorage`에 저장하여 일반 게임과 분리.
+- 게임 진행은 브라우저에 자동 저장.
 - 방별 퍼즐, 소지품, 복도 위치, 열쇠·계단, 정전·비상 조명 상태 저장.
 - 방을 옮기거나 **처음 위치로**를 눌러도 정전·퍼즐 상태 유지.
 - **처음부터 시작**은 해당 실행 환경의 게임 진행 초기화. 브라우저·기기 간 저장 동기화는 미구현.
@@ -106,13 +91,16 @@ python -m http.server 8000
 | MP4·Web Audio | 실습실 기록 영상과 짧은 효과음 |
 | GitHub Pages | 정적 파일 호스팅 |
 
-**WebGL은 JavaScript에서 사용하는 브라우저 그래픽 API입니다.** WebGL 제어 코드와 셰이더 소스도 JS 파일에 들어 있으므로 GitHub의 언어 통계에서 JavaScript 비중이 높게 나타납니다.
-
 ### 렌더링 구조
 
-- **출입 관리실:** 한 장의 연속 파노라마를 WebGL로 투영하고 조사 대상과 같은 시선 각도 사용.
-- **복도:** 문·바닥·계단을 연결한 WebGL 공간. 같은 카메라와 삼각형으로 클릭 대상 판정.
-- **나머지 방:** WebGL 벽·바닥·천장과 CSS 3D 퍼즐 물체를 함께 사용. 공유 카메라로 위치와 가림 관계 유지.
+WebGL 배경을 공통으로 사용하며, 공간 표현과 이동 방식은 다음과 같이 구성.
+
+| 공간 | 공간 표현 | 이동 방식 |
+| --- | --- | --- |
+| 출입 관리실 | 360도 파노라마 이미지 투영 | 시선 회전과 물건 조사 중심 |
+| 복도 | 벽·문·계단을 입체 도형으로 구성 | 바닥 클릭으로 걷기, 시선 회전 |
+| 나머지 방 | WebGL 입체 배경과 CSS 3D 퍼즐 물체 조합 | 물건에 접근, 상자에 오르기 등 상황별 이동 |
+
 - **B-0:** 이미지·SVG·평면 스프라이트 기반 표현. 눈·입 움직임과 상황별 자세를 조합.
 - **실습실 영상:** 생성 일러스트에 느린 줌을 적용한 12초 무음 컷 영상. 재생·정지·되감기·텍스트 자막 지원.
 - **AI 동작:** 정해진 게임 규칙과 대화 분기. 실제 생성형 AI 호출·음성 인식·얼굴 인식·모델 학습은 사용하지 않음.
@@ -121,7 +109,7 @@ python -m http.server 8000
 
 | 역할 | 파일 |
 | --- | --- |
-| 진입점 | [index.html](index.html), [preview-v2.html](preview-v2.html) |
+| 진입점 | [index.html](index.html) |
 | 전체 진행·출입 관리실 | [firstperson.js](firstperson.js), [panorama.js](panorama.js) |
 | 복도 이동·입체 공간 | [lab-navigation-model.js](lab-navigation-model.js), [lab-navigation.js](lab-navigation.js), [lab-webgl.js](lab-webgl.js) |
 | 교육 실습실 | [education-model.js](education-model.js), [education-room.js](education-room.js) |
@@ -132,32 +120,7 @@ python -m http.server 8000
 | 공통 공간·문 통과 | [room-space.js](room-space.js), [room-webgl.js](room-webgl.js), [room-transition.js](room-transition.js) |
 | 리소스·검사 | [assets/](assets/), [tests/](tests/) |
 
-## 6. 검사와 배포
-
-### 자동 검사
-
-Node.js로 실행하는 퍼즐 규칙·입력·진행 연결 검사 20개 구성. 실행에는 Node.js가 필요하며 게임 배포에는 필요하지 않음.
-
-Windows PowerShell에서 전체 검사:
-
-```powershell
-Get-ChildItem tests -Filter *.cjs | ForEach-Object {
-  node $_.FullName
-  if ($LASTEXITCODE -ne 0) { throw "검사 실패: $($_.Name)" }
-}
-```
-
-주요 검증 대상:
-
-- 방 사이 이동, 저장 복원, 임시 위치 이동.
-- 상자 배치·올라서기·B-0 구조, 협동 손잡이·출입문 조건.
-- 기록 메모리 획득과 비밀 일지 접근 조건.
-- 팝업을 닫은 뒤 조작 재개, 드래그와 클릭 구분.
-- WebGL 카메라·선택 좌표, 캐릭터 위치, 문 통과 처리.
-
-자동 검사와 별도로 브라우저에서 실제 마우스 조작·세로 화면·연속 플레이 확인.
-
-### GitHub Pages 배포
+## 6. 배포
 
 - `main` 브랜치에 푸시하면 [pages.yml](.github/workflows/pages.yml) 실행.
 - 저장소의 정적 파일을 GitHub Pages로 배포. 별도 번들링·빌드 단계 없음.
@@ -179,6 +142,8 @@ Get-ChildItem tests -Filter *.cjs | ForEach-Object {
 | UI 통일 | 상단·하단 한 줄 배치, 공통 팝업·폰트, 메뉴에 지도·기록 배치 |
 | 교육 실습실 | 수업 기록 영상, 풀이 수정·검증, 메모리와 비밀 일지 연결 |
 | 입력·재방문 | 임시 위치 이동, 완료 방 재방문, 복도 드래그, 빈 책상 시점 유지 수정 |
+
+자동 검증은 [tests/](tests/)의 20개 검사로 구성. 퍼즐 규칙·입력·방 연결·저장 복원·렌더링 좌표 등을 확인하며, 브라우저에서 실제 조작도 별도 확인.
 
 최근 주요 변경:
 

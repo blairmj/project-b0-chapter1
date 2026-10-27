@@ -32,5 +32,5 @@ K.remember(central,'door',2);assert.match(K.reply('central',central,{latch:.5}),
 central.holding=true;assert.match(K.reply('central',central),/계속 잡고/);
 central.opened=true;assert.match(K.reply('central',central),/열린 채 고정/);assert.equal(central.holding,true,'recap does not release B-0');
 const controller=fs.readFileSync(require.resolve('../chapter3.js'),'utf8');assert.doesNotMatch(controller,/출구라며/,'student does not attribute an unspoken route to B-0');
-for(const page of ['index.html','preview-v2.html']){const html=fs.readFileSync(require.resolve('../'+page),'utf8');assert.ok(html.indexOf('room-dialogue.js?')>0&&html.indexOf('room-dialogue.js?')<html.indexOf('chapter2.js?'));}
+for(const page of ['index.html']){const html=fs.readFileSync(require.resolve('../'+page),'utf8');assert.ok(html.indexOf('room-dialogue.js?')>0&&html.indexOf('room-dialogue.js?')<html.indexOf('chapter2.js?'));}
 console.log('PASS: look/read/open knowledge boundaries, no unobserved clue/answer disclosure, action-state replies, persistence, reset and page integration');

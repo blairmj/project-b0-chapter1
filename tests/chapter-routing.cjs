@@ -1,15 +1,15 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),M=require('../lab-navigation-model.js');
 const app={attributes:{},setAttribute(k,v){this.attributes[k]=v;},querySelector(){return null;},querySelectorAll(){return [];},addEventListener(){}};
 let stored=JSON.stringify({phase:'escaped',chapter:3,muted:true}),two,three,four,hall,disposed=0;
-const location={pathname:'/preview-v2.html',href:'https://example.test/preview-v2.html?chapter=2',search:'?chapter=2'};
+const location={pathname:'/index.html',href:'https://example.test/index.html?chapter=2',search:'?chapter=2'};
 const rooms=new Map([['unrelated-user-data','keep']]);
 const context=vm.createContext({document:{querySelector:()=>app},location,URL,URLSearchParams,
  history:{replaceState(a,b,url){location.href=String(url);location.search=new URL(url).search;}},
- sessionStorage:{getItem:k=>k==='project-b0-firstperson-v4'?stored:rooms.get(k)??null,setItem(k,v){if(k==='project-b0-firstperson-v4')stored=v;else rooms.set(k,v);},removeItem:k=>rooms.delete(k)},setTimeout:()=>0,clearTimeout(){},cancelAnimationFrame(){},
+ localStorage:{getItem:k=>k==='project-b0-firstperson-v4'?stored:rooms.get(k)??null,setItem(k,v){if(k==='project-b0-firstperson-v4')stored=v;else rooms.set(k,v);},removeItem:k=>rooms.delete(k)},setTimeout:()=>0,clearTimeout(){},cancelAnimationFrame(){},
  window:{B0LabNavigation:M,addEventListener(){},startLabNavigation(options){hall=options;return {dispose(){disposed++;}};},startChapterTwo(options){two=options;return {dispose(){disposed++;},jumpToEnd(){rooms.set('reviewed-chapter','2');}};},startChapterThree(options){three=options;return {dispose(){disposed++;}};},startChapterFour(options){four=options;return {dispose(){disposed++;}};}}});
 const run=s=>vm.runInContext(s,context);
 run(fs.readFileSync(require.resolve('../firstperson.js'),'utf8').replace(/boot\(\);\s*$/,''));
-run('boot()');assert.ok(two,'explicit Chapter 2 URL enters the saved room');assert.equal(two.preview,true);
+run('boot()');assert.ok(two,'explicit Chapter 2 URL enters the saved room');assert.equal(two.preview,undefined,'normal entry uses persistent browser storage');
 two.onNext();assert.ok(hall);assert.equal(hall.state.cleared.storage,true);assert.equal(new URL(location.href).searchParams.get('area'),'hall');assert.equal(three,undefined,'room exit must not teleport into the next room');
 hall.onEnter('access');assert.ok(three);assert.equal(new URL(location.href).searchParams.get('chapter'),'3');assert.equal(new URL(location.href).searchParams.has('area'),false);
 three.onCorridor();assert.equal(hall.state.cleared.access,true);hall.onEnter('mirror');assert.equal(new URL(location.href).searchParams.get('room'),'mirror');
@@ -37,7 +37,7 @@ context.window.startEducationRoom=options=>({dispose(){disposed++;}});
 run('startAdventure()');
 const originalRooms=[...rooms.entries()].filter(([key])=>key.includes('room2')||key.includes('room3'));
 run('window.B0CampaignUI.travel("education")');assert.equal(new URL(location.href).searchParams.get('room'),'education');
-run('window.B0CampaignUI.travel("central")');assert.equal(JSON.parse(stored).chapter,4);assert.equal(four.preview,true);
+run('window.B0CampaignUI.travel("central")');assert.equal(JSON.parse(stored).chapter,4);assert.equal(four.preview,undefined);
 let reviewNav=JSON.parse(rooms.get('project-b0-lab-navigation-v1'));
 assert.equal(reviewNav.keyTaken,false);assert.equal(reviewNav.stairsUnlocked,false);assert.equal(reviewNav.reviewMode,true);assert.equal(reviewNav.floor,2);
 assert.equal(M.restore(reviewNav).floor,2,'temporary floor survives reload without a real key');
