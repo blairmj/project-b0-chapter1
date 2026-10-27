@@ -5,7 +5,7 @@
   const common=(text,action)=>button(text,action);
   let returnMenu=null;
   function header({place,namespace='action',reset='home',zoomClass='',active=false}){
-    return `<header class="b0-hud"><div class="b0-hud-main"><h1 class="b0-location ${namespace==='lab'?'lab-location':''}">${place}</h1><nav aria-label="게임 메뉴"><div class="zoom-controls" role="group" aria-label="화면 배율">${button('−','zoom-out',namespace,`aria-label="축소" ${active?'':'disabled'}`)}<output class="${zoomClass}" hidden>100%</output>${button('+','zoom-in',namespace,`aria-label="확대" ${active?'':'disabled'}`)}</div>${button('메뉴','menu',namespace)}</nav></div><div class="b0-hud-tools">${button('처음 위치로',reset,namespace,active?'':'disabled')}${window.B0LessonJumpButton?.()||''}</div></header>`;
+    return `<header class="b0-hud"><div class="b0-hud-main"><h1 class="b0-location ${namespace==='lab'?'lab-location':''}">${place}</h1><div class="b0-hud-tools">${button('처음 위치로',reset,namespace,active?'':'disabled')}${window.B0LessonJumpButton?.()||''}</div><nav aria-label="게임 메뉴"><div class="zoom-controls" role="group" aria-label="화면 배율">${button('−','zoom-out',namespace,`aria-label="축소" ${active?'':'disabled'}`)}<output class="${zoomClass}" hidden>100%</output>${button('+','zoom-in',namespace,`aria-label="확대" ${active?'':'disabled'}`)}</div>${button('메뉴','menu',namespace)}</nav></div></header>`;
   }
   function menuContent({namespace='action',close='close-modal',home='campaign-home',record='',extras=''}={}){
     const native=(text,action)=>button(text,action,namespace);
