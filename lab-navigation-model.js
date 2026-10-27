@@ -37,7 +37,9 @@
     // Solved rooms retain their distinct exits (window / hidden passage).
     if(!completed&&doors[from]){
       const d=doors[from];s.mode='hall';s.floor=d.floor;s.companion=null;
-      s.camera={x:d.x?Math.sign(d.x)*140:0,z:from==='practice'?140:from==='central'?-2435:d.z,yaw:((d.yaw+360)%360)-180,pitch:-4};
+      // Step out to the corridor center and look along it. Looking directly
+      // away from a side door otherwise fills a portrait screen with a wall.
+      s.camera={x:0,z:from==='practice'?140:from==='central'?-2435:d.z,yaw:d.floor===2?-180:0,pitch:-4};
       return s;
     }
     s.mode='hall';s.floor=1;s.companion=null;s.camera={x:0,z:80,yaw:0,pitch:-4};

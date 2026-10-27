@@ -44,7 +44,8 @@ for(const id of ['storage','access','mirror','central']){
   const before={...back.cleared};M.returned(back,id,false);
   assert.deepEqual(back.cleared,before,'backtracking cannot complete a room');
   assert.equal(back.floor,M.doors[id].floor);assert.equal(back.camera.z,id==='central'?-2435:M.doors[id].z);
-  assert.equal(Math.sign(back.camera.x),Math.sign(M.doors[id].x),'return through the same side of the corridor');
+  assert.equal(back.camera.x,0,'step into the corridor center instead of staring at the opposite wall');
+  assert.equal(back.camera.yaw,id==='central'?-180:0,'look along the corridor after leaving a room');
   const same=M.restore(back);assert.equal(same.camera.z,back.camera.z,'doorway position survives reload');
 }
 console.log('PASS: every room backtracks through its own doorway without granting completion');
