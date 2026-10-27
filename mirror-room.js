@@ -82,9 +82,9 @@
     }
     function activateObject(id){if(!targetMode&&id==='door'&&M.solved(s)){leave();return;}select(id);}
     function select(id){
-      if(s.phase==='approach')return;selection=id;speech.hidden=true;
+      if(s.phase==='approach')return;selection=id;window.B0RoomDialogue?.remember(s,id);save();speech.hidden=true;
       if(targetMode&&M.symbols.includes(id)){targetMode=false;cameraTo({x:-55,z:-55,yaw:90,pitch:-5,zoom:1.45});requestMenu(id);return;}
-      if(id==='robot'){robotMenu();return;}
+      if(id==='robot'){robotMenu(true);return;}
       const positions={door:{x:-160,z:-130,yaw:0,pitch:-5},own:{x:-180,z:-120,yaw:-20,pitch:-5},glass:{x:-105,z:0,yaw:90,pitch:-8},panel:{x:-55,z:-55,yaw:90,pitch:-5,zoom:1.45},vent:{x:-80,z:-200,yaw:70,pitch:12},entry:{x:-150,z:140,yaw:180,pitch:-8}};
       if(M.symbols.includes(id)){cameraTo(positions.panel);leverActions(id);return;}
       if(positions[id])cameraTo(positions[id]);
@@ -93,9 +93,9 @@
     }
     function leverActions(id){selection=id;actions(M.names[id]+' 손잡이',[['살펴보기','inspect-'+id],...(['split','unlocked'].includes(s.phase)?[['B-0에게 부탁','request-'+id]]:[]),['선택 닫기','clear']]);}
     function requestMenu(id){if(!['split','unlocked'].includes(s.phase)){leverActions(id);return;}selection=id;actions(M.names[id]+' 손잡이를 어떻게 움직일까?',[['내려 줘','command-'+id+'-down'],['올려 줘','command-'+id+'-up'],['내린 채 잡고 있어','command-'+id+'-hold'],['놓아 줘','command-'+id+'-release'],['돌아가기','select-'+id]]);}
-    function robotMenu(){actions('B-0에게 말하기',[['뭐가 보이니?','ask-see'],['방금 어떻게 움직였어?','ask-last'],...(s.phase==='unlocked'?[['이제 놓아도 돼','reunite']]:[]),...(['split','unlocked'].includes(s.phase)?[['대상 가리키기','target-mode']]:[]),['닫기','clear']]);}
+    function robotMenu(respond=false){if(respond)say('robot',window.B0RoomDialogue?.reply('mirror',s,{target:selection})||M.reply(s,'last'));actions('B-0에게 말하기',[['뭐가 보이니?','ask-see'],['방금 어떻게 움직였어?','ask-last'],...(s.phase==='unlocked'?[['이제 놓아도 돼','reunite']]:[]),...(['split','unlocked'].includes(s.phase)?[['대상 가리키기','target-mode']]:[]),['닫기','clear']]);}
     function inspect(id){
-      M.inspect(s,id);save();const descriptions={door:M.solved(s)?'두 잠금쇠가 풀렸다. 문 너머로 통로가 보인다.':'두 개의 잠금쇠가 문을 잡고 있다. 위쪽 잠금쇠 옆에는 삼각형이 새겨져 있다.',own:'아래로 움직이는 손잡이다. 손을 떼면 다시 위로 돌아온다.',glass:M.solved(s)?'유리벽이 위로 올라가 있다. 이제 서로에게 갈 수 있다.':'두꺼운 유리다. B-0는 보이지만 이쪽에서 건너갈 수는 없다.',panel:'모양이 다른 손잡이가 세 개 있다. 유리 너머에 있어서 내 손으로는 닿지 않는다.',vent:s.vent?'환기 장치의 덮개가 닫혀 있다.':'높은 벽에 환기 장치가 달려 있다.',entry:'지나온 문이 닫혀 있다. 안쪽 손잡이도 움직이지 않는다.'};
+      window.B0RoomDialogue?.remember(s,id,2);M.inspect(s,id);save();const descriptions={door:M.solved(s)?'두 잠금쇠가 풀렸다. 문 너머로 통로가 보인다.':'두 개의 잠금쇠가 문을 잡고 있다. 위쪽 잠금쇠 옆에는 삼각형이 새겨져 있다.',own:'아래로 움직이는 손잡이다. 손을 떼면 다시 위로 돌아온다.',glass:M.solved(s)?'유리벽이 위로 올라가 있다. 이제 서로에게 갈 수 있다.':'두꺼운 유리다. B-0는 보이지만 이쪽에서 건너갈 수는 없다.',panel:'모양이 다른 손잡이가 세 개 있다. 유리 너머에 있어서 내 손으로는 닿지 않는다.',vent:s.vent?'환기 장치의 덮개가 닫혀 있다.':'높은 벽에 환기 장치가 달려 있다.',entry:'지나온 문이 닫혀 있다. 안쪽 손잡이도 움직이지 않는다.'};
       say('student',M.symbols.includes(id)?`${M.names[id]}가 새겨져 있다. 아래로 움직일 수 있는 손잡이다. 유리 너머에 있어 손이 닿지 않는다.`:descriptions[id]||'직접 살펴보자.');
     }
     function command(id,verb){
@@ -112,7 +112,7 @@
     }
     function unlockedActions(){actions('출입문이 열렸다.',[['이제 놓아도 돼','reunite'],['문 살펴보기','select-door']]);}
     function afterUnlock(){save();update();sound('unlock');say('student','열렸어!');unlockedActions();}
-    function pull(){
+    function pull(){window.B0RoomDialogue?.remember(s,'own',3);save();
       if(s.phase!=='split')return;cancelAnimationFrame(handFrame);const start=performance.now();
       function step(t){if(dead||s.phase!=='split')return;const v=reduce()?1:Math.min(1,(t-start)/500);if(M.setOwn(s,v)){afterUnlock();return;}update();if(v<1)handFrame=requestAnimationFrame(step);else{say('student','아래쪽 잠금쇠가 움직였어.');later(()=>{if(s.phase==='split'&&!pointer){M.setOwn(s,0);update();}},350);}}
       handFrame=requestAnimationFrame(step);
@@ -130,10 +130,10 @@
     }
     function move(e){
       if(!pointer||pointer.id!==e.pointerId)return;const dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;if(!pointer.moved&&Math.hypot(dx,dy)<6)return;pointer.moved=true;stage.setPointerCapture(e.pointerId);
-      if(pointer.own){if(M.setOwn(s,pointer.base+dy/85))afterUnlock();else update();}
+      if(pointer.own){window.B0RoomDialogue?.remember(s,'own',3);if(M.setOwn(s,pointer.base+dy/85))afterUnlock();else update();}
       else{camera.yaw=pointer.yaw-dx*.19/camera.zoom;camera.pitch=pointer.pitch+dy*.16/camera.zoom;updateCamera();}e.preventDefault();
     }
-    function up(e){if(!pointer||pointer.id!==e.pointerId)return;const p=pointer;pointer=null;suppress=p.moved;if(stage.hasPointerCapture(e.pointerId))stage.releasePointerCapture(e.pointerId);if(p.own&&s.phase==='split'){M.setOwn(s,0);update();if(p.moved)say('student','손을 떼니 손잡이가 돌아왔어.');}save();}
+    function up(e){if(!pointer||pointer.id!==e.pointerId)return;const p=pointer;pointer=null;suppress=p.moved;if(stage.hasPointerCapture(e.pointerId))stage.releasePointerCapture(e.pointerId);if(p.own&&s.phase==='split'){if(p.moved)window.B0RoomDialogue?.remember(s,'own',3);M.setOwn(s,0);update();if(p.moved)say('student','손을 떼니 손잡이가 돌아왔어.');}save();}
     function cancelPointer(){pointer=null;suppress=true;if(s.phase==='split')M.setOwn(s,0);update();save();}
     function modal(title,body){app.querySelector('.mr-modal')?.remove();const d=document.createElement('dialog');d.className='modal mr-modal';d.innerHTML=`<div class="modal-header"><h2>${esc(title)}</h2>${b('닫기','close-modal','quiet')}</div><div class="modal-body">${body}</div>`;app.append(d);d.addEventListener('close',()=>d.remove());d.showModal();}
     function act(a){
@@ -150,7 +150,7 @@
       if(a.startsWith('zoom-')){camera.zoom=Math.max(.7,Math.min(1.65,camera.zoom+(a==='zoom-in'?.15:-.15)));updateCamera();return;}
       if(s.phase==='approach')return;
       if(a==='clear'){selection=null;targetMode=false;speech.hidden=true;actions('방 안을 자유롭게 살펴보세요.');return;}
-      if(a==='robot'){robotMenu();return;}if(a.startsWith('ask-')){say('robot',M.reply(s,a.slice(4)));return;}
+      if(a==='robot'){robotMenu(true);return;}if(a.startsWith('ask-')){say('robot',M.reply(s,a.slice(4)));return;}
       if(a==='target-mode'){targetMode=true;actions('물건을 직접 눌러 가리켜 주세요.',[['취소','clear']]);return;}
       if(a.startsWith('select-')){select(a.slice(7));return;}if(a.startsWith('inspect-')){inspect(a.slice(8));return;}
       if(a.startsWith('request-')){requestMenu(a.slice(8));return;}

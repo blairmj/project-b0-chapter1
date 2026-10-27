@@ -2,7 +2,7 @@
   'use strict';
   const symbols=['circle','triangle','square'];
   const objects=['door','own','glass','panel','robot','vent','entry',...symbols];
-  const fresh=()=>({version:1,phase:'approach',line:0,holding:null,active:null,last:null,own:0,lights:false,vent:false,seen:{},logs:[]});
+  const fresh=()=>({version:1,phase:'approach',line:0,holding:null,active:null,last:null,own:0,lights:false,vent:false,seen:{},observations:{seen:{},last:''},logs:[]});
   const solved=s=>['unlocked','reunited','complete'].includes(s.phase);
   function log(s,action,target,verb){s.logs.push({action,target,verb});s.logs=s.logs.slice(-100);}
   function inspect(s,id){if(!objects.includes(id))return false;s.seen[id]=true;log(s,'inspect',id);return true;}
@@ -43,7 +43,7 @@
     s.own=solved(s)?1:0;s.lights=s.holding==='circle';s.vent=s.holding==='square';
     if(raw.last&&symbols.includes(raw.last.target)&&['down','up','hold','release'].includes(raw.last.verb))s.last={target:raw.last.target,verb:raw.last.verb};
     for(const id of objects)if(raw.seen?.[id]===true)s.seen[id]=true;
-    s.logs=Array.isArray(raw.logs)?raw.logs.filter(x=>x&&typeof x.action==='string').slice(-100):[];return s;
+    s.logs=Array.isArray(raw.logs)?raw.logs.filter(x=>x&&typeof x.action==='string').slice(-100):[];if(raw.observations&&typeof raw.observations==='object')s.observations={seen:{...raw.observations.seen},last:raw.observations.last};return s;
   }
   const api={fresh,solved,inspect,release,command,setOwn,join,finish,reply,restore,names,symbols};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.B0Mirror=api;

@@ -3,7 +3,7 @@ const nodes=new Map();function node(k){if(!nodes.has(k))nodes.set(k,{style:{},da
 const initial=M.fresh();Object.assign(initial,{phase:'room',met:true,boss:true});
 let saved,now=0,id=0;const frames=new Map(),timers=new Map(),app={innerHTML:'',querySelector:s=>node(s),addEventListener(){},removeEventListener(){}};
 const storage={getItem:k=>k==='project-b0-final-v2'?JSON.stringify(initial):null,setItem(k,v){if(k==='project-b0-final-v2')saved=JSON.parse(v);}};
-const ctx={window:{B0Final:M,addEventListener(){},removeEventListener(){}},localStorage:storage,sessionStorage:storage,matchMedia:()=>({matches:true}),performance:{now:()=>now},setTimeout(f){timers.set(++id,f);return id;},clearTimeout(n){timers.delete(n);},requestAnimationFrame(f){frames.set(++id,f);return id;},cancelAnimationFrame(n){frames.delete(n);}};
+const ctx={window:{B0Final:M,B0RoomDialogue:require('../room-dialogue.js'),addEventListener(){},removeEventListener(){}},localStorage:storage,sessionStorage:storage,matchMedia:()=>({matches:true}),performance:{now:()=>now},setTimeout(f){timers.set(++id,f);return id;},clearTimeout(n){timers.delete(n);},requestAnimationFrame(f){frames.set(++id,f);return id;},cancelAnimationFrame(n){frames.delete(n);}};
 let closedContexts=0;
 ctx.window.AudioContext=class{
   constructor(){this.currentTime=0;this.closed=false;this.destination={};}

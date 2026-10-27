@@ -1,6 +1,6 @@
 (function(root){
   'use strict';
-  const fresh=()=>({version:2,phase:'intro',line:0,met:false,boss:false,bodyChecked:false,links:{robot:true},upper:false,holding:false,opened:false,seen:{},logs:[]});
+  const fresh=()=>({version:2,phase:'intro',line:0,met:false,boss:false,bodyChecked:false,links:{robot:true},upper:false,holding:false,opened:false,seen:{},observations:{seen:{},last:''},logs:[]});
   function restore(raw){const s=fresh();if(!raw||raw.version!==2)return s;
     for(const k of ['met','boss','bodyChecked','upper','opened'])s[k]=raw[k]===true;
     if(['intro','room','farewell','ending','complete'].includes(raw.phase))s.phase=raw.phase;
@@ -9,7 +9,7 @@
     if(['farewell','ending','complete'].includes(s.phase)&&!s.opened){s.phase='room';s.line=0;}
     // A saved request is not a maintained physical grip after a reload.
     s.holding=false;s.seen=raw.seen&&typeof raw.seen==='object'?{...raw.seen}:{};
-    s.logs=Array.isArray(raw.logs)?raw.logs.slice(-80):[];return s;
+    s.logs=Array.isArray(raw.logs)?raw.logs.slice(-80):[];if(raw.observations&&typeof raw.observations==='object')s.observations={seen:{...raw.observations.seen},last:raw.observations.last};return s;
   }
   function log(s,action,value){s.logs.push({action,value});s.logs=s.logs.slice(-80);}
   function connect(s,id,on){if(id!=='robot'||!s.boss||!s.bodyChecked||s.opened)return false;s.links.robot=!!on;if(on)s.holding=false;log(s,'remote-control',!!on);return true;}

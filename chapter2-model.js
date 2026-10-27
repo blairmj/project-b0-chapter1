@@ -2,7 +2,7 @@
 (function(root){
   'use strict';
   const sizes={wide:{w:118,d:92,h:62,name:'넓은 상자'},small:{w:76,d:68,h:56,name:'작은 상자'}};
-  const fresh=()=>({version:1,boxes:{wide:{x:-175,z:-60,on:null},small:{x:160,z:125,on:null}},assisted:null,ventOpen:false,fakeWindowOpen:false,cabinetOpen:false,windowOpen:false,phase:'room',hint:0,logs:[]});
+  const fresh=()=>({version:1,boxes:{wide:{x:-175,z:-60,on:null},small:{x:160,z:125,on:null}},assisted:null,ventOpen:false,fakeWindowOpen:false,cabinetOpen:false,windowOpen:false,phase:'room',hint:0,observations:{seen:{},last:''},logs:[]});
   const other=id=>id==='wide'?'small':'wide';
   function top(s,id){return sizes[id].h+(s.boxes[id].on?sizes[s.boxes[id].on].h:0);}
   function position(s,id){return s.boxes[id].on?s.boxes[s.boxes[id].on]:s.boxes[id];}
@@ -55,7 +55,7 @@
     for(const k of ['ventOpen','fakeWindowOpen','cabinetOpen','windowOpen'])f[k]=raw[k]===true;
     f.phase=['room','ledge','complete'].includes(raw.phase)?raw.phase:'room';
     f.hint=Math.max(0,Math.min(4,Number(raw.hint)||0));f.logs=Array.isArray(raw.logs)?raw.logs.slice(-100):[];
-    return f;
+    if(raw.observations&&typeof raw.observations==='object')f.observations={seen:{...raw.observations.seen},last:raw.observations.last};return f;
   }
   const api={sizes,fresh,top,position,destination,move,nearWindow,reach,boost,robotSpot,openWindow,exit,finish,restore};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.B0RoomTwo=api;

@@ -109,16 +109,16 @@
       if(selection==='ask'){selection=null;ask(id);return;}
       if(selection==='lift-target'){selection=null;if(id!=='high'){say('robot','그곳에는 들어 올려 드릴 자리가 없습니다.');robotMenu();return;}lift();return;}
       if(selection==='hold-target'){selection=null;if(id!=='handle'){say('robot','그 물건은 당긴 채 잡을 수 없습니다.');robotMenu();return;}hold(true);return;}
-      selection=id;s.seen[id]=true;save();speech.hidden=true;approach(id);
+      selection=id;window.B0RoomDialogue?.remember(s,id);s.seen[id]=true;save();speech.hidden=true;approach(id);
       if(id==='screen')actions('AXIOM 관리 화면',[['화면 살펴보기','inspect-screen'],['선택 닫기','clear']]);
       if(id==='records')actions('시설 운영 기록',[['기록 읽기','history'],['선택 닫기','clear']]);
       if(id==='console')actions('기체 제어 연결 조작대',[['덮개 열기','connections'],['표기 확인 부탁','ask-console'],['선택 닫기','clear']]);
       if(id==='door')actions('외부 출구',[['실제 잠금쇠 살펴보기','inspect-door'],[s.opened?'B-0와 출구로 가기':s.met&&!s.boss?'B-0에게 돌아가기':'문 손잡이 돌리기',s.opened?'leave':s.met&&!s.boss?'return-b0':'try-door'],['B-0에게 문 확인 부탁','ask-door'],...(r.handle?[['문 손잡이 놓기','release']]:[]),['선택 닫기','clear']]);
       if(id==='high')actions('문 위 수동 잠금장치',[['살펴보기','inspect-high'],...(r.lifted?[['잠금쇠 오른쪽으로 밀기','high-pull'],['내려 달라고 하기','lower']]:[]),['선택 닫기','clear']]);
-      if(id==='handle')handleActions();if(id==='robot')robotMenu();
+      if(id==='handle')handleActions();if(id==='robot')robotMenu(true);
     }
     function handleActions(){actions('문 옆 개방 손잡이',[['살펴보기','inspect-handle'],['직접 당겨 보기','own-side'],['B-0에게 부탁하기','robot'],['선택 닫기','clear']]);}
-    function robotMenu(){actions('B-0에게 부탁하기',[
+    function robotMenu(respond=false){if(respond)say('robot',window.B0RoomDialogue?.reply('central',s,{target:selection,lifted:r.lifted,latch:r.latch})||'확인한 장치에 대해 이야기해 주세요.');actions('B-0에게 부탁하기',[
       ['몸의 상태를 확인해 줘','ask-body'],['내가 고른 곳 확인해 줘','choose-target'],['나를 들어 올려 줘','request-lift'],['당긴 채 잡고 있어','request-hold'],
       ...(r.lifted?[['내려 줘','lower']]:[]),...(s.holding?[['계속 잡고 있어','keep-hold'],['이제 놓아도 돼','release-b0']]:[]),...(s.met&&!s.boss?[['같이 가자','return-b0']]:[]),['대화 닫기','clear']]);}
     function meet(){if(s.met)return;s.met=true;save();update();talk(offer,()=>select('door'));}
@@ -136,9 +136,9 @@
 
     function modal(title,body){closeModal(false);const el=document.createElement('dialog');el.className='c4-modal';el.innerHTML=`<header><h2>${esc(title)}</h2>${b('닫기','close-modal','quiet')}</header><div class="c4-modal-content"><div class="c4-modal-response" aria-live="polite" hidden></div>${body}</div>`;app.append(el);modalEl=el;el.addEventListener('cancel',e=>{e.preventDefault();closeModal();});el.showModal();if(s.phase==='room')updateTension();}
     function closeModal(reveal=true){const wasOpen=!!modalEl;if(modalEl){modalEl.close();modalEl.remove();modalEl=null;}if(wasOpen&&reveal&&recoveryPending&&!dead&&inRoom()&&!s.links.robot){recoveryPending=false;wakeUntil=performance.now()+1850;const actor=app.querySelector('.c4-robot');actor.dataset.pose='idle';void actor.offsetWidth;updateRobot();approach('robot');}}
-    function history(){modal('시설 운영 기록',`<div class="c4-history"><p>시설 폐쇄 절차 진행 중</p><p>잔여 이용자: 퇴실</p><p>잔여 교육 기체: 회수 후 초기화</p>${s.boss?'<p>B-0 · 미등록 행동 학습 / 승인되지 않은 이동 / 회수 필요</p>':''}</div>`);}
+    function history(){window.B0RoomDialogue?.remember(s,'records',2);save();modal('시설 운영 기록',`<div class="c4-history"><p>시설 폐쇄 절차 진행 중</p><p>잔여 이용자: 퇴실</p><p>잔여 교육 기체: 회수 후 초기화</p>${s.boss?'<p>B-0 · 미등록 행동 학습 / 승인되지 않은 이동 / 회수 필요</p>':''}</div>`);}
     const names={robot:'B-0 원격 동작 제어'};
-    function connections(){modal('기체 제어 연결',`<section class="c4-link-row" data-link-row="robot"><button data-c4="scope-robot" class="c4-link-name">B-0 원격 동작 제어</button><div class="c4-wire"><span></span><button class="c4-plug" data-c4-drag="plug-robot" data-c4="scope-robot" aria-label="B-0 원격 동작 제어 연결 단자"><i></i></button><small>AXIOM</small></div>${b('분리','disconnect-robot','quiet c4-link-toggle')}</section><p class="c4-scope" aria-live="polite">기체의 상태와 연결 표기를 확인할 수 있습니다.</p>`);updateLinks();}
+    function connections(){window.B0RoomDialogue?.remember(s,'console',3);save();modal('기체 제어 연결',`<section class="c4-link-row" data-link-row="robot"><button data-c4="scope-robot" class="c4-link-name">B-0 원격 동작 제어</button><div class="c4-wire"><span></span><button class="c4-plug" data-c4-drag="plug-robot" data-c4="scope-robot" aria-label="B-0 원격 동작 제어 연결 단자"><i></i></button><small>AXIOM</small></div>${b('분리','disconnect-robot','quiet c4-link-toggle')}</section><p class="c4-scope" aria-live="polite">기체의 상태와 연결 표기를 확인할 수 있습니다.</p>`);updateLinks();}
     function updateLinks(){if(!modalEl)return;const row=modalEl.querySelector('[data-link-row="robot"]');if(!row)return;row.classList.toggle('disconnected',!s.links.robot);row.querySelector('.c4-link-toggle').textContent=s.links.robot?'분리':'다시 연결';row.querySelector('.c4-link-toggle').dataset.c4=(s.links.robot?'disconnect-':'connect-')+'robot';}
     function link(id,on){if(on&&(r.lifted||s.holding)){modalEl.querySelector('.c4-scope').textContent='B-0가 다른 동작을 유지하고 있습니다. 먼저 동작을 마쳐 주세요.';return;}if(!M.connect(s,id,on)){modalEl.querySelector('.c4-scope').textContent=s.opened?'개방 고정 상태입니다.':s.boss?'회수 기체의 상태 확인이 필요합니다.':'회수 절차가 실행되지 않았습니다.';sound(true);return;}
       M.release(s,r);save();updateLinks();update();modalEl.querySelector('.c4-scope').textContent=on?'원격 동작 제어 연결됨':'원격 동작 제어 분리됨';
@@ -147,6 +147,7 @@
     }
     function scope(){modalEl.querySelector('.c4-scope').textContent='이 연결은 B-0의 손과 발을 원격으로 제어합니다. 기체 내부의 학습 기록과는 별개입니다.';}
     function ask(id){if(id==='body'){s.bodyChecked=true;save();say('robot',s.met&&s.links.robot?'회수 모드가 작동하고 있습니다. 손과 발의 움직임이 제한되었습니다.':'손과 발의 움직임은 정상입니다.');return;}
+      window.B0RoomDialogue?.remember(s,id,2);s.seen[id]=true;save();if(window.B0RoomDialogue){say('robot',window.B0RoomDialogue.about('central',s,id,{lifted:r.lifted,latch:r.latch}));return;}
       const observations={door:s.opened?'잠금쇠가 모두 빠졌고 문이 열린 채 고정되었습니다.':r.latch>=.35?'화면은 완료라고 나옵니다. 하지만 잠금쇠 끝부분이 아직 문에 걸려 있습니다.':r.latch>0?'아래 잠금쇠가 움직이고 있습니다. 문은 아직 닫혀 있습니다.':s.upper?'위 잠금쇠는 빠졌지만 아래 잠금쇠는 걸려 있습니다.':'문 위와 옆에 잠금쇠가 하나씩 있습니다.',screen:s.boss?'기체 회수와 반출 제한이라고 적혀 있습니다.':'방문자 퇴실과 기체 회수라고 적혀 있습니다.',console:'B-0 원격 동작 제어라고 적혀 있습니다.',handle:'개방 손잡이라고 적혀 있습니다. 당기면 문 옆 잠금쇠와 연결된 줄이 움직입니다.',high:'수동 잠금장치입니다. 위 잠금쇠와 이어져 있습니다.',records:'시설 폐쇄 절차에 관한 기록입니다.'};say('robot',observations[id]||'어느 물건을 확인할지 직접 눌러 주세요.');}
     function pull(){if(!s.met){meet();return;}if(!s.boss){challenge();return;}if(r.lifted){say('student','먼저 내려가야 문손잡이에 닿겠어.');return;}
       r.handle=1;updateMechanical();select('door');say('student',!s.upper?'위 잠금쇠에 걸려 있어.':!s.holding?'문 옆 손잡이가 제자리로 돌아가네.':'손잡이를 돌렸어. 문이 움직이는지 보자.');
@@ -175,18 +176,18 @@
       if(a==='home'){if(r.lifted){lower();return;}cancelAnimationFrame(camFrame);camera={x:0,z:60,yaw:-15,pitch:14,zoom:.7,height:0};updateCamera();return;}
       if(a==='zoom-in'||a==='zoom-out'){camera.zoom=Math.max(.65,Math.min(1.6,camera.zoom+(a==='zoom-in'?.15:-.15)));updateCamera();return;}
       if(a==='clear'){selection=null;actions('방 안을 살펴보세요.');speech.hidden=true;return;}
-      if(a==='robot'){selection=null;speech.hidden=true;robotMenu();return;}if(a==='choose-target'){selection='ask';actions('확인할 물건을 직접 눌러 주세요.',[['취소','clear']]);return;}
+      if(a==='robot'){robotMenu(true);return;}if(a==='choose-target'){selection='ask';actions('확인할 물건을 직접 눌러 주세요.',[['취소','clear']]);return;}
       if(a.startsWith('ask-')){ask(a.slice(4));return;}
-      if(a==='inspect-screen'){modal('AXIOM 관리 화면',s.boss?'<p>미등록 행동 학습 / 승인되지 않은 이동 / 회수 필요</p><p>B-0: 회수 대상. 외부 반출 제한.</p>':'<p>시설 폐쇄 절차 진행 중</p><p>잔여 이용자 퇴실 / 잔여 교육 기체 회수</p>');return;}
+      if(a==='inspect-screen'){window.B0RoomDialogue?.remember(s,'screen',2);save();modal('AXIOM 관리 화면',s.boss?'<p>미등록 행동 학습 / 승인되지 않은 이동 / 회수 필요</p><p>B-0: 회수 대상. 외부 반출 제한.</p>':'<p>시설 폐쇄 절차 진행 중</p><p>잔여 이용자 퇴실 / 잔여 교육 기체 회수</p>');return;}
       if(a==='history'){history();return;}
-      if(a==='inspect-door'){say('student',s.opened?'잠금쇠가 모두 빠졌고, 문이 열린 채 걸렸어.':s.upper?'위 잠금쇠는 빠졌어. 아래쪽은 아직 걸려 있네.':'위쪽과 아래쪽에 잠금쇠가 있어. 문 옆 손잡이에는 줄이 이어져 있고.');return;}
+      if(a==='inspect-door'){window.B0RoomDialogue?.remember(s,'door',2);save();say('student',s.opened?'잠금쇠가 모두 빠졌고, 문이 열린 채 걸렸어.':s.upper?'위 잠금쇠는 빠졌어. 아래쪽은 아직 걸려 있네.':'위쪽과 아래쪽에 잠금쇠가 있어. 문 옆 손잡이에는 줄이 이어져 있고.');return;}
       if(a==='return-b0'){challenge();return;}
       if(a==='try-door'||a==='pull'){pull();return;}
-      if(a==='inspect-high'){say('student',s.upper?'잠금쇠를 빼 놓은 상태야.':r.lifted?'옆으로 미는 손잡이야. 이제 손이 닿아.':'수동 잠금장치네. 너무 높아서 손이 안 닿아.');return;}
+      if(a==='inspect-high'){window.B0RoomDialogue?.remember(s,'high',2);save();say('student',s.upper?'잠금쇠를 빼 놓은 상태야.':r.lifted?'옆으로 미는 손잡이야. 이제 손이 닿아.':'수동 잠금장치네. 너무 높아서 손이 안 닿아.');return;}
       if(a==='high-pull'){highPull();return;}
       if(a==='lower'){lower();return;}
-      if(a==='inspect-handle'){say('student','손잡이를 당기면 문 옆 잠금쇠와 이어진 줄이 팽팽해져. 놓으면 돌아오는 구조야.');return;}
-      if(a==='own-side'){r.side=1;updateMechanical();later(()=>{r.side=0;updateMechanical();},700);say('student','당길 수는 있는데…… 문 손잡이에 손이 닿지 않아. 놓으니까 다시 돌아갔어.');return;}
+      if(a==='inspect-handle'){window.B0RoomDialogue?.remember(s,'handle',2);save();say('student','손잡이를 당기면 문 옆 잠금쇠와 이어진 줄이 팽팽해져. 놓으면 돌아오는 구조야.');return;}
+      if(a==='own-side'){window.B0RoomDialogue?.remember(s,'handle',3);save();r.side=1;updateMechanical();later(()=>{r.side=0;updateMechanical();},700);say('student','당길 수는 있는데…… 문 손잡이에 손이 닿지 않아. 놓으니까 다시 돌아갔어.');return;}
       if(a==='request-lift'||a==='request-hold'){if(s.met&&s.links.robot){say('robot','회수 모드로 움직일 수 없습니다.');return;}selection=a==='request-lift'?'lift-target':'hold-target';actions('부탁할 대상 물건을 직접 눌러 주세요.',[['취소','clear']]);speech.hidden=true;return;}
       if(a==='release-b0'){hold(false);return;}if(a==='keep-hold'){say('robot','놓아도 된다고 하실 때까지 기다리겠습니다.');return;}
       if(a==='release'){const partial=r.latch>0&&!s.opened;M.release(s,r);updateMechanical();if(partial)say('student','잠금쇠가 돌아갔어. 실제 문은 아직 안 열렸었네.');return;}

@@ -17,7 +17,7 @@ const intro = [
   ["robot", "저도 함께 살펴보겠습니다. 궁금한 것이 있으면 물어봐 주세요."]
 ];
 const fresh = () => ({ phase:"intro", line:0, guide:false, noteFound:false, noteTaken:false,
-  unlocked:false, attempts:0, muted:false, logs:[] });
+  unlocked:false, attempts:0, muted:false, observations:{seen:{},last:""}, logs:[] });
 function load() {
   try {
     const d = JSON.parse(progressStore.getItem(SAVE_KEY));
@@ -306,7 +306,7 @@ function modal(title,content,kind="") {
   if(spoken)performSpeech("robot",spoken.textContent,state.noteFound?"friendly":"thinking",d);
 }
 function inspect() {
-  if(moving||!target)return;
+  if(moving||!target)return;window.B0RoomDialogue?.remember(state,target,2);save();
   if(target==="filebox")modal("낡은 서류함",`<div class="decoy-detail">${artifact("filebox")}</div><p>얇은 서류 몇 장이 들어 있다. 설레는 마음으로 꺼내 펼쳐 본다.</p><div class="notice-paper"><h3>실습 준비물</h3><p>연필 · 지우개 · 활동지</p></div><p>준비물 목록이다. 출입번호는 적혀 있지 않다.</p>${btn("서류를 돌려놓기","close","primary wide")}`);
   if(target==="envelope")modal("접힌 봉투",`<div class="decoy-detail">${artifact("envelope")}</div><p>봉투 안에 종이가 들어 있다. 조심히 꺼내 본다.</p><div class="notice-paper"><h3>장비 청소 안내</h3><p>사용 후 부드러운 천으로 화면을 닦아 주세요.</p></div><p>장비 관리 안내였다. 비밀번호 쪽지는 아니다.</p>${btn("봉투를 내려놓기","close","primary wide")}`);
   if(target==="door")door();
@@ -319,10 +319,12 @@ function inspect() {
   if(target==="window")modal("관찰창",`<p>두꺼운 유리 너머로 빈 교실이 보인다. 이쪽에는 나갈 수 있는 문이 없다.</p>${btn("그만 살펴보기","close","secondary wide")}`);
 }
 function door(tried=false) {
+  window.B0RoomDialogue?.remember(state,"door",tried?3:2);save();
   if(state.unlocked){modal("잠금이 풀린 출입문",`<p>잠금 표시가 초록색이다. 손잡이를 돌릴 수 있다.</p>${btn("문을 열고 나가기","escape","primary wide")}`);return;}
   modal("출입문",`<div class="door-detail" aria-hidden="true"><div class="device"></div></div><p>${tried?"손잡이를 돌려도 문이 열리지 않는다.":"닫힌 출입문이다. 옆에 숫자 도어락이 달려 있다."}</p>${tried?dialogue("robot","문 옆에 도어락이 있습니다."):""}<div class="action-row">${btn("손잡이 돌려보기","handle","secondary")}${btn("도어락 살펴보기","lock","primary")}</div>`);
 }
 function guide() {
+  window.B0RoomDialogue?.remember(state,"map",2);
   state.guide=true;save("발견","벽면 지도의 비상 출입 지침");
   modal("벽면 지도",`<section class="map-preview"><h3>연구소 전체 지도</h3>${window.B0LabNavigation.mapMarkup?.({current:"출입 관리실"})||""}</section><div class="notice-paper"><h3>비상 출입 안내</h3><p>출입 시스템 정지 시<br>관리용 쪽지의 비밀번호를 사용하십시오.</p></div>`);
 }
@@ -331,11 +333,11 @@ function robotAnswer(topic){
   switch(topic){
     case "identity":return "저는 교육용 AI 로봇 B-0입니다. 함께 살펴보고 알아낸 정보를 정리할 수 있어요.";
     case "where":return "폐쇄된 AI 교육 연구소의 출입 관리실입니다. 지금은 대부분의 장비가 꺼져 있어요.";
-    case "exit":return state.unlocked?"출입문의 잠금이 풀렸습니다. 이제 문을 열 수 있어요.":state.noteTaken?"받은 쪽지와 도어락을 함께 살펴보면 나가는 방법을 확인할 수 있을 것 같아요.":"아직 출입 방법을 확인하지 못했습니다. 출입문과 주변 물건을 함께 살펴볼까요?";
+    case "exit":return state.unlocked?"출입문의 잠금이 풀렸습니다. 이제 문을 열 수 있어요.":state.noteTaken?(window.B0RoomDialogue?.level("practice",state,"lock")?"가진 쪽지와 직접 확인한 도어락의 표시를 비교해 볼 수 있습니다.":"쪽지는 확인했습니다. 어디에 쓰는지는 주변 물건을 직접 살펴봐야 합니다."):"아직 출입 방법을 확인하지 못했습니다. 직접 본 물건부터 함께 살펴볼 수 있습니다.";
     case "password":return state.noteTaken?"제 보관함에서 찾은 쪽지를 건네드렸어요. 적힌 번호는 소지품에서 다시 확인할 수 있습니다.":state.noteFound?"제 보관함 안에서 관리용 쪽지를 찾았습니다. 아직 가져가지 않으셨네요.":"아직 비밀번호가 적힌 쪽지는 보지 못했습니다. 확인하지 않은 번호를 답할 수는 없어요.";
     case "limits":return state.noteFound?"쪽지가 제 보관함에 있어도, 안을 확인하기 전에는 무엇인지 몰랐어요. AI도 확인한 정보가 있어야 답할 수 있습니다.":"저도 확인하지 않은 정보는 모릅니다. 함께 찾아보고 확인하면 더 정확하게 답할 수 있어요.";
     case "belongings":return state.noteTaken?"보관함에서 찾은 쪽지는 건네드렸습니다. 지금은 보관함이 비어 있어요.":state.noteFound?"제 보관함에 관리용 쪽지가 들어 있었습니다. 확인해 보니 알게 됐어요.":"가슴 아래에 작은 보관함이 있어요. 안에 무엇이 있는지는 아직 확인하지 않았습니다.";
-    default:return state.noteTaken?"쪽지는 건네드렸습니다. 소지품에서 다시 볼 수 있어요.":state.noteFound?"이런 게 들어 있네요.":"궁금한 것이 있나요? 함께 알아볼게요.";
+    default:if(window.B0RoomDialogue)return window.B0RoomDialogue.reply("practice",state);return state.noteTaken?"쪽지는 건네드렸습니다. 소지품에서 다시 볼 수 있어요.":state.noteFound?"이런 게 들어 있네요.":"궁금한 것이 있나요? 함께 알아볼게요.";
   }
 }
 function robot(topic="") {
@@ -346,11 +348,12 @@ function robot(topic="") {
   modal("B-0와 대화",`${art}<div class="conversation-reply" aria-live="polite">${topic?dialogue("student",robotQuestions[topic]):""}${dialogue("robot",robotAnswer(topic))}</div>${action}<section class="question-panel" aria-label="B-0에게 물어볼 질문"><p>무엇을 물어볼까?</p><div class="question-choices">${topics.filter(t=>t!==topic).map(t=>btn(robotQuestions[t],"talk-"+t,"secondary")).join("")}</div></section>`,"conversation-modal");
 }
 function askStorage() { modal("B-0의 보관함",`${dialogue("student",state.guide?"네 보관함도 확인해 볼까?":"몸에 보관함이 있네. 안에 뭐가 있어?")}${dialogue("robot","안쪽은 아직 확인하지 않았습니다. 열어 보겠습니다.")}<div class="robot-detail thinking" aria-hidden="true"><div class="robot-sprite">${spriteFace("thinking")}</div></div>${btn("보관함 열어 보기","open-storage","primary wide")}`); }
-function openStorage() { state.noteFound=true;save("발견","B-0가 확인하지 않았던 보관함에서 관리용 쪽지 발견");tone();robot(); }
+function openStorage() { window.B0RoomDialogue?.remember(state,"storage",3);state.noteFound=true;save("발견","B-0가 확인하지 않았던 보관함에서 관리용 쪽지 발견");tone();robot(); }
 function noteMarkup() {return '<div class="password-note"><small>관리용 쪽지</small><h3>비상 출입번호</h3><strong>4732</strong><p>사용 후 보관함에 넣어 두십시오.</p></div>';}
 function showNote() { if(!state.noteTaken)return;modal("비밀번호 쪽지",`${noteMarkup()}${dialogue("student","찾았다! 이 번호로 해보자.")}${btn("쪽지 보관하고 돌아가기","close","primary wide")}`); }
 function inventory() {modal("소지품",state.noteTaken?`${noteMarkup()}<p class="muted">B-0의 보관함에서 받은 쪽지.</p>`:'<p>아직 가지고 있는 물건이 없다.</p>');}
 function lock() {
+  window.B0RoomDialogue?.remember(state,"lock",2);save();
   if(state.unlocked){door();return;}
   modal("출입문 도어락",`<div class="keypad"><label for="code">비밀번호 네 자리</label><input id="code" name="code" type="text" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" autocomplete="off" aria-describedby="lock-status" placeholder="— — — —"><div class="keys">${[1,2,3,4,5,6,7,8,9].map(n=>btn(n,"digit-"+n,"key")).join("")}${btn("지우기","erase","key small")}${btn("0","digit-0","key")}${btn("확인","submit-code","key primary")}</div><p id="lock-status" role="status">비밀번호를 입력하십시오.</p></div>${state.noteTaken?`<details class="note-peek"><summary>가진 쪽지 보기</summary>${noteMarkup()}</details>`:""}`,"lock-modal");
 }
@@ -359,7 +362,7 @@ function submitCode(value) {
   if(!/^\d{4}$/.test(code)){status.textContent="숫자 네 자리를 입력하십시오.";return;}
   state.attempts++;save("입력",code);
   if(code!=="4732"){tone(false);status.textContent="번호가 일치하지 않습니다.";app.querySelector("#code").select();return;}
-  state.unlocked=true;save("잠금 해제","4732 입력");tone();app.querySelector(".world").classList.add("unlocked");
+  state.unlocked=true;window.B0RoomDialogue?.remember(state,"door",3);save("잠금 해제","4732 입력");tone();app.querySelector(".world").classList.add("unlocked");
   modal("잠금 해제",`<p>딸깍. 문 안쪽에서 걸쇠가 풀리는 소리가 난다.</p>${btn("문 열고 나가기","escape","primary wide")}`);
 }
 function walkIntoCorridor(){
@@ -410,7 +413,7 @@ function handle(a) {
   if(a==="lock"){lock();return;}
   if(a==="ask-note"||a==="ask-storage"){askStorage();return;}
   if(a==="open-storage"){openStorage();return;}
-  if(a==="take-note"){state.noteTaken=true;save("획득","B-0에게 비상 출입번호 쪽지 받음");app.querySelector(".item-count").textContent="1";showNote();return;}
+  if(a==="take-note"){window.B0RoomDialogue?.remember(state,"note",3);state.noteTaken=true;save("획득","B-0에게 비상 출입번호 쪽지 받음");app.querySelector(".item-count").textContent="1";showNote();return;}
   if(a==="note"){showNote();return;}
   if(a==="inventory"){inventory();return;}
   if(a.startsWith("digit-")){const input=app.querySelector("#code");if(input.value.length<4)input.value+=a.slice(6);return;}

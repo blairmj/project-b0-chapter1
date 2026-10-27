@@ -75,6 +75,7 @@
       segment();
     }
     function climb(id){
+      window.B0RoomDialogue?.remember(s,id,3);
       const p=M.position(s,id),base=M.sizes[s.boxes[id].on||id],start=view();
       const dx=start.x-p.x,dz=start.z-p.z,length=Math.hypot(dx,dz)||1,ux=length===1&&dx===0&&dz===0?0:dx/length,uz=length===1&&dx===0&&dz===0?1:dz/length;
       const distance=Math.min(ux?Math.abs((base.w/2+30)/ux):Infinity,uz?Math.abs((base.d/2+30)/uz):Infinity);
@@ -106,9 +107,9 @@
       if(mode?.type==='move'){
         if(M.sizes[id]&&id!==mode.id){const p=M.position(s,id);place(p.x,p.z,id);}return;
       }
-      selection=id;update();
+      selection=id;window.B0RoomDialogue?.remember(s,id);save();update();
       if(M.sizes[id])actions(M.sizes[id].name,[['살펴보기','inspect-'+id],['옮기기','move-'+id],...(!standing?[['올라서기','climb-'+id]]:[]),['선택 닫기','clear']]);
-      else if(id==='robot')robotMenu();
+      else if(id==='robot')robotMenu(true);
       else if(id==='window')actions('높은 창문',[['살펴보기','inspect-window'],[s.windowOpen?'창문 넘기':'걸쇠 열기',s.windowOpen?'exit':'open-window'],['선택 닫기','clear']]);
       else if(id==='fake-window')actions('옆 벽의 창문',[['살펴보기','inspect-fake-window'],[s.fakeWindowOpen?'창 닫기':'창 열어 보기','fake-window'],['선택 닫기','clear']]);
       else if(id==='vent')actions('벽면 환기 덮개',[['살펴보기','inspect-vent'],[s.ventOpen?'덮개 닫기':'덮개 열기','vent'],['선택 닫기','clear']]);
@@ -123,10 +124,10 @@
       if(id==='window'&&s.windowOpen)return '걸쇠가 풀려 있다. 창 너머로 통로가 이어진다.';
       return descriptions[id];
     }
-    function robotMenu(){actions('B-0에게 부탁',[['살펴봐 줘','request-inspect'],['옮겨 줘','request-move'],['나를 들어 올려 줘','boost'],['이 방을 살펴봐 줘','survey'],['닫기','clear']]);}
+    function robotMenu(respond=false){if(respond)say('robot',window.B0RoomDialogue?.reply('storage',s,{target:selection,standing})||'확인한 물건을 두고 이야기해 주세요.');actions('B-0에게 부탁',[['살펴봐 줘','request-inspect'],['옮겨 줘','request-move'],['나를 들어 올려 줘','boost'],['이 방을 살펴봐 줘','survey'],['닫기','clear']]);}
     function robotTarget(id){
       if(id==='robot')return;const verb=mode.verb;mode=null;
-      if(verb==='inspect'){say('robot',id==='window'?'창 너머는 통로입니다. 안쪽 걸쇠가 보입니다.':id==='fake-window'?(s.fakeWindowOpen?'유리 뒤가 벽입니다. 통로로 이어지지 않습니다.':'유리 너머는 잘 보이지 않습니다. 창을 열어 확인해 볼까요?'):id==='vent'?(s.ventOpen?'통로 뒤가 금속판으로 막혀 있습니다. 여기로는 지나갈 수 없습니다.':'덮개 너머는 여기서 다 보이지 않습니다. 열어 확인할 수 있습니다.'):id==='entry'?'안쪽 손잡이는 보이지 않습니다. 아직 문을 여는 방법은 찾지 못했습니다.':M.sizes[id]?(id==='wide'?'윗면이 넓고 단단합니다. 바닥에서 밀어 옮길 수 있습니다.':'윗면이 평평합니다. 다른 물체 위에 놓을 때 받치는 면을 확인해야 합니다.'):'비어 있는 보관장입니다. 벽에 고정되어 있습니다.');select(id);}
+      if(verb==='inspect'){window.B0RoomDialogue?.remember(s,id,2);save();say('robot',id==='window'?'창 너머는 통로입니다. 안쪽 걸쇠가 보입니다.':id==='fake-window'?(s.fakeWindowOpen?'유리 뒤가 벽입니다. 통로로 이어지지 않습니다.':'유리 너머는 잘 보이지 않습니다. 창을 열어 확인해 볼까요?'):id==='vent'?(s.ventOpen?'통로 뒤가 금속판으로 막혀 있습니다. 여기로는 지나갈 수 없습니다.':'덮개 너머는 여기서 다 보이지 않습니다. 열어 확인할 수 있습니다.'):id==='entry'?'안쪽 손잡이는 보이지 않습니다. 아직 문을 여는 방법은 찾지 못했습니다.':M.sizes[id]?(id==='wide'?'윗면이 넓고 단단합니다. 바닥에서 밀어 옮길 수 있습니다.':'윗면이 평평합니다. 다른 물체 위에 놓을 때 받치는 면을 확인해야 합니다.'):(s.cabinetOpen?'보관장 안은 비어 있습니다.':'닫힌 보관장 안쪽은 아직 보이지 않습니다.'));select(id);}
       else if(!M.sizes[id]){say('robot','이 물체는 옮길 수 없습니다. 다른 대상을 지정해 주세요.');robotMenu();}
       else if(verb==='move')beginMove(id,true);
     }
@@ -157,6 +158,7 @@
     }
     function place(x,z,support=null){
       if(!mode)return;const {id,byRobot}=mode,d=M.move(s,id,x,z,support);
+      if(d.ok)window.B0RoomDialogue?.remember(s,id,3);
       if(!d.ok){say('student',d.reason);return;}
       mode=null;app.querySelector('.c2-floor-target').hidden=true;helpText.hidden=true;update();select(id);
       if(byRobot){walkRobot(d.x-85,d.z+15,()=>say('robot','지정하신 위치에 놓았습니다.'));}
@@ -327,21 +329,21 @@
       if(a==='home'){standing=null;lift=0;s.assisted=null;groundView=null;cancelMove();camera={yaw:-48,pitch:-12,zoom:1};travel([{x:0,z:0,height:0}],null,false);return;}
       if(a.startsWith('zoom-')){camera.zoom=Math.max(.65,Math.min(1.5,camera.zoom+(a==='zoom-in'?.15:-.15)));updateCamera();return;}
       if(a==='clear'||a==='cancel'){cancelMove();return;}
-      if(a==='robot'){robotMenu();return;}
+      if(a==='robot'){robotMenu(true);return;}
       if(a.startsWith('request-')){mode={type:'target',verb:a.slice(8)};actions('부탁할 대상 물건을 직접 눌러 주세요.',[['취소','cancel']]);return;}
       if(a==='boost'){boostStudent();return;}
-      if(a==='survey'){walkRobot(-205,35,()=>say('robot','보이는 벽면에서는 다른 문을 찾지 못했습니다. 아직 확인하지 못한 곳도 있습니다.'));return;}
-      if(a.startsWith('inspect-')){const id=a.slice(8);say('student',describe(id));s.logs.push({action:'inspect',id});save();return;}
-      if(a==='push-entry'){say('student','움직이지 않아. 다른 곳도 살펴봐야겠어.');return;}
-      if(a==='vent'){s.ventOpen=!s.ventOpen;s.logs.push({action:'vent',open:s.ventOpen});update();select('vent');if(s.ventOpen)say('student','뒤가 금속판으로 막혀 있어. 통로처럼 보였는데…….');return;}
-      if(a==='fake-window'){s.fakeWindowOpen=!s.fakeWindowOpen;s.logs.push({action:'fake-window',open:s.fakeWindowOpen});update();select('fake-window');if(s.fakeWindowOpen)say('student','창 바로 뒤가 벽이야. 여기로는 나갈 수 없겠어.');return;}
-      if(a==='cabinet'){s.cabinetOpen=!s.cabinetOpen;update();select('cabinet');if(s.cabinetOpen)say('student','안에는 아무것도 없어.');return;}
+      if(a==='survey'){walkRobot(-205,35,()=>{window.B0RoomDialogue?.remember(s,'survey',2);save();say('robot','보이는 벽면에서는 다른 문을 찾지 못했습니다. 아직 확인하지 못한 곳도 있습니다.');});return;}
+      if(a.startsWith('inspect-')){const id=a.slice(8);window.B0RoomDialogue?.remember(s,id,2);say('student',describe(id));s.logs.push({action:'inspect',id});save();return;}
+      if(a==='push-entry'){window.B0RoomDialogue?.remember(s,'entry',3);save();say('student','움직이지 않아. 다른 곳도 살펴봐야겠어.');return;}
+      if(a==='vent'){window.B0RoomDialogue?.remember(s,'vent',3);s.ventOpen=!s.ventOpen;s.logs.push({action:'vent',open:s.ventOpen});update();select('vent');if(s.ventOpen)say('student','뒤가 금속판으로 막혀 있어. 통로처럼 보였는데…….');return;}
+      if(a==='fake-window'){window.B0RoomDialogue?.remember(s,'fake-window',3);s.fakeWindowOpen=!s.fakeWindowOpen;s.logs.push({action:'fake-window',open:s.fakeWindowOpen});update();select('fake-window');if(s.fakeWindowOpen)say('student','창 바로 뒤가 벽이야. 여기로는 나갈 수 없겠어.');return;}
+      if(a==='cabinet'){window.B0RoomDialogue?.remember(s,'cabinet',3);s.cabinetOpen=!s.cabinetOpen;update();select('cabinet');if(s.cabinetOpen)say('student','안에는 아무것도 없어.');return;}
       if(a==='move-view'){if(mode){mode.looking=!mode.looking;moveActions();}return;}
       if(a.startsWith('move-')){beginMove(a.slice(5));return;}
       if(a.startsWith('nudge-')){nudge(a.slice(6));return;}
       if(a==='drop'){if(mode?.candidate){const p=mode.candidate;place(p.x,p.z,p.support);}else say('student','놓을 위치를 먼저 지정해야겠어.');return;}
       if(a.startsWith('climb-')){const id=a.slice(6);if(standing)return;if(s.boxes.small.on===id){say('student','위에 작은 상자가 놓여 있어. 올라설 상자를 다시 골라야겠어.');return;}climb(id);return;}
-      if(a==='open-window'){if(M.openWindow(s,standing)){update();say('student','열렸어. 너머로 넘어갈 수 있겠어.');select('window');}else reachMessage();return;}
+      if(a==='open-window'){if(M.openWindow(s,standing)){window.B0RoomDialogue?.remember(s,'window',3);update();say('student','열렸어. 너머로 넘어갈 수 있겠어.');select('window');}else reachMessage();return;}
       if(a==='exit'){if(M.exit(s,standing)){save();ending();}else reachMessage();}
     }
     function click(e){const b=e.target.closest('[data-c2]');if(b){e.preventDefault();act(b.dataset.c2);}}

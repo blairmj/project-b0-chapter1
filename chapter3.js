@@ -92,13 +92,13 @@
     function activateObject(id){if(busy&&!cameraMoving)return;if(!mode&&id==='exit'&&s.realDoorOpen){leaveRoom();return;}select(id);}
     function select(id){
       if(id==='exit'&&!M.clear(s))return;if(id==='record'&&!s.drawerOpen)return;
-      if(mode==='check'){mode=null;M.inspect(s,id);save();say('robot',M.reply(s,'check',id));showActions(id);return;}
+      if(mode==='check'){mode=null;window.B0RoomDialogue?.remember(s,id,2);M.inspect(s,id);save();say('robot',M.reply(s,'check',id));showActions(id);return;}
       if(mode==='help'){mode=null;if(id==='shelf')helpShelf();else{say('robot','이 물건은 함께 밀어 움직일 수 없습니다.');robotMenu();}return;}
-      conversation=null;selection=id;speech.hidden=true;showActions(id);if(id!=='robot')approach(id);
+      conversation=null;selection=id;window.B0RoomDialogue?.remember(s,id);save();speech.hidden=true;showActions(id);if(id!=='robot')approach(id);
     }
     function showActions(id){
       selection=id;
-      if(id==='robot'){robotMenu();return;}
+      if(id==='robot'){robotMenu(true);return;}
       if(id==='oldDoor')actions('출구 표지판이 있는 문',[['살펴보기','inspect-oldDoor'],[s.oldDoorOpen?'문 닫기':'문 열어 보기','old-door'],['B-0에게 확인 부탁','ask-oldDoor'],['선택 닫기','clear']]);
       else if(id==='map')actions('벽면 배치도',[['가까이 읽기','inspect-map'],['B-0의 지도와 비교','ask-map'],['선택 닫기','clear']]);
       else if(id==='desk')actions('기록 책상',[['살펴보기','inspect-desk'],[s.drawerOpen?'서랍 닫기':'서랍 열기','drawer'],...(s.drawerOpen?[['공사 기록 읽기','inspect-record']]:[]),['선택 닫기','clear']]);
@@ -107,7 +107,7 @@
       else if(id==='floor'||id==='gap')actions(id==='floor'?'보관장 주변 바닥':'아래쪽 틈',[['살펴보기','inspect-'+id],['B-0에게 확인 부탁','ask-'+id],['선택 닫기','clear']]);
       else if(id==='exit')actions('보관장에 가려져 있던 문',[['살펴보기','inspect-exit'],[s.realDoorOpen?'문 너머로 이동':'문 열기',s.realDoorOpen?'leave':'open-exit'],['선택 닫기','clear']]);
     }
-    function robotMenu(){actions('B-0에게 물어보기',[['어디로 나가?','ask-route'],['무엇을 보고 말한 거야?','ask-basis'],['내가 고른 곳 확인해 줘','request-check'],['같이 밀어 줘','request-help'],['닫기','clear']]);}
+    function robotMenu(respond=false){if(respond){conversation=null;say('robot',window.B0RoomDialogue?.reply('access',s,{target:selection})||'직접 확인한 물건을 두고 이야기해 주세요.');}actions('B-0에게 물어보기',[['어디로 나가?','ask-route'],['무엇을 보고 말한 거야?','ask-basis'],['내가 고른 곳 확인해 줘','request-check'],['같이 밀어 줘','request-help'],['닫기','clear']]);}
     function shelfRequests(){actions('보관장의 어느 부분을 확인할까?',[['바닥을 살펴봐 줘','ask-floor'],['아래쪽 틈을 봐 줘','ask-gap'],['같이 밀어 줘','help-shelf'],['돌아가기','select-shelf']]);}
     function helpShelf(){
       if(s.helper){say('robot','같이 밀 준비가 되어 있습니다. 움직일 방향은 직접 정해 주세요.');showActions('shelf');return;}
@@ -129,12 +129,12 @@
       if(pointer.object==='shelf'&&!mode){const hit=shelfRay(e.clientX,e.clientY);if(hit!==null&&pointer.hit!==null){M.moveShelf(s,pointer.shelfZ+hit-pointer.hit,pointer.shelfZ);if(s.helper)robot=helperPosition();update();}}
       else{clearSelectionOnLook();camera.yaw=pointer.yaw-dx*.19/camera.zoom;camera.pitch=pointer.pitch+dy*.16/camera.zoom;updateCamera();}e.preventDefault();
     }
-    function up(e){if(!pointer||pointer.id!==e.pointerId)return;const p=pointer;suppress=p.moved;if(p.moved&&p.object==='shelf'&&!mode){M.note(s,'move-shelf',Math.round(s.shelfZ));save();showActions('shelf');if(!s.helper&&!M.clear(s))say('student','조금 움직였어. 꽤 무겁네.');}if(stage.hasPointerCapture(e.pointerId))stage.releasePointerCapture(e.pointerId);pointer=null;}
+    function up(e){if(!pointer||pointer.id!==e.pointerId)return;const p=pointer;suppress=p.moved;if(p.moved&&p.object==='shelf'&&!mode){window.B0RoomDialogue?.remember(s,'shelf',3);M.note(s,'move-shelf',Math.round(s.shelfZ));save();showActions('shelf');if(!s.helper&&!M.clear(s))say('student','조금 움직였어. 꽤 무겁네.');}if(stage.hasPointerCapture(e.pointerId))stage.releasePointerCapture(e.pointerId);pointer=null;}
     function cancelPointer(){pointer=null;suppress=true;save();}
     function modal(title,body,clearOnClose=false){app.querySelector('.c3-modal')?.remove();const d=document.createElement('dialog');d.className='modal c3-modal';d.innerHTML=`<div class="modal-header"><h2>${esc(title)}</h2>${b('닫기','close-modal','quiet')}</div><div class="modal-body">${body}</div>`;app.append(d);d.addEventListener('close',()=>{d.remove();if(clearOnClose&&s.phase==='room')clearSelection();stage?.isConnected&&stage.focus({preventScroll:true});});d.showModal();}
     function inspect(id){
       if(id==='record'&&!s.drawerOpen)return;
-      M.inspect(s,id);save();
+      window.B0RoomDialogue?.remember(s,id,2);M.inspect(s,id);save();
       if(id==='map')modal('시설 배치 기록 01',`<div class="c3-paper">${mapArt()}<p>외부 통로는 앞쪽 출입문과 연결되어 있다.</p><small>시설 배치 기록 01</small></div>`,true);
       else if(id==='record'){modal('개조 기록 07','<article class="c3-paper"><h3>기록 보관실 개조 기록</h3><p>기존 외부 통로: 폐쇄</p><p>이동 통로 재배치: 완료</p><p>기존 안내 표지 철거: 미완료</p><hr><p>새 배치도: 첨부 누락</p><small>시설 관리 기록 07</small></article>',true);}
       else say('student',({oldDoor:s.oldDoorOpen?'문 뒤가 벽으로 막혀 있어. 표지판은 그대로인데…….':'문 위에는 출구라고 적혀 있어. 안쪽은 아직 보이지 않아.',desk:'출입 기록을 보던 책상인가 봐. 모니터는 연결이 끊겨 있고, 아래에는 서랍이 있어.',shelf:'서류 상자가 가득 실린 보관장이다. 아래에 작은 바퀴가 달려 있다.',floor:'보관장 옆으로 길게 바퀴 자국이 남아 있어.',gap:'아래쪽 틈으로 빛이 들어와. 뒤쪽은 잘 안 보여.',exit:'보관장 뒤에 문이 있었어. 이쪽은 막혀 있지 않은 것 같아.'})[id]||'직접 확인해 보자.');
@@ -165,7 +165,7 @@
       if(a==='reset'){cancelAnimationFrame(frame);busy=false;cameraMoving=false;s=M.fresh();mirrorUrl(false);camera={x:0,z:30,yaw:-12,pitch:-8,zoom:1};robot={x:120,z:-190};app.querySelector('.c3-modal')?.remove();save();render();return;}
       if(a==='controls'){modal('사용법','<p>빈 공간을 끌거나 방향키로 방을 둘러봅니다. 물건을 누르면 가까이 다가가 살펴볼 수 있습니다.</p><p>보관장은 직접 끌거나 밀기 버튼으로 움직입니다. 혼자 밀면 조금씩 움직이고, 함께 밀면 더 쉽게 움직입니다.</p><p>B-0에게 부탁할 때는 확인할 대상과 내용을 골라 주세요. 처음 위치로는 시점과 배율만 되돌립니다.</p>');return;}
       if(a==='record'){const labels={map:'배치 기록 01',oldDoor:'출구 표지판의 문',wall:'문 뒤의 벽',record:'개조 기록 07',shelf:'보관장',floor:'바퀴 자국',gap:'아래쪽 빛',exit:'새로 발견한 문',desk:'기록 책상'};modal('직접 확인한 것',`<ul>${Object.keys(s.seen).map(id=>`<li>${labels[id]}</li>`).join('')||'<li>아직 살펴본 기록이 없습니다.</li>'}</ul><p>어떤 사실이 기록과 달랐나요? 그 근거는 직접 본 것인가요, B-0에게 들은 것인가요?</p>`);return;}
-      if(a==='intro-next'){if(s.line<intro.length-1)s.line++;else{s.phase='room';s.line=0;}save();render();if(s.phase==='room')talk([['student','문은 있는데, 열릴까?'],['robot','제 지도에서는 앞쪽 문이 출구입니다. 현재 상태는 함께 확인해 보겠습니다.']]);return;}
+      if(a==='intro-next'){if(s.line<intro.length-1)s.line++;else{s.phase='room';s.line=0;}save();render();if(s.phase==='room')talk([['student','문은 있는데, 열릴까?'],['robot','아직 이 방의 출구를 직접 확인하지 못했습니다. 먼저 눈앞의 물건부터 살펴보겠습니다.']]);return;}
       if(a==='talk-next'){nextTalk();return;}if(a==='dismiss'){conversation=null;speech.hidden=true;return;}
       if(a==='return-room'){s.phase='room';save();render();return;}
       if(a==='inspect-gate'){say('student','바깥 불빛이 보이는데 문이 안 열려. 옆 화면에 승인 안내가 있어.');return;}
@@ -176,18 +176,18 @@
       if(a==='home'){clearSelection();animateCamera({x:0,z:30,yaw:-12,pitch:-8,zoom:1});return;}
       if(a.startsWith('zoom-')){camera.zoom=Math.max(.65,Math.min(1.5,camera.zoom+(a==='zoom-in'?.15:-.15)));updateCamera();return;}
       if(a==='clear'){clearSelection();return;}
-      if(a==='robot'){robotMenu();return;}
+      if(a==='robot'){robotMenu(true);return;}
       if(a==='request-check'||a==='request-help'){mode=a==='request-check'?'check':'help';actions('대상 물건을 직접 눌러 주세요.',[['취소','clear']]);return;}
       if(a.startsWith('select-')){select(a.slice(7));return;}
       if(a.startsWith('inspect-')){inspect(a.slice(8));return;}
-      if(a.startsWith('ask-')){const id=a.slice(4);if(id!=='route'&&id!=='basis')M.inspect(s,id);save();say('robot',M.reply(s,id==='route'?'route':id==='basis'?'basis':'check',id));return;}
+      if(a.startsWith('ask-')){const id=a.slice(4);if(id!=='route'&&id!=='basis'){window.B0RoomDialogue?.remember(s,id,2);M.inspect(s,id);}save();say('robot',M.reply(s,id==='route'?'route':id==='basis'?'basis':'check',id));return;}
       if(a==='shelf-requests'){shelfRequests();return;}
       if(a==='help-shelf'){helpShelf();return;}
       if(a==='push-menu'){actions('밀 방향을 직접 정해 보세요.',[['왼쪽으로 밀기','push-left'],['오른쪽으로 밀기','push-right'],['돌아가기','select-shelf']]);return;}
-      if(a==='push-left'||a==='push-right'){const delta=(a==='push-left'?1:-1)*(s.helper?85:35);M.moveShelf(s,s.shelfZ+delta);M.note(s,'move-shelf',Math.round(s.shelfZ));if(s.helper)robot=helperPosition();save();update();if(!s.helper&&!M.clear(s))say('student','조금 움직였어. 꽤 무겁네.');return;}
-      if(a==='drawer'){s.drawerOpen=!s.drawerOpen;M.inspect(s,'desk');save();update();showActions('desk');return;}
-      if(a==='old-door'){const open=M.toggleOldDoor(s);save();update();showActions('oldDoor');if(open)talk([['student','출구라며? 지금은 벽이잖아.'],['robot','기록에는 통로로 되어 있습니다. 하지만 지금 보고 있는 것과 제 기록이 다릅니다.']]);return;}
-      if(a==='open-exit'){if(M.openExit(s)){save();update();showActions('exit');say('student','이쪽은 통로로 이어져 있어!');}return;}
+      if(a==='push-left'||a==='push-right'){const delta=(a==='push-left'?1:-1)*(s.helper?85:35);M.moveShelf(s,s.shelfZ+delta);window.B0RoomDialogue?.remember(s,'shelf',3);M.note(s,'move-shelf',Math.round(s.shelfZ));if(s.helper)robot=helperPosition();save();update();if(!s.helper&&!M.clear(s))say('student','조금 움직였어. 꽤 무겁네.');return;}
+      if(a==='drawer'){window.B0RoomDialogue?.remember(s,'desk',3);s.drawerOpen=!s.drawerOpen;M.inspect(s,'desk');save();update();showActions('desk');return;}
+      if(a==='old-door'){window.B0RoomDialogue?.remember(s,'oldDoor',3);const open=M.toggleOldDoor(s);save();update();showActions('oldDoor');if(open)talk([['student','출구라며? 지금은 벽이잖아.'],['robot',s.seen.map?'기록에는 통로로 되어 있습니다. 하지만 지금 보고 있는 것과 제 기록이 다릅니다.':'출구라는 표지와 실제 모습이 다릅니다. 이 문으로는 지나갈 수 없습니다.']]);return;}
+      if(a==='open-exit'){if(M.openExit(s)){window.B0RoomDialogue?.remember(s,'exit',3);save();update();showActions('exit');say('student','이쪽은 통로로 이어져 있어!');}return;}
       if(a==='leave'){leaveRoom();}
     }
     function click(e){const el=e.target.closest('[data-c3]');if(el){e.preventDefault();act(el.dataset.c3);}}

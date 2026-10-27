@@ -16,7 +16,7 @@ function node(key){
 const app={querySelector:node,addEventListener(){},removeEventListener(){}};
 const storage={getItem(){return null;},setItem(){}};
 let frame=0,clock=0,reduceMotion=true;const frames=new Map();
-const context={window:{B0RoomTwo:M,addEventListener(){},removeEventListener(){}},
+const context={window:{B0RoomTwo:M,B0RoomDialogue:require('../room-dialogue.js'),addEventListener(){},removeEventListener(){}},
   sessionStorage:storage,localStorage:storage,document:{elementFromPoint(){return null;}},
   performance:{now:()=>clock},requestAnimationFrame(fn){frames.set(++frame,fn);return frame;},
   matchMedia:()=>({matches:reduceMotion}),setTimeout:()=>0,clearTimeout(){},cancelAnimationFrame(id){frames.delete(id);}};

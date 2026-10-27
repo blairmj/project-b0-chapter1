@@ -4,7 +4,8 @@ for(const direction of [-1,1]){
   const s=M.fresh();s.phase='room';
   assert.equal(M.openExit(s),false);assert.equal(M.leave(s),false);
   assert.doesNotMatch(M.reply(s,'route'),/보관장|숨은|밀어/,'B-0 cannot disclose the hidden exit');
-  assert.match(M.reply(s,'basis'),/기록 01/);
+  assert.doesNotMatch(M.reply(s,'basis'),/기록 01/,'an unread record is not introduced by a general question');
+  const read=M.fresh();M.inspect(read,'map');assert.match(M.reply(read,'basis'),/기록 01/);
   for(let i=0;i<5;i++)M.moveShelf(s,s.shelfZ+35*direction);
   assert.equal(M.clear(s),true,'either direction can reveal the door, without a clue checklist');
   assert.deepEqual(s.seen,{});
