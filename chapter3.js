@@ -39,7 +39,7 @@
       app.innerHTML=`<main class="game c2-game c3-game">${window.B0UI?.header({place:`기록 보관실`,namespace:"c3",reset:"home",zoomClass:"c3-zoom",active:true})||""}
       <section class="c2-stage c3-stage" tabindex="0" aria-label="기록 보관실. 빈 공간을 끌어 둘러보고 물건을 눌러 살펴보세요."><div class="c2-world c3-world">
       ${['front','left','right','back'].map(f=>`<div class="c2-wall c2-wall-${f}"><div class="c3-conduit" aria-hidden="true"></div><div class="c3-riser" aria-hidden="true"></div><div class="c2-light"></div></div>`).join('')}<div class="c2-floor"></div><div class="c2-ceiling"></div><div class="sf-archive-console" aria-hidden="true"><i></i><i></i><i></i></div>
-      <div class="c3-junction" aria-hidden="true"><i></i><i></i><span></span></div><div class="c3-room-plaque" aria-hidden="true"><small>RECORD ARCHIVE</small><strong>기록 보관실</strong></div><div class="c3-clock" aria-hidden="true"><i></i><i></i></div>
+      <div class="c2-entry c2-object c3-entrance" aria-hidden="true" style="left:-62.5px;transform:translate3d(-210.26px,0,297px) rotateY(180deg);pointer-events:none"><span></span></div><div class="c3-junction" aria-hidden="true"><i></i><i></i><span></span></div><div class="c3-room-plaque" aria-hidden="true"><small>RECORD ARCHIVE</small><strong>기록 보관실</strong></div><div class="c3-clock" aria-hidden="true"><i></i><i></i></div>
       <div class="c3-observation" aria-hidden="true"><div class="c3-observation-frame"><span></span><span></span><span></span><small>관찰창</small></div></div>
       <div class="c3-record-wall" aria-hidden="true"><div class="c3-record-window"><span>출입 기록 보관</span><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
       <div class="c3-old-exit" data-object="oldDoor" role="button" tabindex="0" aria-label="출구 표지판이 있는 문"><span class="c3-exit-sign">출구</span><span class="c3-brick-wall"></span><span class="c3-old-leaf"><i></i></span></div>
@@ -70,7 +70,7 @@
       stage.dataset.yaw=camera.yaw;stage.dataset.pitch=camera.pitch;
       app.querySelector('.c3-robot').style.transform=`translate3d(${robot.x-48}px,24px,${robot.z}px) rotateY(${-camera.yaw}deg)`;
       window.B0RoomSpace?.sync(world);
-      window.B0RoomTransit?.bind(world,{read:()=>({...camera,x:camera.x*SPACE,z:camera.z*SPACE,height:0}),write:v=>{Object.assign(camera,v,{x:v.x/SPACE,z:v.z/SPACE});updateCamera(true);},stop:()=>{cancelAnimationFrame(frame);cameraMoving=false;busy=false;pointer=null;},door:{x:0,z:578,yaw:180},exit:{x:-573,z:0,yaw:-90}});
+      window.B0RoomTransit?.bind(world,{read:()=>({...camera,x:camera.x*SPACE,z:camera.z*SPACE,height:0}),write:v=>{Object.assign(camera,v,{x:v.x/SPACE,z:v.z/SPACE});updateCamera(true);},stop:()=>{cancelAnimationFrame(frame);cameraMoving=false;busy=false;pointer=null;},door:{x:-410,z:578,yaw:180},exit:{x:-573,z:0,yaw:-90}});
       app.querySelector('.c3-zoom').textContent=Math.round(camera.zoom*100)+'%';
     }
     function update(){

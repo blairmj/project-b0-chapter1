@@ -18,6 +18,6 @@
 .b0-passage-jamb:before{content:'';position:absolute;left:-5px;top:35px;width:3px;height:75px;background:#70dbed;box-shadow:0 0 8px #70dbed88}
 
 /* Existing decorative leaves must not remain behind the temporary open portal. */
-.b0-passage-travel .c2-entry,.b0-passage-travel .mr-entry,.b0-passage-travel .mr-door,.b0-passage-travel .c3-real-exit,.b0-passage-travel .c4-door{visibility:hidden}
+.b0-passage-travel .c2-entry,.b0-passage-travel .c3-entrance,.b0-passage-travel .mr-entry,.b0-passage-travel .mr-door,.b0-passage-travel .c3-real-exit,.b0-passage-travel .c4-door{visibility:hidden}
 
 .b0-passage-canvas{display:block;position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
