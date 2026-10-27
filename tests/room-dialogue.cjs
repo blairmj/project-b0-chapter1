@@ -10,6 +10,11 @@ for(const [room,M] of Object.entries(models)){
 const cargo=models.storage.fresh();K.remember(cargo,'cabinet');assert.doesNotMatch(K.reply('storage',cargo),/비어/);
 K.remember(cargo,'cabinet',3);assert.match(K.reply('storage',cargo),/비어/);cargo.cabinetOpen=false;assert.match(K.reply('storage',cargo),/직접 열어 본/,'closed again still retains learned contents');
 const freshVent=models.storage.fresh();K.remember(freshVent,'vent',2);assert.doesNotMatch(K.reply('storage',freshVent),/금속판으로 막혀/);K.remember(freshVent,'vent',3);assert.match(K.reply('storage',freshVent),/금속판/);
+const moved=models.storage.fresh();models.storage.move(moved,'wide',-110,-60);K.remember(moved,'wide',3);
+assert.match(K.reply('storage',moved),/다른 위치로/);assert.doesNotMatch(K.reply('storage',moved),/높아|높이가 달라/,'floor movement does not imply stacking');
+models.storage.move(moved,'small',-110,-60,'wide');K.remember(moved,'small',3);assert.match(K.reply('storage',moved),/높아/);
+const own=models.mirror.fresh();own.phase='split';K.remember(own,'own',3);own.own=.5;assert.match(K.reply('mirror',own),/당기고/);assert.doesNotMatch(K.reply('mirror',own),/돌아왔/);
+own.own=0;assert.match(K.reply('mirror',own),/돌아왔/);own.phase='unlocked';own.own=1;assert.match(K.reply('mirror',own),/고정/);assert.doesNotMatch(K.reply('mirror',own),/돌아왔/);
 const archive=models.access.fresh();assert.doesNotMatch(models.access.reply(archive,'route'),/앞쪽 문/);
 K.remember(archive,'desk');assert.doesNotMatch(K.reply('access',archive),/개조 기록|보관장 뒤.*문/);
 K.remember(archive,'floor',2);assert.match(K.reply('access',archive),/자국/);assert.doesNotMatch(K.reply('access',archive),/밀어|출구.*뒤/);
@@ -25,5 +30,7 @@ central.met=central.boss=true;central.bodyChecked=false;assert.match(K.reply('ce
 central.bodyChecked=true;central.links.robot=false;K.remember(central,'door');assert.doesNotMatch(K.reply('central',central,{latch:.5}),/아직 문에 걸려/);
 K.remember(central,'door',2);assert.match(K.reply('central',central,{latch:.5}),/아직 문에 걸려/);
 central.holding=true;assert.match(K.reply('central',central),/계속 잡고/);
+central.opened=true;assert.match(K.reply('central',central),/열린 채 고정/);assert.equal(central.holding,true,'recap does not release B-0');
+const controller=fs.readFileSync(require.resolve('../chapter3.js'),'utf8');assert.doesNotMatch(controller,/출구라며/,'student does not attribute an unspoken route to B-0');
 for(const page of ['index.html','preview-v2.html']){const html=fs.readFileSync(require.resolve('../'+page),'utf8');assert.ok(html.indexOf('room-dialogue.js?')>0&&html.indexOf('room-dialogue.js?')<html.indexOf('chapter2.js?'));}
 console.log('PASS: look/read/open knowledge boundaries, no unobserved clue/answer disclosure, action-state replies, persistence, reset and page integration');

@@ -186,7 +186,7 @@
       if(a==='push-menu'){actions('밀 방향을 직접 정해 보세요.',[['왼쪽으로 밀기','push-left'],['오른쪽으로 밀기','push-right'],['돌아가기','select-shelf']]);return;}
       if(a==='push-left'||a==='push-right'){const delta=(a==='push-left'?1:-1)*(s.helper?85:35);M.moveShelf(s,s.shelfZ+delta);window.B0RoomDialogue?.remember(s,'shelf',3);M.note(s,'move-shelf',Math.round(s.shelfZ));if(s.helper)robot=helperPosition();save();update();if(!s.helper&&!M.clear(s))say('student','조금 움직였어. 꽤 무겁네.');return;}
       if(a==='drawer'){window.B0RoomDialogue?.remember(s,'desk',3);s.drawerOpen=!s.drawerOpen;M.inspect(s,'desk');save();update();showActions('desk');return;}
-      if(a==='old-door'){window.B0RoomDialogue?.remember(s,'oldDoor',3);const open=M.toggleOldDoor(s);save();update();showActions('oldDoor');if(open)talk([['student','출구라며? 지금은 벽이잖아.'],['robot',s.seen.map?'기록에는 통로로 되어 있습니다. 하지만 지금 보고 있는 것과 제 기록이 다릅니다.':'출구라는 표지와 실제 모습이 다릅니다. 이 문으로는 지나갈 수 없습니다.']]);return;}
+      if(a==='old-door'){window.B0RoomDialogue?.remember(s,'oldDoor',3);const open=M.toggleOldDoor(s);save();update();showActions('oldDoor');if(open)talk([['student',s.seen.map?'지도에는 출구인데, 지금은 벽이잖아.':'출구 표지가 있는데, 문 뒤는 벽이잖아.'],['robot',s.seen.map?'기록에는 통로로 되어 있습니다. 하지만 지금 보고 있는 것과 제 기록이 다릅니다.':'출구라는 표지와 실제 모습이 다릅니다. 이 문으로는 지나갈 수 없습니다.']]);return;}
       if(a==='open-exit'){if(M.openExit(s)){window.B0RoomDialogue?.remember(s,'exit',3);save();update();showActions('exit');say('student','이쪽은 통로로 이어져 있어!');}return;}
       if(a==='leave'){leaveRoom();}
     }
