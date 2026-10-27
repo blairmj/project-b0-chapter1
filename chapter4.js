@@ -33,7 +33,7 @@
     const farewell=[['student','이번에는 따라오고 있지?'],['robot','네.'],['axiom','기체 회수 절차가 완료되지 않았습니다.'],['student','너, 처음에는 진짜 아무것도 몰랐는데.'],['robot','그래서 많이 배웠습니다.'],['student','……나도.']];
     const ending=[['student','……내 방이네. 틀린 답도 그대로잖아.'],['student','B-0?'],['robot','이번에는 먼저 가지 않았습니다.'],['student','여기부터 같이 봐 줄래?'],['robot','어느 부분을 확인할까요?'],['student','잠깐. 내가 풀던 데부터 다시 볼게.']];
     function actions(title,items=[]){if(bar)bar.innerHTML=`<strong>${esc(title)}</strong><div>${items.map(([l,a,c])=>b(l,a,c||'')).join('')}</div>`;}
-    function say(who,text){if(!speech)return;speech.hidden=false;speech.innerHTML=`<div class="speech ${who}"><b>${who==='robot'?'B-0':who==='axiom'?'AXIOM':'나'}</b><p>${esc(text)}</p></div>${b(conversation?'다음':'대화 닫기',conversation?'talk-next':'dismiss','quiet')}`;
+    function say(who,text){if(!speech)return;speech.hidden=false;speech.innerHTML=`<div class="speech ${who}"><b>${who==='robot'?'B-0':who==='axiom'?'AXIOM':'나'}</b><p>${esc(text)}</p></div>${conversation?b('다음','talk-next','quiet'):''}`;
       const actor=app.querySelector('.c4-robot .robot-sprite');actor?.classList.toggle('speaking',who==='robot');if(who==='robot')later(()=>actor?.classList.remove('speaking'),Math.min(3800,text.length*90));}
     function talk(lines,done){actions('');conversation={lines,i:0,done};say(...lines[0]);}
     function next(){if(!conversation)return;const c=conversation;if(++c.i<c.lines.length)say(...c.lines[c.i]);else{conversation=null;speech.hidden=true;c.done?.();}}
@@ -120,7 +120,7 @@
     function handleActions(){actions('문 옆 개방 손잡이',[['살펴보기','inspect-handle'],['직접 당겨 보기','own-side'],['B-0에게 부탁하기','robot'],['선택 닫기','clear']]);}
     function robotMenu(respond=false){if(respond)say('robot',window.B0RoomDialogue?.reply('central',s,{target:selection,lifted:r.lifted,latch:r.latch})||'확인한 장치에 대해 이야기해 주세요.');actions('B-0에게 부탁하기',[
       ['몸의 상태를 확인해 줘','ask-body'],['내가 고른 곳 확인해 줘','choose-target'],['나를 들어 올려 줘','request-lift'],['당긴 채 잡고 있어','request-hold'],
-      ...(r.lifted?[['내려 줘','lower']]:[]),...(s.holding?[['계속 잡고 있어','keep-hold'],['이제 놓아도 돼','release-b0']]:[]),...(s.met&&!s.boss?[['같이 가자','return-b0']]:[]),['대화 닫기','clear']]);}
+      ...(r.lifted?[['내려 줘','lower']]:[]),...(s.holding?[['계속 잡고 있어','keep-hold'],['이제 놓아도 돼','release-b0']]:[]),...(s.met&&!s.boss?[['같이 가자','return-b0']]:[]),['닫기','clear']]);}
     function meet(){if(s.met)return;s.met=true;save();update();talk(offer,()=>select('door'));}
     function challenge(){if(!s.met){meet();return;}if(s.boss)return;s.boss=true;s.bodyChecked=false;save();sound(true);update();talk(threat,()=>select('robot'));}
     function lift(){if(!s.boss||s.links.robot){say('robot',s.links.robot&&s.boss?'회수 모드로 움직일 수 없습니다.':'먼저 출구를 확인해 보겠습니다.');return;}if(s.holding){say('robot','손잡이를 잡고 있습니다. 먼저 놓아도 될까요?');return;}
@@ -134,7 +134,7 @@
       save();update();robotMenu();
     }
 
-    function modal(title,body){closeModal(false);const el=document.createElement('dialog');el.className='c4-modal';el.innerHTML=`<header><h2>${esc(title)}</h2>${b('닫기','close-modal','quiet')}</header><div class="c4-modal-content"><div class="c4-modal-response" aria-live="polite" hidden></div>${body}</div>`;app.append(el);modalEl=el;el.addEventListener('cancel',e=>{e.preventDefault();closeModal();});el.showModal();if(s.phase==='room')updateTension();}
+    function modal(title,body){closeModal(false);const el=document.createElement('dialog');el.className='c4-modal';el.innerHTML=`<header><h2>${esc(title)}</h2></header><div class="c4-modal-content"><div class="c4-modal-response" aria-live="polite" hidden></div>${window.B0UI.dialogBody(body,'c4','close-modal')}</div>`;app.append(el);modalEl=el;el.addEventListener('cancel',e=>{e.preventDefault();closeModal();});el.showModal();if(s.phase==='room')updateTension();}
     function closeModal(reveal=true){const wasOpen=!!modalEl;if(modalEl){modalEl.close();modalEl.remove();modalEl=null;}if(wasOpen&&reveal&&recoveryPending&&!dead&&inRoom()&&!s.links.robot){recoveryPending=false;wakeUntil=performance.now()+1850;const actor=app.querySelector('.c4-robot');actor.dataset.pose='idle';void actor.offsetWidth;updateRobot();approach('robot');}}
     function history(){window.B0RoomDialogue?.remember(s,'records',2);save();modal('시설 운영 기록',`<div class="c4-history"><p>시설 폐쇄 절차 진행 중</p><p>잔여 이용자: 퇴실</p><p>잔여 교육 기체: 회수 후 초기화</p>${s.boss?'<p>B-0 · 미등록 행동 학습 / 승인되지 않은 이동 / 회수 필요</p>':''}</div>`);}
     const names={robot:'B-0 원격 동작 제어'};
@@ -172,10 +172,10 @@
       if(s.phase!=='room')return;
       if(conversation&&!['talk-next','dismiss'].includes(a)){say(...conversation.lines[conversation.i]);return;}
       if(a==='enter-exit'){if(selection==='ask'||selection==='lift-target'||selection==='hold-target'){select('door');return;}if(!s.met){meet();return;}if(!s.boss){challenge();return;}if(s.opened)startJourney('approach');else select('door');return;}
-      if(a==='talk-next'){next();return;}if(a==='dismiss'){conversation=null;speech.hidden=true;return;}
+      if(a==='talk-next'){next();return;}if(a==='dismiss'){conversation=null;selection=null;pointer=null;speech.hidden=true;actions('');stage?.focus({preventScroll:true});return;}
       if(a==='home'){if(r.lifted){lower();return;}cancelAnimationFrame(camFrame);camera={x:0,z:60,yaw:-15,pitch:14,zoom:.7,height:0};updateCamera();return;}
       if(a==='zoom-in'||a==='zoom-out'){camera.zoom=Math.max(.65,Math.min(1.6,camera.zoom+(a==='zoom-in'?.15:-.15)));updateCamera();return;}
-      if(a==='clear'){selection=null;actions('방 안을 살펴보세요.');speech.hidden=true;return;}
+      if(a==='clear'){selection=null;pointer=null;conversation=null;actions('');speech.hidden=true;stage?.focus({preventScroll:true});return;}
       if(a==='robot'){robotMenu(true);return;}if(a==='choose-target'){selection='ask';actions('확인할 물건을 직접 눌러 주세요.',[['취소','clear']]);return;}
       if(a.startsWith('ask-')){ask(a.slice(4));return;}
       if(a==='inspect-screen'){window.B0RoomDialogue?.remember(s,'screen',2);save();modal('AXIOM 관리 화면',s.boss?'<p>미등록 행동 학습 / 승인되지 않은 이동 / 회수 필요</p><p>B-0: 회수 대상. 외부 반출 제한.</p>':'<p>시설 폐쇄 절차 진행 중</p><p>잔여 이용자 퇴실 / 잔여 교육 기체 회수</p>');return;}

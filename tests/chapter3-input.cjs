@@ -21,6 +21,7 @@ assert.doesNotMatch(node('.c3-actions').innerHTML,/data-c3=/,'dragging the view 
 node('.c3-stage').listeners.click({target:{closest(){return null;}}});
 game.select('map');flush();node('.c3-stage').listeners.click({target:{closest(){return null;}}});
 assert.doesNotMatch(node('.c3-actions').innerHTML,/data-c3=/,'clicking empty room space dismisses the selection');
+game.act('robot');assert.doesNotMatch(node('.c3-speech').innerHTML,/data-c3="dismiss"/);game.act('clear');assert.equal(node('.c3-speech').hidden,true);
 game.select('map');flush();game.act('clear');assert.doesNotMatch(node('.c3-actions').innerHTML,/data-c3=/);
 game.act('robot');game.act('request-check');node('.c3-stage').listeners.keydown({key:'ArrowRight',target:{dataset:{}},preventDefault(){}});
 assert.equal(game.state().mode,'check','looking for a target must keep a pending B-0 request');game.act('clear');

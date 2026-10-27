@@ -1,5 +1,5 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),M=require('../mirror-model.js');
-const nodes=new Map();function node(k){if(!nodes.has(k))nodes.set(k,{style:{},dataset:{},hidden:false,isConnected:true,clientWidth:616,clientHeight:500,innerHTML:'',textContent:'',classList:{toggle(){},add(){},remove(){}},querySelector:s=>node(k+s),querySelectorAll:()=>[],addEventListener(){},setPointerCapture(){},hasPointerCapture(){return true;},releasePointerCapture(){}});return nodes.get(k);}
+const nodes=new Map();function node(k){if(!nodes.has(k))nodes.set(k,{style:{},dataset:{},hidden:false,isConnected:true,clientWidth:616,clientHeight:500,innerHTML:'',textContent:'',classList:{toggle(){},add(){},remove(){}},querySelector:s=>node(k+s),querySelectorAll:()=>[],addEventListener(){},setPointerCapture(){},hasPointerCapture(){return true;},releasePointerCapture(){},focus(){}});return nodes.get(k);}
 const app={querySelector:s=>s==='.mr-modal'?null:node(s),addEventListener(){},removeEventListener(){}};
 let serial=0,complete=0,saves=0;const frames=new Map(),timers=new Map();
 const context={window:{B0Mirror:M,B0RoomDialogue:require('../room-dialogue.js'),addEventListener(){},removeEventListener(){}},matchMedia:()=>({matches:true}),performance:{now:()=>0},requestAnimationFrame(fn){frames.set(++serial,fn);return serial;},cancelAnimationFrame(n){frames.delete(n);},setTimeout(fn,ms){timers.set(++serial,{fn,ms});return serial;},clearTimeout(n){timers.delete(n);}};
@@ -28,5 +28,5 @@ const nextState=M.fresh();nextState.phase='split';
 const parallel=context.window.startMirrorRoom({app,portrait:()=>'',state:nextState,onSave(){},onBack(){},onComplete(){}});
 parallel.act('command-triangle-hold');parallel.select('own');flush();
 assert.match(node('.mr-actions').innerHTML,/data-mr="pull"/,'B-0 finishing a walk must preserve the student current object controls');
-assert.equal(nextState.holding,'triangle');parallel.dispose();
+assert.equal(nextState.holding,'triangle');parallel.act('robot');assert.doesNotMatch(node('.mr-speech').innerHTML,/data-mr="dismiss"/);parallel.act('target-mode');parallel.act('clear');assert.equal(node('.mr-speech').hidden,true);assert.equal(nextState.holding,'triangle','closing the UI preserves the active instruction');parallel.select('own');assert.match(node('.mr-actions').innerHTML,/data-mr="pull"/);parallel.dispose();
 console.log('PASS: robot walk completion preserves a newer student object selection');

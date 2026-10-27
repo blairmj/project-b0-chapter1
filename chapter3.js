@@ -22,7 +22,7 @@
     }
     function clearSelectionOnLook(){if((selection||cameraMoving)&&!mode&&!conversation)clearSelection();}
     function say(who,text){
-      if(!speech)return;speech.hidden=false;speech.innerHTML=`<div class="speech ${who}"><b>${who==='robot'?'B-0':'나'}</b><p>${esc(text)}</p></div>${b(conversation?'다음':'대화 닫기',conversation?'talk-next':'dismiss','quiet')}`;
+      if(!speech)return;speech.hidden=false;speech.innerHTML=`<div class="speech ${who}"><b>${who==='robot'?'B-0':'나'}</b><p>${esc(text)}</p></div>${conversation?b('다음','talk-next','quiet'):''}`;
       const actor=app.querySelector('.robot-sprite');if(actor){actor.classList.toggle('speaking',who==='robot');later(()=>actor.classList.remove('speaking'),Math.min(4500,text.length*85));}
     }
     function talk(lines,done){conversation={lines,index:0,done};say(...lines[0]);}
@@ -131,7 +131,7 @@
     }
     function up(e){if(!pointer||pointer.id!==e.pointerId)return;const p=pointer;suppress=p.moved;if(p.moved&&p.object==='shelf'&&!mode){window.B0RoomDialogue?.remember(s,'shelf',3);M.note(s,'move-shelf',Math.round(s.shelfZ));save();showActions('shelf');if(!s.helper&&!M.clear(s))say('student','조금 움직였어. 꽤 무겁네.');}if(stage.hasPointerCapture(e.pointerId))stage.releasePointerCapture(e.pointerId);pointer=null;}
     function cancelPointer(){pointer=null;suppress=true;save();}
-    function modal(title,body,clearOnClose=false){app.querySelector('.c3-modal')?.remove();const d=document.createElement('dialog');d.className='modal c3-modal';d.innerHTML=`<div class="modal-header"><h2>${esc(title)}</h2>${b('닫기','close-modal','quiet')}</div><div class="modal-body">${body}</div>`;app.append(d);d.addEventListener('close',()=>{d.remove();if(clearOnClose&&s.phase==='room')clearSelection();stage?.isConnected&&stage.focus({preventScroll:true});});d.showModal();}
+    function modal(title,body,clearOnClose=false){app.querySelector('.c3-modal')?.remove();const d=document.createElement('dialog');d.className='modal c3-modal';d.innerHTML=`<div class="modal-header"><h2>${esc(title)}</h2></div><div class="modal-body">${window.B0UI.dialogBody(body,'c3','close-modal')}</div>`;app.append(d);d.addEventListener('close',()=>{d.remove();if(clearOnClose&&s.phase==='room')clearSelection();stage?.isConnected&&stage.focus({preventScroll:true});});d.showModal();}
     function inspect(id){
       if(id==='record'&&!s.drawerOpen)return;
       window.B0RoomDialogue?.remember(s,id,2);M.inspect(s,id);save();
@@ -166,7 +166,7 @@
       if(a==='controls'){modal('사용법','<p>빈 공간을 끌거나 방향키로 방을 둘러봅니다. 물건을 누르면 가까이 다가가 살펴볼 수 있습니다.</p><p>보관장은 직접 끌거나 밀기 버튼으로 움직입니다. 혼자 밀면 조금씩 움직이고, 함께 밀면 더 쉽게 움직입니다.</p><p>B-0에게 부탁할 때는 확인할 대상과 내용을 골라 주세요. 처음 위치로는 시점과 배율만 되돌립니다.</p>');return;}
       if(a==='record'){const labels={map:'배치 기록 01',oldDoor:'출구 표지판의 문',wall:'문 뒤의 벽',record:'개조 기록 07',shelf:'보관장',floor:'바퀴 자국',gap:'아래쪽 빛',exit:'새로 발견한 문',desk:'기록 책상'};modal('직접 확인한 것',`<ul>${Object.keys(s.seen).map(id=>`<li>${labels[id]}</li>`).join('')||'<li>아직 살펴본 기록이 없습니다.</li>'}</ul><p>어떤 사실이 기록과 달랐나요? 그 근거는 직접 본 것인가요, B-0에게 들은 것인가요?</p>`);return;}
       if(a==='intro-next'){if(s.line<intro.length-1)s.line++;else{s.phase='room';s.line=0;}save();render();if(s.phase==='room')talk([['student','문은 있는데, 열릴까?'],['robot','아직 이 방의 출구를 직접 확인하지 못했습니다. 먼저 눈앞의 물건부터 살펴보겠습니다.']]);return;}
-      if(a==='talk-next'){nextTalk();return;}if(a==='dismiss'){conversation=null;speech.hidden=true;return;}
+      if(a==='talk-next'){nextTalk();return;}if(a==='dismiss'){clearSelection();stage?.focus({preventScroll:true});return;}
       if(a==='return-room'){s.phase='room';save();render();return;}
       if(a==='inspect-gate'){say('student','바깥 불빛이 보이는데 문이 안 열려. 옆 화면에 승인 안내가 있어.');return;}
       if(a==='request-approval'){if(M.request(s)){save();renderGate();talk([['robot','외부 이동이 보류되었습니다. 중앙관리실에서 직접 확인하라고 나옵니다. 그쪽으로 가려면 옆 관찰실을 지나야 합니다.'],['student','여기까지 왔는데 왜 못 나가게 하는 거야?']]);}return;}
@@ -175,7 +175,7 @@
       if(s.phase!=='room'||(busy&&!cameraMoving))return;
       if(a==='home'){clearSelection();animateCamera({x:0,z:30,yaw:-12,pitch:-8,zoom:1});return;}
       if(a.startsWith('zoom-')){camera.zoom=Math.max(.65,Math.min(1.5,camera.zoom+(a==='zoom-in'?.15:-.15)));updateCamera();return;}
-      if(a==='clear'){clearSelection();return;}
+      if(a==='clear'){clearSelection();stage?.focus({preventScroll:true});return;}
       if(a==='robot'){robotMenu(true);return;}
       if(a==='request-check'||a==='request-help'){mode=a==='request-check'?'check':'help';actions('대상 물건을 직접 눌러 주세요.',[['취소','clear']]);return;}
       if(a.startsWith('select-')){select(a.slice(7));return;}

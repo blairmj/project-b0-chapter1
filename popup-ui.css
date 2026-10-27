@@ -28,3 +28,8 @@
 /* B-0 uses the same speech color in rooms and in the corridor. */
 #app .speech.robot p{color:#123548;background:#b9e8f6;border:0;border-top-right-radius:2px;text-shadow:none}
 @media(max-width:420px){#app :is(.modal,.c4-modal,.lab-modal,.b0-common-modal) h2{font-size:20px}#app :is(.modal,.c4-modal,.lab-modal,.b0-common-modal)>:is(.modal-body,.c4-modal-content,.lab-modal-body,.b0-modal-body){font-size:14px}}
+
+/* Dismissal belongs to the lower action row, with the same digital popup style. */
+#app dialog .b0-dialog-footer{display:flex;justify-content:flex-end;margin-top:18px;gap:8px}
+#app dialog .b0-dialog-footer>button{min-width:88px}
+#app dialog .map-status-title{padding-right:0}

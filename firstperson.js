@@ -301,7 +301,7 @@ function bindCamera() {
 }
 function modal(title,content,kind="") {
   const previous=app.querySelector("dialog");if(!previous)lastFocus=document.activeElement;previous?.remove();
-  const d=document.createElement("dialog");d.className="modal "+kind;d.innerHTML=`<div class="modal-header"><h2>${title}</h2>${btn("닫기","close","quiet")}</div><div class="modal-body">${content}</div>`;app.append(d);d.addEventListener("close",()=>{d.remove();if(lastFocus?.isConnected)lastFocus.focus({preventScroll:true});});d.showModal();
+  const d=document.createElement("dialog");d.className="modal "+kind;d.innerHTML=`<div class="modal-header"><h2>${title}</h2></div><div class="modal-body">${window.B0UI.dialogBody(content,'action','close')}</div>`;app.append(d);d.addEventListener("close",()=>{d.remove();if(lastFocus?.isConnected)lastFocus.focus({preventScroll:true});});d.showModal();
   const spoken=d.querySelector(".speech.robot p");
   if(spoken)performSpeech("robot",spoken.textContent,state.noteFound?"friendly":"thinking",d);
 }

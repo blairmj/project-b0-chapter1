@@ -51,7 +51,7 @@ console.log('PASS: physical B-0 position survives rotation and key pickup, entry
 
 let lastDialog,entered;
 context.document={createElement(){const handlers={};return lastDialog={setAttribute(){},addEventListener(k,f){handlers[k]=f},showModal(){},close(){handlers.close?.()},remove(){}};}};
-context.window.B0UI={menuContent:()=>'',header:()=>''};app.append=()=>{};
+context.document.addEventListener=()=>{};vm.runInNewContext(fs.readFileSync(require.resolve('../ui-common.js'),'utf8'),context);app.append=()=>{};
 const popState=M.fresh();popState.cleared.practice=true;popState.powerOut=true;
 const pop=context.window.startLabNavigation({app,portrait:()=>'',state:popState,onSave(){},onEnter:id=>entered=id,onHome(){},muted:true});
 pop.act('menu');lastDialog.close(); // Native Escape emits close without the button action.

@@ -2,7 +2,8 @@
   'use strict';
   const M=window.B0LabNavigation;
   const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const b=(text,action,cls='')=>`<button type="button" data-lab="${action}" class="${cls}">${text}</button>`;
+  const moveLabels={'turn-left':'왼쪽으로 보기',forward:'앞으로 이동',backward:'뒤로 이동','turn-right':'오른쪽으로 보기'};
+  const b=(text,action,cls='')=>`<button type="button" data-lab="${action}" class="${cls}"${moveLabels[action]?` aria-label="${moveLabels[action]}"`:''}>${text}</button>`;
   const keyArt='<svg viewBox="0 0 100 40" aria-hidden="true"><circle cx="20" cy="20" r="13"/><path d="M33 20h53m-12 0v12m-12-12v9"/></svg>';
   M.mapMarkup=function({floor=1,z=80,current=''}={}){
     const markerY=Math.max(246,Math.min(458,458-(80-z)*.13));
@@ -48,7 +49,7 @@
       <div class="lab-stair-entry ${s.stairsUnlocked?'authorized':''}" data-lab-object="stairs" role="button" tabindex="0" aria-label="2층 계단"><span>2F · 중앙관리실</span><i class="lab-stair-field" aria-hidden="true"></i></div><div class="lab-stair-control ${s.stairsUnlocked?'authorized':''}" data-lab-object="stair-control" role="button" tabindex="0" aria-label="계단 차단 제어기"><span>2F</span><i></i><b>제어</b></div>
       ${Array.from({length:14},(_,i)=>`<div class="lab-step" style="transform:translate3d(0,${180-(i+1)*360/14}px,${-1820-i*22}px) rotateX(90deg)"></div><div class="lab-riser" style="transform:translate3d(0,${180-(i+1)*360/14}px,${-1809-i*22}px)"></div>`).join('')}
       ${[-2220,-2440].map((z,i)=>`<div class="lab-fluorescent" style="transform:translate3d(0,-642px,${z}px) rotateX(-90deg);--light-order:${i}" aria-hidden="true"><i></i></div><div class="lab-light-pool" style="transform:translate3d(0,-181px,${z}px) rotateX(90deg)" aria-hidden="true"></div>`).join('')}<div class="lab-upper-floor"></div><div class="lab-upper-ceiling"></div><div class="lab-upper-end"></div>${[-1,1].map(side=>`<div class="lab-upper-wall" style="transform:translate3d(${side*270}px,0,-2330px) rotateY(${-side*90}deg)"><span class="lab-wall-light"></span></div><div class="lab-stair-side" style="transform:translate3d(${side*270}px,0,-1940px) rotateY(${-side*90}deg)"></div>`).join('')}
-      <div class="lab-b0"><div class="robot-sprite live-body">${portrait()}</div><div class="c4-walk-art"><div class="c4-walk-frame"></div></div></div></div><div class="lab-notice" role="status" hidden></div><div class="lab-walk-mark" aria-hidden="true">이동 중</div><div class="lab-dpad">${b('↶','turn-left','quiet')}${b('앞으로','forward')}${b('↷','turn-right','quiet')}${b('뒤로','backward','quiet')}</div></section><section class="lab-actions" aria-label="복도에서 선택한 대상"></section><footer>${b('B-0에게 말하기','robot','secondary')}<div class="lab-pocket">${b('소지품','inventory','quiet')}</div></footer></main>`;
+      <div class="lab-b0"><div class="robot-sprite live-body">${portrait()}</div><div class="c4-walk-art"><div class="c4-walk-frame"></div></div></div></div><div class="lab-notice" role="status" hidden></div><div class="lab-walk-mark" aria-hidden="true">이동 중</div><div class="lab-dpad">${b('←','turn-left','quiet')}${b('↑','forward')}${b('↓','backward','quiet')}${b('→','turn-right','quiet')}</div></section><section class="lab-actions" aria-label="복도에서 선택한 대상"></section><footer>${b('B-0에게 말하기','robot','secondary')}<div class="lab-pocket">${b('소지품','inventory','quiet')}</div></footer></main>`;
       world=app.querySelector('.lab-world');stage=app.querySelector('.lab-stage');bar=app.querySelector('.lab-actions');notice=app.querySelector('.lab-notice');
       stage.addEventListener('pointerdown',down);stage.addEventListener('pointermove',move);stage.addEventListener('pointerup',up);stage.addEventListener('pointercancel',cancel);
       stage.addEventListener('keydown',key);stage.addEventListener('wheel',e=>{e.preventDefault();camera.pitch=Math.max(-35,Math.min(45,camera.pitch-e.deltaY*.025));update();save();},{passive:false});
@@ -124,7 +125,7 @@
       cancelTalk();selection=id;
       if(id==='shutter'){say(s.cleared.storage?'반대편에서 안전 차단문을 해제했다.':'안전 차단문이 내려와 있다. 옆방과 다른 통로를 살펴봐야겠다.');actions('복도 차단문',[['돌아가기','clear']]);return;}
       if(id==='glass'){say(s.cleared.mirror?'유리 차단문이 올라가 북쪽 복도가 이어진다.':'유리 너머로 계단과 작은 보관함이 보인다. 이쪽에서는 열 수 없다.');actions('북쪽 유리 차단문',[['돌아가기','clear']]);return;}
-      if(id==='keybox'){if(!s.cleared.mirror){say('유리 차단문 너머에 있다. 여기서는 손이 닿지 않는다.');actions('벽면 보관함',[['돌아가기','clear']]);return;}actions('벽면 열쇠 보관함',[[s.keyboxOpen?'닫기':'열어 보기','keybox-open'],...(s.keyboxOpen&&!s.keyTaken?[['열쇠 집기','take-key']]:[]),['돌아가기','clear']]);return;}
+      if(id==='keybox'){if(!s.cleared.mirror){say('유리 차단문 너머에 있다. 여기서는 손이 닿지 않는다.');actions('벽면 보관함',[['돌아가기','clear']]);return;}actions('벽면 열쇠 보관함',[[s.keyboxOpen?'보관함 닫기':'열어 보기','keybox-open'],...(s.keyboxOpen&&!s.keyTaken?[['열쇠 집기','take-key']]:[]),['돌아가기','clear']]);return;}
       if(id==='stairs'||id==='stair-control'){actions(id==='stairs'?'2층 계단':'계단 차단 제어기',s.stairsUnlocked?[['계단으로 올라가기','upstairs'],['돌아가기','clear']]:[['계단 올라가 보기','upstairs'],['차단 제어기 살펴보기','inspect-stairs'],...(s.keyTaken?[['열쇠로 차단 해제','unlock-stairs']]:[]),['돌아가기','clear']]);return;}
       if(id==='outside'){say('문 옆 화면에 외부 출입 승인은 2층 중앙관리실에서 확인하라고 적혀 있다.');actions('잠긴 외부 출입구',[['돌아가기','clear']]);return;}
       if(!M.canEnter(s,id)){say(id==='mirror'?'안쪽에서 잠겨 있다. 기록 보관실과 연결된 통로가 있을까?':'문까지 가는 통로가 막혀 있다.');actions(dLabel(id),[['돌아가기','clear']]);return;}
@@ -142,7 +143,7 @@
     }
     function ascend(){if(!s.stairsUnlocked)return;animate({x:0,z:-1705,yaw:0,pitch:7},()=>animate({x:0,z:-2165,yaw:0,pitch:6,height:360},()=>{M.floor(s,2);Object.assign(camera,s.camera,{height:360});save();update();actions('2층 중앙관리실 앞 복도',[['앞으로','forward'],['1층으로 내려가기','downstairs']]);},true));}
     function descend(done){if(s.floor!==2){done?.();return;}animate({x:0,z:-2145,yaw:180,pitch:-12},()=>animate({x:0,z:-1700,yaw:180,pitch:-4,height:0},()=>{M.floor(s,1);Object.assign(camera,s.camera,{height:0});save();update();actions('1층 계단 앞 복도',[['다시 둘러보기','clear']]);done?.();},true));}
-    function modal(title,body){close();const d=document.createElement('dialog');modalEl=d;d.className='lab-modal';d.setAttribute('aria-label',title);d.innerHTML=`<header><h2>${title}</h2>${b('닫기','close','quiet')}</header><div class="lab-modal-body">${body}</div>`;d.addEventListener('close',()=>{if(modalEl===d)modalEl=null;d.remove();if(!dead&&stage?.isConnected)stage.focus({preventScroll:true});});app.append(d);d.showModal();}
+    function modal(title,body){close();const d=document.createElement('dialog');modalEl=d;d.className='lab-modal';d.setAttribute('aria-label',title);d.innerHTML=`<header><h2>${title}</h2></header><div class="lab-modal-body">${window.B0UI.dialogBody(body,'lab','close')}</div>`;d.addEventListener('close',()=>{if(modalEl===d)modalEl=null;d.remove();if(!dead&&stage?.isConnected)stage.focus({preventScroll:true});});app.append(d);d.showModal();}
     function close(){const d=modalEl;modalEl=null;d?.close();d?.remove();}
     function map(){modal('지도',M.mapMarkup({floor:s.floor,z:camera.z}));}
     function act(a){

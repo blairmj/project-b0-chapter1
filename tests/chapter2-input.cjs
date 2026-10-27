@@ -9,7 +9,7 @@ function node(key){
     clientWidth:616,clientHeight:500,innerHTML:'',textContent:'',
     classList:{toggle(){},add(){},remove(){}},querySelector:s=>node(key+s),
     setAttribute(name,value){this[name]=value;},listeners:{},addEventListener(type,fn){this.listeners[type]=fn;},removeEventListener(){},setPointerCapture(){},
-    hasPointerCapture(){return true;},releasePointerCapture(){},
+    hasPointerCapture(){return true;},releasePointerCapture(){},focus(){},
     getBoundingClientRect(){return {left:0,top:0,width:616,height:500};}});
   return nodes.get(key);
 }
@@ -50,7 +50,10 @@ assert.equal(game.state().view.z,game.state().s.boxes.wide.z);
 assert.equal(game.state().view.height,62);
 assert.ok(game.state().camera.pitch<-40,'player can look down at their footing');
 assert.equal(node('.c2-descend').hidden,false);
-game.act('clear');game.act('robot');game.act('request-inspect');
+game.act('clear');game.act('robot');assert.doesNotMatch(node('.c2-speech').innerHTML,/data-c2="dismiss"/);
+game.act('request-inspect');game.act('cancel');assert.equal(game.state().mode,null);assert.equal(node('.c2-speech').hidden,true);
+game.select('wide');assert.match(node('.c2-actions').innerHTML,/move-wide/,'next object remains directly usable after close');
+game.act('robot');game.act('request-inspect');
 assert.equal(node('.c2-descend').hidden,false,'down remains available through other actions');
 game.act('down');
 assert.equal(game.state().standing,null);assert.equal(game.state().mode,null);assert.match(node('.c2-speech').innerHTML,/바닥으로 내려왔어/);assert.doesNotMatch(node('.c2-actions').innerHTML,/내려오는 중/);

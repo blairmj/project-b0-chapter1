@@ -83,3 +83,5 @@
 .lab-b0{filter:brightness(.85) drop-shadow(0 3px 8px #0008)}
 .lab-notice,.lab-walk-mark{z-index:2}
 .corridor-game .corridor-view,.c3-intro .corridor-view,.c3-end .corridor-view{filter:brightness(.42) saturate(.75)}
+
+#app .lab-dpad button{width:44px;min-width:44px;min-height:44px;padding:0;font:24px/1 system-ui,sans-serif}

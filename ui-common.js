@@ -11,6 +11,10 @@
     const native=(text,action)=>button(text,action,namespace);
     return `<div class="b0-menu-list">${native('계속하기',close)}${namespace==='lab'?native('지도','map'):common('지도','map')}${common('소지품','inventory')}${common('사용법','help')}${record?native('기록 보기',record):common('기록 보기','record')}${native('시작 화면으로',home)}</div>${extras?`<details class="b0-settings"><summary>추가 설정</summary><div class="options">${extras}</div></details>`:''}`;
   }
+  function dialogBody(body,namespace,action){
+    const existing=body.includes(`data-${namespace}="${action}"`)||body.includes(`data-${namespace}='${action}'`);
+    return body+(existing?'':`<div class="b0-dialog-footer">${button('닫기',action,namespace)}</div>`);
+  }
   function close(){const d=document.querySelector('.b0-common-modal');d?.close();d?.remove();}
   function modal(title,body,back=true){
     document.querySelectorAll('#app dialog[open]').forEach(d=>{
@@ -18,7 +22,7 @@
       if(nativeClose)nativeClose.click();else d.close();
     });close();
     const d=document.createElement('dialog');d.className='b0-common-modal';
-    d.innerHTML=`<header><h2>${title}</h2>${common('닫기','close')}</header><div class="b0-modal-body">${body}${back&&returnMenu?common('메뉴로','back-menu'):''}</div>`;
+    d.innerHTML=`<header><h2>${title}</h2></header><div class="b0-modal-body">${dialogBody(body+(back&&returnMenu?common('메뉴로','back-menu'):''),'ui','close')}</div>`;
     document.querySelector('#app').append(d);d.addEventListener('close',()=>d.remove());d.showModal();
   }
   function read(key){try{const storage=location.pathname.endsWith('/preview-v2.html')?sessionStorage:localStorage;return JSON.parse(storage.getItem(key));}catch{return null;}}
@@ -55,5 +59,5 @@
   const actionSize=new ResizeObserver(entries=>{for(const {target} of entries){target.closest('main')?.style.setProperty('--b0-actions-height',target.getBoundingClientRect().height+'px');}});
   new MutationObserver(()=>{const current=document.querySelector('#app main>.c2-actions,#app main>.lab-actions');if(current===observedActions)return;actionSize.disconnect();observedActions=current;if(current)actionSize.observe(current);}).observe(document.querySelector('#app'),{childList:true,subtree:true});
   }
-  window.B0UI={header,menuContent,cameraActive,inventoryButton:()=>common('소지품','inventory'),firstGuide(){try{if(localStorage.getItem('project-b0-controls-seen-v1'))return;localStorage.setItem('project-b0-controls-seen-v1','1');}catch{}help(true);}};
+  window.B0UI={header,menuContent,dialogBody,cameraActive,inventoryButton:()=>common('소지품','inventory'),firstGuide(){try{if(localStorage.getItem('project-b0-controls-seen-v1'))return;localStorage.setItem('project-b0-controls-seen-v1','1');}catch{}help(true);}};
 })();

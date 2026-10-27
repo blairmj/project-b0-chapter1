@@ -21,7 +21,7 @@
         audio||=new(window.AudioContext||window.webkitAudioContext)();void audio.resume();const o=audio.createOscillator(),g=audio.createGain();o.type='triangle';o.frequency.setValueAtTime(kind==='unlock'?460:125,audio.currentTime);o.frequency.exponentialRampToValueAtTime(kind==='unlock'?690:60,audio.currentTime+.18);g.gain.setValueAtTime(.018,audio.currentTime);g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+.25);o.connect(g).connect(audio.destination);o.start();o.stop(audio.currentTime+.26);
       }catch{}
     }
-    function say(who,text,next=false){speech.hidden=false;speech.innerHTML=`<div class="speech ${who}"><b>${who==='robot'?'B-0':'나'}</b><p>${esc(text)}</p></div>${b(next?'다음':'대화 닫기',next?'intro-next':'dismiss','quiet')}`;const el=app.querySelector('.mr-robot');el.classList.toggle('speaking',who==='robot');later(()=>el.classList.remove('speaking'),Math.min(4500,text.length*80));}
+    function say(who,text,next=false){speech.hidden=false;speech.innerHTML=`<div class="speech ${who}"><b>${who==='robot'?'B-0':'나'}</b><p>${esc(text)}</p></div>${next?b('다음','intro-next','quiet'):''}`;const el=app.querySelector('.mr-robot');el.classList.toggle('speaking',who==='robot');later(()=>el.classList.remove('speaking'),Math.min(4500,text.length*80));}
     function render(){
       const approaching=s.phase==='approach',glassUp=approaching&&s.line<2||M.solved(s);
       app.innerHTML=`<main class="game c2-game mr-game">${window.B0UI?.header({place:`거울 관찰실`,namespace:"mr",reset:"home",zoomClass:"mr-zoom",active:true})||""}
@@ -135,7 +135,7 @@
     }
     function up(e){if(!pointer||pointer.id!==e.pointerId)return;const p=pointer;pointer=null;suppress=p.moved;if(stage.hasPointerCapture(e.pointerId))stage.releasePointerCapture(e.pointerId);if(p.own&&s.phase==='split'){if(p.moved)window.B0RoomDialogue?.remember(s,'own',3);M.setOwn(s,0);update();if(p.moved)say('student','손을 떼니 손잡이가 돌아왔어.');}save();}
     function cancelPointer(){pointer=null;suppress=true;if(s.phase==='split')M.setOwn(s,0);update();save();}
-    function modal(title,body){app.querySelector('.mr-modal')?.remove();const d=document.createElement('dialog');d.className='modal mr-modal';d.innerHTML=`<div class="modal-header"><h2>${esc(title)}</h2>${b('닫기','close-modal','quiet')}</div><div class="modal-body">${body}</div>`;app.append(d);d.addEventListener('close',()=>d.remove());d.showModal();}
+    function modal(title,body){app.querySelector('.mr-modal')?.remove();const d=document.createElement('dialog');d.className='modal mr-modal';d.innerHTML=`<div class="modal-header"><h2>${esc(title)}</h2></div><div class="modal-body">${window.B0UI.dialogBody(body,'mr','close-modal')}</div>`;app.append(d);d.addEventListener('close',()=>d.remove());d.showModal();}
     function act(a){
       if(a==='campaign-home'){onHome?.();return;}
       if(a==='close-modal'){app.querySelector('.mr-modal')?.close();return;}
@@ -149,7 +149,7 @@
       if(a==='home'){selection=null;targetMode=false;actions(s.phase==='approach'?'계단 쪽으로 이어지는 관찰실':'방 안을 자유롭게 살펴보세요.');cameraTo({x:-150,z:35,yaw:58,pitch:-8,zoom:1});return;}
       if(a.startsWith('zoom-')){camera.zoom=Math.max(.7,Math.min(1.65,camera.zoom+(a==='zoom-in'?.15:-.15)));updateCamera();return;}
       if(s.phase==='approach')return;
-      if(a==='clear'){selection=null;targetMode=false;speech.hidden=true;actions('방 안을 자유롭게 살펴보세요.');return;}
+      if(a==='clear'){selection=null;targetMode=false;pointer=null;speech.hidden=true;actions('');stage?.focus({preventScroll:true});return;}
       if(a==='robot'){robotMenu(true);return;}if(a.startsWith('ask-')){say('robot',M.reply(s,a.slice(4)));return;}
       if(a==='target-mode'){targetMode=true;actions('물건을 직접 눌러 가리켜 주세요.',[['취소','clear']]);return;}
       if(a.startsWith('select-')){select(a.slice(7));return;}if(a.startsWith('inspect-')){inspect(a.slice(8));return;}
