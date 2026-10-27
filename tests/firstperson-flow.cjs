@@ -27,7 +27,7 @@ assert.match(run('panel.content'),/관리용 쪽지/);
 run('approach("robot");inspect();');assert.match(run('panel.content'),/비밀번호 쪽지를 알아/);
 run('handle("ask-note");handle("open-storage");');
 assert.equal(run('state.noteFound'),true);assert.equal(run('state.noteTaken'),false);
-assert.match(run('panel.content'),/확인하기 전에는 몰랐/);
+assert.match(run('panel.content'),/이런 게 들어 있네요\./);
 run('robot();handle("take-note");');assert.equal(run('state.noteTaken'),true);
 assert.match(run('panel.content'),/4732/);
 run('inventory();');assert.match(run('panel.content'),/4732/);
@@ -85,7 +85,7 @@ for(const t of ['identity','where','exit','belongings']){run('handle("talk-'+t+'
 assert.match(run('panel.content'),/ask-storage/);
 run('state.guide=true;robot()');assert.match(run('panel.content'),/talk-password/);assert.match(run('panel.content'),/talk-limits/);
 run('handle("talk-password")');assert.doesNotMatch(run('panel.content'),/4732/);assert.match(run('panel.content'),/확인하지 않은 번호/);
-run('handle("talk-belongings");handle("ask-storage");handle("open-storage")');assert.equal(run('state.noteFound'),true);assert.match(run('panel.content'),/쪽지 받기/);
+run('handle("talk-belongings");handle("ask-storage");handle("open-storage")');assert.equal(run('state.noteFound'),true);assert.match(run('panel.content'),/확인하기/);
 run('handle("take-note");handle("talk-limits")');assert.match(run('panel.content'),/안을 확인하기 전/);assert.equal(run('state.noteTaken'),true);
 console.log('PASS: selectable questions, context-sensitive topics, no early password reveal, conversation-to-compartment flow');
 
