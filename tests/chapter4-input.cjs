@@ -4,6 +4,13 @@ const initial=M.fresh();Object.assign(initial,{phase:'room',met:true,boss:true})
 let saved,now=0,id=0;const frames=new Map(),timers=new Map(),app={innerHTML:'',querySelector:s=>node(s),addEventListener(){},removeEventListener(){}};
 const storage={getItem:k=>k==='project-b0-final-v2'?JSON.stringify(initial):null,setItem(k,v){if(k==='project-b0-final-v2')saved=JSON.parse(v);}};
 const ctx={window:{B0Final:M,addEventListener(){},removeEventListener(){}},localStorage:storage,sessionStorage:storage,matchMedia:()=>({matches:true}),performance:{now:()=>now},setTimeout(f){timers.set(++id,f);return id;},clearTimeout(n){timers.delete(n);},requestAnimationFrame(f){frames.set(++id,f);return id;},cancelAnimationFrame(n){frames.delete(n);}};
+let closedContexts=0;
+ctx.window.AudioContext=class{
+  constructor(){this.currentTime=0;this.closed=false;this.destination={};}
+  resume(){} createGain(){return {connect(){},disconnect(){},gain:{setValueAtTime(){},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){}}};}
+  createOscillator(){return {connect(){},disconnect(){},start(){},stop(){},frequency:{value:0,setValueAtTime(){},exponentialRampToValueAtTime(){}}};}
+  close(){assert.equal(this.closed,false,'AudioContext cannot be closed twice');this.closed=true;closedContexts++;}
+};
 ctx.document={addEventListener(){}};vm.runInNewContext(fs.readFileSync(require.resolve('../ui-common.js'),'utf8'),ctx);
 vm.runInNewContext(fs.readFileSync(require.resolve('../chapter4.js'),'utf8').replace('render();return {dispose,jumpToEnd};','render();return {dispose,jumpToEnd,act,select,down,move,up,click,updateMechanical,state:()=>({s,r,camera,robot,journey,conversation})};'),ctx);
 const g=ctx.window.startChapterFour({app,portrait:()=>'',onBack(){}});
@@ -29,7 +36,7 @@ for(let t=400;t<=2400;t+=100)step(t);assert.equal(node('.c4-stage').dataset.repo
 g.act('release-b0');assert.ok(g.state().robot.x>-85,'released B-0 waits on the clear side of the exit');assert.equal(g.state().r.latch,0);assert.equal(g.state().s.upper,true);
 g.act('request-hold');g.select('handle');g.act('pull');for(let t=2500;t<=7900;t+=100)step(t);assert.equal(saved.opened,true);
 g.act('leave');assert.equal(g.state().s.phase,'room');g.act('release-b0');g.act('enter-exit');assert.equal(g.state().s.phase,'farewell');for(let i=0;i<6;i++)g.act('story-next');assert.equal(g.state().s.phase,'ending');for(let i=0;i<6;i++)g.act('story-next');assert.equal(g.state().s.phase,'complete');
-g.dispose();assert.equal(frames.size,0);assert.equal(timers.size,0);
+g.dispose();g.dispose();assert.equal(frames.size,0);assert.equal(timers.size,0);assert.equal(closedContexts,1,'back navigation and campaign cleanup share an idempotent disposal');
 ctx.matchMedia=()=>({matches:false});initial.opened=initial.upper=true;initial.links.robot=false;now=0;
 const a=ctx.window.startChapterFour({app,portrait:()=>'',onBack(){}});a.act('leave');step(1100);assert.equal(node('.c4-robot').dataset.pose,'walking');step(2300);assert.equal(a.state().s.phase,'farewell');for(let i=0;i<6;i++)a.act('story-next');step(3900);assert.ok(Number(node('.c4-passage-robot').style.opacity)>0);step(5400);assert.equal(a.state().s.phase,'ending');a.dispose();assert.equal(frames.size,0);
 console.log('PASS: target selection, lift and descent, physical drags, real bolt check, release/reset, held robot cannot be abandoned, walking ending, cleanup');

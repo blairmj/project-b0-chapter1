@@ -158,7 +158,7 @@
       if(a==='pull'){pull();return;}if(a==='reunite'){reunite();return;}if(a==='leave')leave();
     }
     function click(e){const el=e.target.closest('[data-mr]');if(el){e.preventDefault();act(el.dataset.mr);}}
-    function dispose(){dead=true;cancelAnimationFrame(camFrame);cancelAnimationFrame(botFrame);cancelAnimationFrame(handFrame);timers.forEach(clearTimeout);clearTimeout(pulse);audio?.close();app.removeEventListener('click',click);window.removeEventListener('resize',updateCamera);app.querySelector('.mr-modal')?.remove();}
+    function dispose(){if(dead)return;dead=true;cancelAnimationFrame(camFrame);cancelAnimationFrame(botFrame);cancelAnimationFrame(handFrame);timers.forEach(clearTimeout);clearTimeout(pulse);audio?.close();app.removeEventListener('click',click);window.removeEventListener('resize',updateCamera);app.querySelector('.mr-modal')?.remove();}
     app.addEventListener('click',click);window.addEventListener('resize',updateCamera);render();return {dispose};
   };
 })();

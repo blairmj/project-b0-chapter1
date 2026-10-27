@@ -157,7 +157,7 @@
     function up(){if(!pointer)return;suppress=pointer.moved;pointer=null;save();later(()=>{suppress=false;},0);}
     function cancel(){pointer=null;suppress=false;}
     function key(e){if(walking||stairRejecting||modalEl||e.target.closest('input,textarea,select,dialog'))return;if(['ArrowUp','w','W'].includes(e.key)){e.preventDefault();travel(1);}else if(['ArrowDown','s','S'].includes(e.key)){e.preventDefault();travel(-1);}else if(['ArrowLeft','ArrowRight','a','A','d','D'].includes(e.key)){e.preventDefault();animate({yaw:camera.yaw+(['ArrowLeft','a','A'].includes(e.key)?-90:90)});}else if((e.key==='Enter'||e.key===' ')&&e.target.dataset.labObject){e.preventDefault();const id=e.target.dataset.labObject;M.doors[id]?walkTo(id):showObject(id);}}
-    function dispose(){dead=true;renderer?.dispose();renderer=null;cancelAnimationFrame(frame);timers.forEach(clearTimeout);close();audio?.close();app.removeEventListener('click',click);window.removeEventListener('resize',update);}
+    function dispose(){if(dead)return;dead=true;renderer?.dispose();renderer=null;cancelAnimationFrame(frame);timers.forEach(clearTimeout);close();audio?.close();app.removeEventListener('click',click);window.removeEventListener('resize',update);}
     app.addEventListener('click',click);window.addEventListener('resize',update);render();save();return {dispose};
   };
 })();

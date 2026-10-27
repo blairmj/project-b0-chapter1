@@ -344,7 +344,7 @@
       if(a==='exit'){if(M.exit(s,standing)){save();ending();}else reachMessage();}
     }
     function click(e){const b=e.target.closest('[data-c2]');if(b){e.preventDefault();act(b.dataset.c2);}}
-    function dispose(){dead=true;timers.forEach(clearTimeout);cancelAnimationFrame(animation);cancelAnimationFrame(heightFrame);app.removeEventListener('click',click);window.removeEventListener('resize',updateCamera);app.querySelector('.c2-modal')?.remove();}
+    function dispose(){if(dead)return;dead=true;timers.forEach(clearTimeout);cancelAnimationFrame(animation);cancelAnimationFrame(heightFrame);app.removeEventListener('click',click);window.removeEventListener('resize',updateCamera);app.querySelector('.c2-modal')?.remove();}
     app.addEventListener('click',click);window.addEventListener('resize',updateCamera);render();
     function jumpToEnd(){s.windowOpen=true;s.phase='ledge';M.finish(s);s.logs.push({action:'temporary-skip'});save();}
     return {dispose,jumpToEnd};

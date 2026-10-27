@@ -190,7 +190,7 @@
       if(a==='leave'){leaveRoom();}
     }
     function click(e){const el=e.target.closest('[data-c3]');if(el){e.preventDefault();act(el.dataset.c3);}}
-    function dispose(){dead=true;mirrorView?.dispose();mirrorView=null;cancelAnimationFrame(frame);timers.forEach(clearTimeout);app.removeEventListener('click',click);window.removeEventListener('resize',updateCamera);app.querySelector('.c3-modal')?.remove();}
+    function dispose(){if(dead)return;dead=true;mirrorView?.dispose();mirrorView=null;cancelAnimationFrame(frame);timers.forEach(clearTimeout);app.removeEventListener('click',click);window.removeEventListener('resize',updateCamera);app.querySelector('.c3-modal')?.remove();}
     function jumpToEnd(){
       s.shelfZ=175;s.realDoorOpen=true;s.approval='rejected';s.phase='mirror';
       s.mirror={...window.B0Mirror.restore(s.mirror),phase:'complete'};
