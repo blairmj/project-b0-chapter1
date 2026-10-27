@@ -78,3 +78,27 @@ assert.notEqual(gpu.state().camera.yaw,yawBefore,'dragging empty WebGL space mus
 assert.equal(rendered.camera.yaw,gpu.state().camera.yaw,'WebGL and navigation must receive the same camera');
 gpu.dispose();assert.equal(rendererDisposed,true,'leaving the corridor must release the WebGL renderer');
 console.log('PASS: WebGL picking, camera/companion synchronization, popup close, room entry, pointer rotation and renderer cleanup');
+
+// A drag click may arrive after timers, and may finish outside the original canvas.
+let clicksPicked=0;const captures=new Set();
+node('.lab-stage').setPointerCapture=id=>captures.add(id);
+node('.lab-stage').hasPointerCapture=id=>captures.has(id);
+node('.lab-stage').releasePointerCapture=id=>captures.delete(id);
+context.window.B0LabWebGL={create(){return {update(){},pick(){clicksPicked++;return {id:'storage',surface:'door'};},dispose(){}};}};
+const dragState=M.fresh();dragState.cleared.practice=true;
+const look=context.window.startLabNavigation({app,portrait:()=>'',state:dragState,onSave(){},onEnter(){},onHome(){},muted:true});
+look.down(pointer(400,200));look.move(pointer(300,210));assert.ok(captures.has(7),'capture starts when the look gesture is recognized');look.up(pointer(280,210));assert.equal(captures.size,0);
+const delayed=[...timers.values()];timers.clear();delayed.forEach(f=>f());
+look.click({target:{closest(){return null;}},detail:1,clientX:300,clientY:210,preventDefault(){}});
+assert.equal(clicksPicked,0,'delayed post-drag click must not pick a door or start walking');
+look.act('turn-left');const turnYaw=look.state().camera.yaw;
+look.down(pointer(400,200));look.move(pointer(300,200));look.up();
+assert.notEqual(look.state().camera.yaw,turnYaw,'manual drag can take over an in-progress arrow turn');assert.equal(frames.size,0,'the old camera animation must stop fighting the pointer');
+look.down(pointer(400,200));look.move(pointer(250,200));look.up();assert.equal(captures.size,0);
+// A fresh down/up is still a genuine click, after any number of look gestures.
+look.down(pointer(400,200));look.up();look.click({target:{closest(){return null;}},detail:1,clientX:400,clientY:200});assert.equal(clicksPicked,1);finish();
+look.act('forward');assert.ok(frames.size);look.down(pointer(400,200));look.move(pointer(300,200));look.up();assert.equal(frames.size,0,'manual looking can interrupt ordinary floor travel');
+look.act('enter-storage');assert.ok(frames.size);const doorwayYaw=look.state().camera.yaw;
+look.down(pointer(400,200));look.move(pointer(300,200));look.up();assert.equal(look.state().camera.yaw,doorwayYaw,'doorway crossing keeps its guarded camera path');finish();
+look.dispose();assert.equal(captures.size,0);
+console.log('PASS: pointer capture, delayed drag-click suppression, interrupted turn/walk, genuine click recovery and protected doorway travel');

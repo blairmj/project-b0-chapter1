@@ -11,7 +11,7 @@
   };
   window.startLabNavigation=function({app,portrait,state:s,onSave,onEnter,onHome,muted=false,arrival=null}){
     let dead=false,frame=0,pointer=null,walking=false,suppress=false,selection=null,world,stage,bar,notice,modalEl,audio,renderer=null;
-    const timers=new Set(),camera={...s.camera,zoom:1,height:s.floor===2?360:0};let stairRejecting=false,talk=null,speechTicket=0;
+    const timers=new Set(),camera={...s.camera,zoom:1,height:s.floor===2?360:0};let stairRejecting=false,talk=null,speechTicket=0,lookInterruptible=false;
     function companionNear(c,floor){const wanted=c.z-240,limit=M.bound(s,c.x,wanted).z;return M.companionSpot(c.x+100,wanted<limit?c.z+240:wanted,floor);}
     let companion=s.companion||companionNear(camera,s.floor),botMoving=false,passage=null;
     if(s.floor===1&&!s.stairsUnlocked&&companion.z<-1730)companion=companionNear(camera,s.floor);
@@ -51,7 +51,7 @@
       ${[-2220,-2440].map((z,i)=>`<div class="lab-fluorescent" style="transform:translate3d(0,-642px,${z}px) rotateX(-90deg);--light-order:${i}" aria-hidden="true"><i></i></div><div class="lab-light-pool" style="transform:translate3d(0,-181px,${z}px) rotateX(90deg)" aria-hidden="true"></div>`).join('')}<div class="lab-upper-floor"></div><div class="lab-upper-ceiling"></div><div class="lab-upper-end"></div>${[-1,1].map(side=>`<div class="lab-upper-wall" style="transform:translate3d(${side*270}px,0,-2330px) rotateY(${-side*90}deg)"><span class="lab-wall-light"></span></div><div class="lab-stair-side" style="transform:translate3d(${side*270}px,0,-1940px) rotateY(${-side*90}deg)"></div>`).join('')}
       <div class="lab-b0"><div class="robot-sprite live-body">${portrait()}</div><div class="c4-walk-art"><div class="c4-walk-frame"></div></div></div></div><div class="lab-notice" role="status" hidden></div><div class="lab-walk-mark" aria-hidden="true">이동 중</div></section><section class="lab-actions" aria-label="복도에서 선택한 대상"></section><footer>${b('B-0에게 말하기','robot','secondary')}<div class="lab-dpad">${b('←','turn-left','quiet')}${b('↑','forward')}${b('↓','backward','quiet')}${b('→','turn-right','quiet')}</div><div class="lab-pocket">${b('소지품','inventory','quiet')}</div></footer></main>`;
       world=app.querySelector('.lab-world');stage=app.querySelector('.lab-stage');bar=app.querySelector('.lab-actions');notice=app.querySelector('.lab-notice');
-      stage.addEventListener('pointerdown',down);stage.addEventListener('pointermove',move);stage.addEventListener('pointerup',up);stage.addEventListener('pointercancel',cancel);
+      stage.addEventListener('pointerdown',down);stage.addEventListener('pointermove',move);stage.addEventListener('pointerup',up);stage.addEventListener('pointercancel',cancel);stage.addEventListener('lostpointercapture',cancel);stage.addEventListener('pointerleave',e=>{if(pointer&&!pointer.moved)cancel(e);});
       stage.addEventListener('keydown',key);stage.addEventListener('wheel',e=>{e.preventDefault();camera.pitch=Math.max(-35,Math.min(45,camera.pitch-e.deltaY*.025));update();save();},{passive:false});
       if(window.B0LabWebGL){
         try{renderer=window.B0LabWebGL.create(app.querySelector('.lab-webgl-canvas'),{model:M,state:s,onFallback:rendererFallback});if(renderer)stage.classList.add('webgl-active');}
@@ -71,7 +71,7 @@
       stage.classList.toggle('walking',walking);if(stage.dataset.floor!==String(s.floor)){app.querySelector('.lab-pocket').innerHTML=b('소지품','inventory','quiet')+(s.floor===2?b('1층 계단','downstairs','quiet'):'');}stage.dataset.floor=String(s.floor);stage.dataset.position=String(Math.round(camera.z));const place=`${s.floor}층 ${s.floor===2?'중앙관리실 앞 복도':camera.z<-1510?'계단 앞 복도':camera.z<-650?'연구 구역 복도':'출입 구역 복도'}`;if(window.B0UI?.setLocation)window.B0UI.setLocation(place,app);else app.querySelector('.lab-location').textContent=place;
     }
     function animate(to,done,stair=false,durationMs){
-      if(walking)return;cancelTalk();const from={...camera},start=performance.now(),turn=(((to.yaw??camera.yaw)-camera.yaw+540)%360)-180;const distance=Math.hypot((to.x??from.x)-from.x,(to.z??from.z)-from.z,(to.height??from.height)-from.height);const duration=matchMedia('(prefers-reduced-motion: reduce)').matches?1:durationMs??(stair?2300:Math.max(380,Math.min(1900,distance*3.7)));walking=true;notice.hidden=true;let lastStep=-1;
+      if(walking)return;lookInterruptible=!stair;cancelTalk();const from={...camera},start=performance.now(),turn=(((to.yaw??camera.yaw)-camera.yaw+540)%360)-180;const distance=Math.hypot((to.x??from.x)-from.x,(to.z??from.z)-from.z,(to.height??from.height)-from.height);const duration=matchMedia('(prefers-reduced-motion: reduce)').matches?1:durationMs??(stair?2300:Math.max(380,Math.min(1900,distance*3.7)));walking=true;notice.hidden=true;let lastStep=-1;
       const botFrom={...companion},dx=(to.x??from.x)-from.x,dz=(to.z??from.z)-from.z,travelLength=Math.hypot(dx,dz);
       botMoving=travelLength>8;
       const targetFloor=(to.height??camera.height)>180?2:s.floor===2&&(to.height??camera.height)===0?1:s.floor;
@@ -82,7 +82,7 @@
       function tick(t){if(dead)return;const previousPosition={x:camera.x,z:camera.z},p=Math.min(1,(t-start)/duration),q=p*p*(3-2*p);for(const k of ['x','z','pitch','height'])camera[k]=from[k]+((to[k]??from[k])-from[k])*q;camera.yaw=from.yaw+turn*q;companion={x:botFrom.x+(botTo.x-botFrom.x)*q,z:botFrom.z+(botTo.z-botFrom.z)*q,floor:targetFloor};const count=Math.floor(p*duration/380);if(distance>40&&count!==lastStep){lastStep=count;stepSound();}if(s.floor===1&&!s.powerOut&&M.stepsOnPanel(previousPosition,camera))tripPower();update();if(p<1)frame=requestAnimationFrame(tick);else{walking=false;botMoving=false;update();save();done?.();}}frame=requestAnimationFrame(tick);
     }
     function doorTravel(id,inward,done){
-      if(walking)return;cancelTalk();selection=null;actions('');notice.hidden=true;pointer=null;
+      if(walking)return;lookInterruptible=false;cancelTalk();selection=null;actions('');notice.hidden=true;cancel();
       const d=M.doors[id],a=d.yaw*Math.PI/180,forward={x:Math.sin(a),z:-Math.cos(a)},checkpoint={...camera};
       passage={id,open:inward?0:1};walking=true;botMoving=false;
       const doorEl=app.querySelector('.lab-door-'+id);
@@ -176,7 +176,8 @@
       if(a.startsWith('enter-')){const id=a.slice(6);if(M.canEnter(s,id))doorTravel(id,true);return;}
     }
     function click(e){
-      if(suppress){suppress=false;return;}const action=e.target.closest('[data-lab]');if(action){e.preventDefault();act(action.dataset.lab);return;}
+      const action=e.target.closest('[data-lab]');if(action){e.preventDefault();act(action.dataset.lab);return;}
+      if(suppress&&e.detail!==0&&stage.contains(e.target)){suppress=false;e.preventDefault?.();return;}
       if(walking||stairRejecting||modalEl||!stage.contains(e.target))return;
       const el=e.target.closest('[data-lab-object]');if(el){const id=el.dataset.labObject;if(M.doors[id])walkTo(id);else showObject(id);return;}
       if(e.detail===0)return;
@@ -186,12 +187,35 @@
       if(!p||stairAttempt(p)||Math.hypot(p.x-camera.x,p.z-camera.z)<8)return;
       selection=null;actions('');stage.focus({preventScroll:true});animate(p);
     }
-    function down(e){if(e.button!==0||walking||stairRejecting||modalEl||e.target.closest('button'))return;pointer={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:camera.yaw,pitch:camera.pitch,moved:false};}
-    function move(e){if(!pointer){if(renderer&&!walking&&!modalEl){const r=stage.getBoundingClientRect(),hit=renderer.pick(e.clientX-r.left,e.clientY-r.top);stage.style.cursor=hit?.id?'pointer':hit?.surface==='floor'?'crosshair':'grab';}return;}if(pointer.id!==e.pointerId)return;const dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;if(!pointer.moved&&Math.hypot(dx,dy)<6)return;pointer.moved=true;camera.yaw=pointer.yaw-dx*.22;camera.pitch=Math.max(-35,Math.min(45,pointer.pitch+dy*.15));update();}
-    function up(){if(!pointer)return;suppress=pointer.moved;pointer=null;save();later(()=>{suppress=false;},0);}
-    function cancel(){pointer=null;suppress=false;}
+    function down(e){
+      if(e.button!==0||e.isPrimary===false||stairRejecting||modalEl||passage||(walking&&!lookInterruptible)||e.target.closest('button'))return;
+      suppress=false;pointer={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:camera.yaw,pitch:camera.pitch,moved:false};
+    }
+    function move(e){
+      if(!pointer){if(renderer&&!walking&&!modalEl){const r=stage.getBoundingClientRect(),hit=renderer.pick(e.clientX-r.left,e.clientY-r.top);stage.style.cursor=hit?.id?'pointer':hit?.surface==='floor'?'crosshair':'grab';}return;}
+      if(pointer.id!==e.pointerId)return;const dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;
+      if(!pointer.moved&&Math.hypot(dx,dy)<6)return;
+      if(!pointer.moved){
+        // Manual looking takes over an ordinary approach or camera turn. Door
+        // crossings and stairs keep their own non-interruptible camera path.
+        if(walking){cancelAnimationFrame(frame);walking=false;botMoving=false;lookInterruptible=false;pointer.yaw=camera.yaw;pointer.pitch=camera.pitch;}
+        pointer.moved=true;stage.setPointerCapture?.(e.pointerId);stage.focus({preventScroll:true});stage.classList.add('dragging');stage.style.cursor='grabbing';
+        cancelTalk();selection=null;actions('');notice.hidden=true;
+      }
+      camera.yaw=pointer.yaw-dx*.22;camera.pitch=Math.max(-35,Math.min(45,pointer.pitch+dy*.15));update();e.preventDefault?.();
+    }
+    function finishPointer(e){
+      if(!pointer||(e?.pointerId!==undefined&&pointer.id!==e.pointerId))return;
+      const p=pointer;pointer=null;suppress=p.moved;stage.classList.remove('dragging');stage.style.cursor='grab';
+      if(stage.hasPointerCapture?.(p.id))stage.releasePointerCapture(p.id);
+      if(!dead)save();
+      // Keep the drag's synthetic click suppressed until it arrives. A timer
+      // can run before that click; the next genuine pointerdown resets it.
+    }
+    function up(e){finishPointer(e);}
+    function cancel(e){finishPointer(e);}
     function key(e){if(walking||stairRejecting||modalEl||e.target.closest('input,textarea,select,dialog'))return;if(['ArrowUp','w','W'].includes(e.key)){e.preventDefault();travel(1);}else if(['ArrowDown','s','S'].includes(e.key)){e.preventDefault();travel(-1);}else if(['ArrowLeft','ArrowRight','a','A','d','D'].includes(e.key)){e.preventDefault();animate({yaw:camera.yaw+(['ArrowLeft','a','A'].includes(e.key)?-90:90)});}else if((e.key==='Enter'||e.key===' ')&&e.target.dataset.labObject){e.preventDefault();const id=e.target.dataset.labObject;M.doors[id]?walkTo(id):showObject(id);}}
-    function dispose(){if(dead)return;dead=true;renderer?.dispose();renderer=null;cancelAnimationFrame(frame);timers.forEach(clearTimeout);close();audio?.close();app.removeEventListener('click',click);window.removeEventListener('resize',update);}
-    app.addEventListener('click',click);window.addEventListener('resize',update);render();save();if(arrival&&M.doors[arrival.from]){if(!arrival.completed)doorTravel(arrival.from,false);else{const destination={...camera};camera.z+=65;update();animate(destination,null,false,700);}}return {dispose};
+    function dispose(){if(dead)return;cancel();dead=true;renderer?.dispose();renderer=null;cancelAnimationFrame(frame);timers.forEach(clearTimeout);close();audio?.close();app.removeEventListener('click',click);window.removeEventListener('resize',update);window.removeEventListener('blur',cancel);}
+    app.addEventListener('click',click);window.addEventListener('resize',update);window.addEventListener('blur',cancel);render();save();if(arrival&&M.doors[arrival.from]){if(!arrival.completed)doorTravel(arrival.from,false);else{const destination={...camera};camera.z+=65;update();animate(destination,null,false,700);}}return {dispose};
   };
 })();
