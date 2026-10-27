@@ -127,7 +127,7 @@
     function robotMenu(respond=false){if(respond)say('robot',window.B0RoomDialogue?.reply('storage',s,{target:selection,standing})||'확인한 물건을 두고 이야기해 주세요.');actions('B-0에게 부탁',[['살펴봐 줘','request-inspect'],['옮겨 줘','request-move'],['나를 들어 올려 줘','boost'],['이 방을 살펴봐 줘','survey'],['닫기','clear']]);}
     function robotTarget(id){
       if(id==='robot')return;const verb=mode.verb;mode=null;
-      if(verb==='inspect'){window.B0RoomDialogue?.remember(s,id,2);save();say('robot',id==='window'?'창 너머는 통로입니다. 안쪽 걸쇠가 보입니다.':id==='fake-window'?(s.fakeWindowOpen?'유리 뒤가 벽입니다. 통로로 이어지지 않습니다.':'유리 너머는 잘 보이지 않습니다. 창을 열어 확인해 볼까요?'):id==='vent'?(s.ventOpen?'통로 뒤가 금속판으로 막혀 있습니다. 여기로는 지나갈 수 없습니다.':'덮개 너머는 여기서 다 보이지 않습니다. 열어 확인할 수 있습니다.'):id==='entry'?'안쪽 손잡이는 보이지 않습니다. 아직 문을 여는 방법은 찾지 못했습니다.':M.sizes[id]?(id==='wide'?'윗면이 넓고 단단합니다. 바닥에서 밀어 옮길 수 있습니다.':'윗면이 평평합니다. 다른 물체 위에 놓을 때 받치는 면을 확인해야 합니다.'):(s.cabinetOpen?'보관장 안은 비어 있습니다.':'닫힌 보관장 안쪽은 아직 보이지 않습니다.'));select(id);}
+      if(verb==='inspect'){window.B0RoomDialogue?.remember(s,id,2);save();say('robot',id==='window'?'창 너머는 통로입니다. 안쪽 걸쇠가 보입니다.':id==='fake-window'?(s.fakeWindowOpen?'유리 뒤가 벽입니다. 통로로 이어지지 않습니다.':'유리 너머는 잘 보이지 않습니다. 창을 열어 확인해 볼까요?'):id==='vent'?(s.ventOpen?'통로 뒤가 금속판으로 막혀 있습니다. 여기로는 지나갈 수 없습니다.':'덮개 너머는 여기서 다 보이지 않습니다. 열어 확인할 수 있습니다.'):id==='entry'?'안쪽 손잡이는 보이지 않습니다. 아직 문을 여는 방법은 찾지 못했습니다.':M.sizes[id]?(id==='wide'?'윗면이 넓고 단단합니다. 바닥에서 밀어 옮길 수 있습니다.':'윗면이 평평하고 넓은 상자보다 크기가 작습니다. 아직 직접 시도하지 않은 배치는 알 수 없습니다.'):(s.cabinetOpen?'보관장 안은 비어 있습니다.':'닫힌 보관장 안쪽은 아직 보이지 않습니다.'));select(id);}
       else if(!M.sizes[id]){say('robot','이 물체는 옮길 수 없습니다. 다른 대상을 지정해 주세요.');robotMenu();}
       else if(verb==='move')beginMove(id,true);
     }
