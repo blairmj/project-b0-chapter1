@@ -69,6 +69,16 @@
 
 ## 4. 플레이와 저장
 
+### 플레이 후 설문과 교사용 분석
+
+- 엔딩의 **모험 돌아보기 · 설문**에서 [학생 설문](https://blairmj.github.io/project-b0-chapter1/survey.html)으로 이동합니다. 직접 접속도 가능합니다.
+- 자기평가 12문항, 상황 판단 4문항, 플레이 경험 4문항, 선택 서술형 3문항으로 구성합니다. `b0-post-1.0`은 기본판 목표에 맞춘 시범 도구이며 검증된 표준 척도가 아닙니다.
+- 학생은 마지막 단계에서 JSON 응답을 저장해 교사가 정한 경로로 전달합니다. 정적 GitHub Pages이므로 자동 전송·중앙 수집은 하지 않습니다. 작성 중 응답 1건은 해당 브라우저에만 자동 저장합니다.
+- [교사용 분석](https://blairmj.github.io/project-b0-chapter1/analysis.html)은 여러 JSON 응답을 탭 안에서 불러와 문항군 평균·SD·중앙값, 문항별 분포·결측, 상황별 정답률을 표시합니다. 서버 업로드는 없습니다.
+- 원자료·요약·서술형 코딩 CSV와 재개용 분석 묶음 JSON을 저장할 수 있습니다. 서술형은 교사가 직접 코딩하며, 분석 묶음은 불러온 모든 응답과 코딩을 보관합니다. 미리보기 응답은 기본 분석에서 제외합니다.
+- [분석 방법](https://blairmj.github.io/project-b0-chapter1/analysis-methods.html)에 문항 ID, 채점, 결측 처리, 수집 절차, 코딩 기준, 사후 자료 해석의 한계와 후속 효과 검증 설계를 정리했습니다.
+- 검사: `node tests/survey-model.cjs`. 설문과 분석 화면은 빌드·설치 없이 실행됩니다.
+
 [GitHub Pages에서 플레이](https://blairmj.github.io/project-b0-chapter1/)
 
 시작 화면에서 **처음부터 시작** 또는 **이어하기** 선택.
