@@ -53,7 +53,7 @@
           view.write=v=>{originalWrite(v);const distance=Math.max(3,(d.x-v.x)*Math.sin(a)-(d.z-v.z)*Math.cos(a));
             const camera=completed?{...state.camera,z:state.camera.z+distance,zoom:1,height:ground,pitch:0}:{x:hallDoor.x+into.x*distance,z:hallDoor.z+into.z*distance,yaw:hallDoor.yaw+180,pitch:0,zoom:1,height:ground};
             const companion=state.companion||M.companionSpot(state.camera.x+100,state.camera.z-240,hallDoor.floor);
-            portalRenderer?.update(camera,companion,{lit:!state.powerOut,walking:false,passage:{id:corridor.from,open:1},portal:{focal:distance,offsetY:2*(180-(d.wide?260:235)/2)/(d.wide?260:235)}});
+            portalRenderer?.update(camera,companion,{lit:!state.powerOut,walking:false,companionVisible:false,passage:{id:corridor.from,open:1},portal:{focal:distance,offsetY:2*(180-(d.wide?260:235)/2)/(d.wide?260:235)}});
           };
         }
       }

@@ -17,3 +17,14 @@ T.cross(app,()=>entered++);assert.equal(entered,2);assert.equal(camera.z,552,'ro
 T.cross(app,()=>entered++,{direction:'exit'});T.cancel();finish();assert.equal(entered,2,'home/jump cancellation cannot trigger delayed navigation');
 ctx.matchMedia=()=>({matches:true});T.cross(app,()=>entered++);assert.equal(entered,3);assert.equal(frames.size,0);
 console.log('PASS: world-camera approach, visible door opening, threshold exit, interior arrival, duplicate prevention, cancellation and reduced motion');
+
+// A live corridor portal must not show a second companion outside the room.
+ctx.matchMedia=()=>({matches:false});const updates=[];let disposed=0;
+ctx.document.createElement=()=>({style:{setProperty(k,v){this[k]=v;}},setAttribute(){},remove(){this.removed=true;},querySelector(){return {append(){}};}});
+ctx.window.B0LabNavigation=require('../lab-navigation-model.js');
+ctx.window.B0LabWebGL={create(){return {update(camera,companion,options){updates.push(options);},dispose(){disposed++;}};}};
+camera={x:0,z:0,yaw:-30,pitch:-8,zoom:1,height:0};
+T.bind(world,{read:()=>({...camera}),write:v=>camera={...v},stop(){},door:{x:0,z:578,yaw:180,wide:true}});
+T.cross(app,()=>entered++,{direction:'exit',corridor:{state:ctx.window.B0LabNavigation.fresh(),from:'central'}});finish();
+assert.ok(updates.length>0,'the live portal renders during the exit');assert.ok(updates.every(o=>o.companionVisible===false),'the room B-0 is the only companion during the exit');assert.equal(disposed,1,'the portal renderer is disposed after crossing');assert.equal(entered,4);
+console.log('PASS: a live corridor portal never duplicates the room companion');

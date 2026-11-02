@@ -112,3 +112,11 @@ look.act('enter-storage');assert.ok(frames.size);const doorwayYaw=look.state().c
 look.down(pointer(400,200));look.move(pointer(300,200));look.up();assert.equal(look.state().camera.yaw,doorwayYaw,'doorway crossing keeps its guarded camera path');finish();
 look.dispose();assert.equal(captures.size,0);
 console.log('PASS: pointer capture, delayed drag-click suppression, interrupted turn/walk, genuine click recovery and protected doorway travel');
+
+// The control-room door hands off to the live interior without the generic preview walk.
+const centralState=M.fresh();centralState.floor=2;centralState.stairsUnlocked=true;centralState.camera={x:0,z:-2370,yaw:0,pitch:-3};
+let centralEntries=0;const previews=[];
+context.window.B0LabWebGL={create(){return {update(camera,companion,options){if(options.passage)previews.push({...options.passage});},dispose(){}};}};
+const central=context.window.startLabNavigation({app,portrait:()=>'',state:centralState,onSave(){},onEnter:id=>{assert.equal(id,'central');centralEntries++;},onHome(){},muted:true});
+central.act('enter-central');assert.equal(centralEntries,1,'opening central switches to the actual room immediately');assert.equal(frames.size,0,'no generic doorway walking animation delays the interior');assert.equal(previews.length,0,'the central entrance cannot show a placeholder room');central.dispose();
+console.log('PASS: central entrance uses the actual room without a placeholder waiting room');

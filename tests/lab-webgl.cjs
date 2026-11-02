@@ -30,7 +30,7 @@ for(const [id,camera] of Object.entries({storage:{x:0,z:-320,yaw:90},access:{x:0
   const ray=R.ray({height:0,pitch:0,...camera},width/2,height/2,width,height,focal);
   let distance=Infinity,material;
   for(const f of faces){const t=R.intersect(ray,f.a,f.b,f.c)??R.intersect(ray,f.a,f.c,f.d);if(t!==null&&t<distance){distance=t;material=f.m;}}
-  depths.push(distance);if(progress===1)assert.ok(material.kind===5||material.glow===1,`${id}: open doorway shows room material or an interior light`);
+  depths.push(distance);if(progress===1){if(id==='central')assert.equal(material,undefined,'central entrance leaves a clear aperture for the live interior, without a placeholder room');else assert.ok(material.kind===5||material.glow===1,`${id}: open doorway shows room material or an interior light`);}
  }
  assert.ok(depths[2]>depths[0]+300,`${id}: walking through the opening has real depth`);
  const fixed=R.buildScene(M.doors,{dynamicDoors:true});

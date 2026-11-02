@@ -130,15 +130,15 @@
       if(hi-lo>18)panel(lo+5,top+13,hi-5,bottom-13,3,{color:[.52,.62,.68],kind:1});
       const grip=side*(wide?16:11)+shift;if(grip-2>=lo&&grip+2<=hi)panel(grip-2,top+h*.46,grip+2,top+h*.65,7,pale);
     }
-    if(progress<=0||!preview)return;
-    const row={practice:0,education:0,storage:1,access:2,mirror:3,central:4}[id]??2;
+    if(progress<=0||!preview||id==='central')return;
+    const row={practice:0,education:0,storage:1,access:2,mirror:3}[id]??2;
     panel(-310,top-150,310,bottom,-470,{color:[.85,.9,.94],kind:5},[[0,row/5],[1,row/5],[1,(row+1)/5],[0,(row+1)/5]]);
     for(const side of [-1,1])target.quad(P(side*310,top-150,0),P(side*310,top-150,-470),P(side*310,bottom,-470),P(side*310,bottom,0),metal);
     target.quad(P(-310,bottom,0),P(310,bottom,0),P(310,bottom,-470),P(-310,bottom,-470),{color:[.48,.60,.69],kind:1},null,'floor');
     target.quad(P(-310,top-150,0),P(-310,top-150,-470),P(310,top-150,-470),P(310,top-150,0),metal);
     // Familiar silhouettes make the space beyond the open door identifiable.
     function crate(u,n,width,height,depth){
-      const material={color:id==='central'?[.20,.29,.40]:[.58,.65,.63],kind:1,glow:.28};
+      const material={color:[.58,.65,.63],kind:1,glow:.28};
       for(const [a,b] of [[0,1],[1,2],[2,3],[3,0]]){
         const corners=[[u-width/2,n],[u+width/2,n],[u+width/2,n-depth],[u-width/2,n-depth]],A=corners[a],B=corners[b];
         target.quad(P(A[0],bottom-height,A[1]),P(B[0],bottom-height,B[1]),P(B[0],bottom,B[1]),P(A[0],bottom,A[1]),material);
@@ -149,7 +149,6 @@
     if(id==='storage'){crate(-155,-285,120,62,92);crate(125,-370,76,56,68);}
     if(id==='access'){crate(-200,-320,115,205,70);crate(180,-370,130,90,75);}
     if(id==='mirror'){for(const u of [-110,110])crate(u,-365,8,230,8);}
-    if(id==='central'){crate(0,-420,115,155,65);panel(-32,top+50,32,top+100,-352,{color:[.4,.85,1],glow:1});}
     target.quad(P(-35,top-115,-200),P(35,top-115,-200),P(35,top-115,-310),P(-35,top-115,-310),{color:[.7,.9,1],glow:1});
 
   }
@@ -252,7 +251,7 @@
         if(Object.values(model.doors).some(d=>Math.sign(d.x)===side&&Math.abs(d.z-z)<100))continue;
         box(side<0?-268:264,112-up,z-30,4,7,60,{color:[.18,.52*emergency,.65*emergency],glow:emergency});
       }
-      if(current){
+      if(current&&current.companionVisible!==false){
         const c=current.companion,ground=model.groundAt(c.z),theta=-current.camera.yaw*Math.PI/180,right=[Math.cos(theta),0,-Math.sin(theta)];
         const moving=current.walking,w=104,h=156,bob=moving?Math.sin(time*9)*2:0,top=180-ground-h+bob,bottom=180-ground+bob;
         const p=(x,y)=>[c.x+right[0]*x,y,c.z+right[2]*x];

@@ -16,6 +16,7 @@ s.cleared.access=true;assert.match(at(-950).lines[1][1],/수정/);
 s.keyTaken=false;s.keyboxOpen=false;assert.equal(at(-1640,'keybox').id,'keybox');assert.doesNotMatch(at(-1640,'keybox').lines[1][1],/열쇠/,'closed cabinet contents remain unknown');
 assert.notEqual(at(-65,'keybox').id,'keybox','a stale remote object selection cannot override location');
 s.floor=2;assert.equal(at(-2170).id,'upper-hall');assert.equal(at(-2400).id,'room-central');
+assert.deepEqual(at(-2400).lines.at(-1),['student','응, 이번엔 같이 들어가자.'],'the student answers B-0 before they enter together');
 assert.equal(M.restore({...s,stairRejected:true}).stairRejected,true);assert.equal(M.restore({version:1}).stairRejected,false);
 console.log('PASS: local outage dialogue, distinct corridor places, observed knowledge, stair rejection/key/unlock states and old-save compatibility');
 

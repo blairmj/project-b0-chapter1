@@ -16,4 +16,9 @@ const edited=fresh();M.setDraft(edited,'target','circle');M.setDraft(edited,'dir
 const legacy=M.restore({version:1,phase:'split',holding:'triangle',logs:[]});assert.equal(legacy.holding,'triangle');assert.equal(legacy.instruction,null);assert.deepEqual(legacy.draft,{target:null,direction:null,stop:null});
 const store=new Map(),storage={getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v)},prefs=P.create(storage);assert.equal(prefs.get().label,'주인님');assert.equal(prefs.set('friend').persisted,true);assert.equal(prefs.robotText('주인님이 주인님을 주인님과 함께'), '친구가 친구를 친구와 함께');assert.equal(P.create(storage).get().address,'friend');assert.equal(prefs.set('<script>'),null);assert.equal(prefs.get().address,'friend');
 const denied=P.create({getItem(){throw Error('blocked');},setItem(){throw Error('blocked');}});assert.equal(denied.set('explorer').persisted,false);assert.equal(denied.robotText('주인님께 말씀드립니다.'),'탐험가에게 말씀드립니다.');
+assert.equal(prefs.setCustom('  하늘  ').label,'하늘');assert.equal(prefs.robotText('주인님이 주인님을 주인님은 주인님과 주인님께'),'하늘이 하늘을 하늘은 하늘과 하늘에게');assert.equal(P.create(storage).get().label,'하늘');
+assert.equal(prefs.setCustom('민수').label,'민수');assert.equal(prefs.robotText('주인님이 주인님을 주인님은 주인님과'),'민수가 민수를 민수는 민수와');
+assert.equal(prefs.setCustom(''),null);assert.equal(prefs.setCustom('가'.repeat(21)),null);assert.equal(prefs.get().label,'민수','Invalid edits preserve the saved address');
+prefs.setCustom('$&');assert.equal(prefs.robotText('네, 주인님.'),'네, $&.','Custom text must be inserted literally');prefs.set('friend');assert.equal(prefs.get().customName,'$&','Presets preserve the last typed address');
+const corrupt=P.create({getItem:()=>JSON.stringify({address:'custom',customName:''})});assert.equal(corrupt.get().address,'owner');
 console.log('PASS: all target/direction/stop combinations, actual-event guards, independent stop conditions, upward/legacy save recovery, revision evidence, and saved address settings');

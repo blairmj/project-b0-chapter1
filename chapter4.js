@@ -85,7 +85,7 @@
       function step(t){if(dead||!journey||journey.kind!==kind)return;const p=Math.min(1,(t-start)/duration),smooth=v=>v*v*(3-2*v),clamp=v=>Math.max(0,Math.min(1,v));
         if(kind==='approach'){const walk=clamp((p-.12)/.88),look=smooth(clamp(p/.5));robot={x:from.x+(-85-from.x)*walk,z:from.z+(235-from.z)*walk};camera={x:view.x+(-125-view.x)*look,z:view.z+(235-240/SPACE-view.z)*look,yaw:view.yaw+turn*look,pitch:view.pitch+(-8-view.pitch)*look,zoom:view.zoom+(1-view.zoom)*look};}
         else{const walk=clamp(p/.72),follow=smooth(clamp((p-.62)/.38));robot={x:-85,z:235+55*walk};camera={x:view.x+(-85-view.x)*smooth(p),z:view.z+40*Math.min(p/.62,1)+140*follow,yaw:view.yaw+turn*smooth(p),pitch:view.pitch+(0-view.pitch)*smooth(p),zoom:1};
-          const crossing=clamp((robot.z-270)/18),depth=clamp((p-.50)/.50),portal=app.querySelector('.c4-passage-robot');app.querySelector('.c4-robot').style.opacity=1-crossing;portal.style.opacity=crossing;portal.style.transform=`translateY(${-depth*24}%) scale(${1-depth*.4})`;app.querySelector('.c4-exit-fade').style.opacity=smooth(clamp((p-.78)/.22));}
+          const crossed=robot.z>=270,depth=clamp((p-.50)/.50),portal=app.querySelector('.c4-passage-robot');app.querySelector('.c4-robot').style.opacity=crossed?'0':'1';portal.style.opacity=crossed?'1':'0';portal.style.transform=`translateY(${-depth*24}%) scale(${1-depth*.4})`;app.querySelector('.c4-exit-fade').style.opacity=smooth(clamp((p-.78)/.22));}
         updateCamera();if(p<1)journeyFrame=requestAnimationFrame(step);else finish();}
       journeyFrame=requestAnimationFrame(step);
     }

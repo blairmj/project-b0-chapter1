@@ -88,6 +88,8 @@
     function doorTravel(id,inward,done){
       if(walking)return;lookInterruptible=false;cancelTalk();selection=null;actions('');notice.hidden=true;cancel();
       const d=M.doors[id],a=d.yaw*Math.PI/180,forward={x:Math.sin(a),z:-Math.cos(a)},checkpoint={...camera};
+      // The control room is entered through its live interior, without the hall's placeholder room.
+      if(inward&&id==='central'){onEnter(id);return;}
       passage={id,open:inward?0:1};walking=true;botMoving=false;
       const doorEl=app.querySelector('.lab-door-'+id);
       function phase(to,ms,opening,next){
