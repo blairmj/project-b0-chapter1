@@ -111,3 +111,11 @@ hasLessonMemory=false;walking.select('computer');assert.match(node('.c3-actions'
 assert.match(lastDialog.innerHTML,/교육 실습실/);walking.act('close-modal');
 walking.select('shelf');flush();assert.match(node('.c3-actions').innerHTML,/밀어 보기/);
 console.log('PASS: B-0 target mode dismissal, walking after close, drag-click separation, memory source and resumed puzzle controls');
+walking.select('computer');const zoomBefore=walking.state().camera.zoom;
+node('.c3-stage').listeners.wheel({deltaY:-100,deltaMode:0,preventDefault(){}});flush();
+assert.ok(walking.state().camera.zoom>zoomBefore,'wheel takes over an ordinary automatic approach');assert.equal(walking.state().busy,false);
+const stoppedZoom=walking.state().camera.zoom;node('dialog[open]').open=true;
+node('.c3-stage').listeners.wheel({deltaY:100,deltaMode:0,preventDefault(){throw Error('must not consume popup scroll');}});
+assert.equal(walking.state().camera.zoom,stoppedZoom);node('dialog[open]').open=false;
+console.log('PASS: archive wheel zoom during approach and popup scroll isolation');
+

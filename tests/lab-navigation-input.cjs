@@ -1,6 +1,6 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),M=require('../lab-navigation-model.js');
 const nodes=new Map();
-function node(k){if(!nodes.has(k))nodes.set(k,{style:{},dataset:{},clientWidth:760,clientHeight:480,hidden:false,innerHTML:'',textContent:'',classList:{add(){},remove(){},toggle(){},contains(){return false}},addEventListener(){},setAttribute(){},contains(){return true},focus(){},getBoundingClientRect(){return {left:0,top:0,width:760,height:480}}});return nodes.get(k);}
+function node(k){if(!nodes.has(k))nodes.set(k,{style:{},dataset:{},clientWidth:760,clientHeight:480,hidden:false,innerHTML:'',textContent:'',classList:{add(){},remove(){},toggle(){},contains(){return false}},listeners:{},addEventListener(k,f){this.listeners[k]=f;},setAttribute(){},contains(){return true},focus(){},getBoundingClientRect(){return {left:0,top:0,width:760,height:480}}});return nodes.get(k);}
 let htmlWrites=0,clock=0,id=0,saves=0;const frames=new Map(),timers=new Map();
 const app={set innerHTML(v){htmlWrites++;},querySelector:node,addEventListener(){},removeEventListener(){}};
 const context={window:{B0LabNavigation:M,B0LabDialogue:require('../lab-dialogue.js'),addEventListener(){},removeEventListener(){}},performance:{now:()=>clock},matchMedia:()=>({matches:false}),requestAnimationFrame:f=>{frames.set(++id,f);return id;},cancelAnimationFrame:n=>frames.delete(n),setTimeout:f=>{timers.set(++id,f);return id;},clearTimeout:n=>timers.delete(n)};
@@ -8,6 +8,13 @@ vm.runInNewContext(fs.readFileSync(require.resolve('../lab-navigation.js'),'utf8
 function finish(){let limit=0;while(frames.size){assert.ok(limit++<100,'animation must finish');clock+=250;const pending=[...frames.values()];frames.clear();pending.forEach(f=>f(clock));}}
 const state=M.fresh();state.cleared.practice=true;
 const g=context.window.startLabNavigation({app,portrait:()=>'',state,onSave:()=>saves++,onEnter(){},onHome(){},muted:true});
+const initialView={...g.state().camera};let prevented=0;
+const wheel=(deltaY,deltaMode=0)=>node('.lab-stage').listeners.wheel({deltaY,deltaMode,preventDefault(){prevented++;}});
+wheel(-100);assert.ok(g.state().camera.zoom>initialView.zoom);assert.equal(g.state().camera.pitch,initialView.pitch,'wheel zoom must not tilt the view');
+wheel(100);assert.ok(Math.abs(g.state().camera.zoom-initialView.zoom)<1e-8,'reverse wheel restores zoom without drift');
+wheel(-3,1);const lineZoom=g.state().camera.zoom;g.act('view-home');finish();wheel(-48);assert.ok(Math.abs(g.state().camera.zoom-lineZoom)<1e-8,'line and pixel wheels share sensitivity');
+node('dialog[open]').open=true;const dialogZoom=g.state().camera.zoom;wheel(-100);assert.equal(g.state().camera.zoom,dialogZoom,'popup scrolling cannot zoom the room');node('dialog[open]').open=false;
+g.act('view-home');finish();assert.ok(prevented>=4);
 const original={...g.state().companion};g.act('turn-left');finish();
 assert.equal(g.state().companion.x,original.x);assert.equal(g.state().companion.z,original.z,'looking around must not teleport B-0');
 g.walkTo('practice');finish();assert.equal(g.state().camera.z,80);assert.equal(Math.abs(g.state().camera.yaw),180);assert.equal(state.powerOut,false,'looking back at the classroom does not cut power');
@@ -33,7 +40,7 @@ g.act('talk-next');g.act('talk-next');g.act('talk-close');
 assert.ok(g.state().companion.z>=M.bound(state,0,-9999).z,'B-0 cannot stand beyond a closed barrier');
 M.returned(state,'mirror');state.cleared.storage=true;state.keyboxOpen=true;
 g.act('upstairs');finish();
-assert.equal(state.floor,1);assert.ok(g.state().camera.height>0,'the player takes a few physical steps before rejection');
+assert.equal(state.floor,1);assert.ok(g.state().camera.height>=100,'rejection begins after climbing visibly higher than the former 55px step');
 const rejectDelay=[...timers.values()];timers.clear();rejectDelay.forEach(f=>f());finish();
 assert.equal(g.state().camera.z,-1695);assert.equal(g.state().camera.height,0,'rejection returns the player to the foot of the stairs');
 assert.match(node('.lab-notice').innerHTML,/밀려 내려왔어/);

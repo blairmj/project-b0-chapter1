@@ -243,7 +243,9 @@
       quad([-250,-58,base],[tipX,-58,tip],[tipX,48,tip],[-250,48,base],{color:[.58,.69,.74],kind:1},'keybox');
       box(-268,5,-1774,12,88,68,dark,'stair-control');box(-254,12,-1767,3,28,54,state.stairsUnlocked?cyan:amber,'stair-control');box(-254,49,-1745,4,21,5,pale,'stair-control');
       if(canvas.parentElement.classList.contains('stair-repel')){
-        for(let y=-280;y<180;y+=22)quad([-262,y,-1806],[262,y,-1806],[262,y+2,-1806],[-262,y+2,-1806],amber,'stairs');
+        const field={color:[.95,.27,.19],glow:.7};
+        for(let y=-420;y<180;y+=32)quad([-262,y,-1935],[262,y,-1935],[262,y+3,-1935],[-262,y+3,-1935],field,'stairs');
+        for(let x=-240;x<=240;x+=80)quad([x,-420,-1934],[x+2,-420,-1934],[x+2,180,-1934],[x,180,-1934],field,'stairs');
       }
       for(const l of scene.lights)box(-16,l.y+12.1,l.z-52,32,.8,104,{color:power>.03?[.62+.32*power,.76+.24*power,.85+.15*power]:[.12,.18,.23],glow:power});
       if(emergency>.01)for(const side of [-1,1])for(const [from,to,up] of [[180,-1800,0],[-2170,-2500,360]])for(let z=from;z>to;z-=250){

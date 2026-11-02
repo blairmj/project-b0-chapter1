@@ -37,7 +37,7 @@
       room=app.querySelector('.c2-game');stage=app.querySelector('.c2-stage');world=app.querySelector('.c2-world');actionbar=app.querySelector('.c2-actions');speech=app.querySelector('.c2-speech');helpText=app.querySelector('.c2-basic-help');
       stage.addEventListener('pointerdown',pointerDown);stage.addEventListener('pointermove',pointerMove);stage.addEventListener('pointerup',pointerUp);stage.addEventListener('pointercancel',cancelPointer);
       stage.addEventListener('click',e=>{if(suppress){suppress=false;return;}if(busy||travelling||mode?.looking)return;const el=e.target.closest('[data-object]');if(s.phase==='ledge'){if(el?.dataset.object==='robot')act('help-b0');return;}if(el){if(!mode&&el.dataset.object==='vent'&&s.ventOpen&&e.target.closest('.c2-vent-lid'))act('vent');else activateObject(el.dataset.object);}else if(mode?.type==='move'){const p=floorPoint(e.clientX,e.clientY);if(p)place(p.x,p.z);}});
-      stage.addEventListener('wheel',e=>{e.preventDefault();if(s.phase!=='room'||travelling)return;if(!mode)camera.zoom=Math.max(.65,Math.min(1.5,camera.zoom-e.deltaY*.001));updateCamera();},{passive:false});
+      stage.addEventListener('wheel',e=>{if(app.querySelector('dialog[open]')?.open)return;e.preventDefault();if(s.phase!=='room'||travelling)return;if(!mode)camera.zoom=Math.max(.65,Math.min(1.5,camera.zoom*Math.exp(-Math.max(-150,Math.min(150,e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?stage.clientHeight:1)))*.0015)));updateCamera();},{passive:false});
       stage.addEventListener('keydown',keyDown);
       update();
       if(s.phase==='ledge'){enterLedge(false);return;}

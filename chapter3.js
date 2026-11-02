@@ -56,7 +56,7 @@
       stage=app.querySelector('.c3-stage');world=app.querySelector('.c3-world');bar=app.querySelector('.c3-actions');speech=app.querySelector('.c3-speech');
       stage.addEventListener('pointerdown',down);stage.addEventListener('pointermove',move);stage.addEventListener('pointerup',up);stage.addEventListener('pointercancel',cancelPointer);
       stage.addEventListener('click',e=>{if(suppress){suppress=false;return;}if((busy&&!cameraMoving)||e.target.closest('[data-c3]'))return;const id=e.target.closest('[data-object]')?.dataset.object;if(id)activateObject(id);else if(!mode&&!conversation){clearSelection();walkFloor(e);}});
-      stage.addEventListener('wheel',e=>{e.preventDefault();if(!busy){camera.zoom=Math.max(.65,Math.min(1.5,camera.zoom-e.deltaY*.001));updateCamera();}},{passive:false});
+      stage.addEventListener('wheel',e=>{if(app.querySelector('dialog[open]')?.open)return;e.preventDefault();if(cameraMoving){cancelAnimationFrame(frame);cameraMoving=false;busy=false;}if(!busy){camera.zoom=Math.max(.65,Math.min(1.5,camera.zoom*Math.exp(-Math.max(-150,Math.min(150,e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?stage.clientHeight:1)))*.0015)));updateCamera();}},{passive:false});
       stage.addEventListener('keydown',e=>{if(busy&&!cameraMoving)return;if((e.key==='Enter'||e.key===' ')&&e.target.dataset.object){e.preventDefault();activateObject(e.target.dataset.object);return;}const dirs={ArrowLeft:-15,ArrowRight:15};if(dirs[e.key]){e.preventDefault();clearSelectionOnLook();camera.yaw+=dirs[e.key];updateCamera();}if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();clearSelectionOnLook();camera.pitch+=e.key==='ArrowUp'?8:-8;updateCamera();}});
       update();if(entranceTalk)talk(intro);
     }

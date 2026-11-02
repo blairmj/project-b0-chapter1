@@ -41,7 +41,7 @@
       stage.addEventListener('pointerdown',down);stage.addEventListener('pointermove',move);stage.addEventListener('pointerup',up);stage.addEventListener('pointercancel',cancelPointer);
       stage.addEventListener('click',e=>{if(suppress){suppress=false;return;}if(e.target.closest('[data-mr]'))return;const id=e.target.closest('[data-mr-object]')?.dataset.mrObject;if(id)activateObject(id);});
       stage.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.dataset.mrObject){e.preventDefault();activateObject(e.target.dataset.mrObject);return;}if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();if(e.key==='ArrowLeft')camera.yaw-=15;if(e.key==='ArrowRight')camera.yaw+=15;if(e.key==='ArrowUp')camera.pitch+=8;if(e.key==='ArrowDown')camera.pitch-=8;updateCamera();});
-      stage.addEventListener('wheel',e=>{e.preventDefault();camera.zoom=Math.max(.7,Math.min(1.65,camera.zoom-e.deltaY*.001));updateCamera();},{passive:false});
+      stage.addEventListener('wheel',e=>{if(app.querySelector('dialog[open]')?.open)return;e.preventDefault();cancelAnimationFrame(camFrame);camera.zoom=Math.max(.7,Math.min(1.65,camera.zoom*Math.exp(-Math.max(-150,Math.min(150,e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?stage.clientHeight:1)))*.0015)));updateCamera();},{passive:false});
       update();if(approaching)introLine();else if(s.phase==='unlocked')unlockedActions();else if(['reunited','complete'].includes(s.phase))joinedActions();else actions('방 안을 자유롭게 살펴보세요.');
       if(!approaching&&s.phase==='split')actions('방 안을 자유롭게 살펴보세요.');
     }

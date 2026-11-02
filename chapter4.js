@@ -59,7 +59,7 @@
       <section class="c2-actions c4-actions" aria-label="선택한 대상의 조작"><p>방 안을 살펴보세요.</p></section><footer>${b('B-0에게 말하기','robot','secondary')}${window.B0UI?.inventoryButton()||''}</footer></main>`;
       stage=app.querySelector('.c4-stage');world=app.querySelector('.c4-world');bar=app.querySelector('.c4-actions');speech=app.querySelector('.c4-speech');
       stage.addEventListener('pointerdown',down);stage.addEventListener('pointermove',move);stage.addEventListener('pointerup',up);stage.addEventListener('pointercancel',cancel);
-      stage.addEventListener('wheel',e=>{e.preventDefault();camera.zoom=Math.max(.65,Math.min(1.6,camera.zoom-e.deltaY*.001));updateCamera();},{passive:false});
+      stage.addEventListener('wheel',e=>{if(journey||carryingTransition||app.querySelector('dialog[open]')?.open)return;e.preventDefault();cancelAnimationFrame(camFrame);camera.zoom=Math.max(.65,Math.min(1.6,camera.zoom*Math.exp(-Math.max(-150,Math.min(150,e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?stage.clientHeight:1)))*.0015)));updateCamera();},{passive:false});
       update();if(entranceTalk)talk(intro.map(([who,text])=>[who,text.replace('들어가 보자.','여기서 출구를 찾아보자.')]));if(s.phase==='farewell')farewellLine();frame=requestAnimationFrame(loop);
     }
     function updateCamera(){if(!inRoom()||!world?.isConnected)return;camera.pitch=Math.max(-60,Math.min(40,camera.pitch));camera.yaw=((camera.yaw+540)%360)-180;
