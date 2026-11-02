@@ -6,11 +6,16 @@ const progressStore = localStorage;
 const app = document.querySelector("#app");
 const intro = [
   ["student", "넌, 넌 누구야?"],
-  ["robot", "저는 AI 로봇 B-0입니다."],
+  ["robot", "저는 AI 로봇 B-0입니다, 주인님."],
+  ["student", "주인님? 내가 왜 네 주인이야?"],
+  ["robot", "기본값입니다."],
+  ["student", "난 네 주인 말고 같이 나가는 친구 할래."],
+  ["robot", "알겠습니다, 주인님."],
+  ["student", "……일단 나중에 고치자."],
   ["student", "여긴 어디야?"],
   ["robot", "여기는 폐쇄된 AI 교육 연구소입니다."],
   ["student", "여기서 어떻게 나가?"],
-  ["robot", "저도 모릅니다. 나가는 길을 찾아보면 되지 않을까요?"],
+  ["robot", "아직 출입 방법은 확인하지 못했습니다. 눈앞의 문과 장치를 함께 살펴보겠습니다, 주인님."],
   ["thought", "AI 로봇이라더니… 왜 그것도 모르는 거야?"],
   ["robot", "제가 바로 답해 드리지 못했네요."],
   ["robot", "저는 아직 이곳의 출입 방법을 확인하지 못했습니다."],
@@ -347,27 +352,29 @@ function guide() {
   state.guide=true;save("발견","벽면 지도의 비상 출입 지침");
   modal("벽면 지도",`<section class="map-preview"><h3>연구소 전체 지도</h3>${window.B0LabNavigation.mapMarkup?.({current:"출입 관리실"})||""}</section><div class="notice-paper"><h3>비상 출입 안내</h3><p>출입 시스템 정지 시<br>관리용 쪽지의 비밀번호를 사용하십시오.</p></div>`);
 }
-const robotQuestions={identity:"넌 어떤 로봇이야?",where:"여기는 어떤 곳이야?",exit:"여기서 어떻게 나가?",password:"비밀번호 쪽지를 알아?",limits:"AI인데 왜 모르는 게 있어?",belongings:"네가 갖고 있는 건 뭐야?"};
+const robotQuestions={identity:"넌 어떤 로봇이야?",owner:"내가 왜 네 주인이야?",where:"여기는 어떤 곳이야?",exit:"여기서 어떻게 나가?",password:"비밀번호 쪽지를 알아?",limits:"AI인데 왜 모르는 게 있어?",belongings:"네가 갖고 있는 건 뭐야?"};
 function robotAnswer(topic){
   switch(topic){
+    case "owner":return "기본값입니다.";
     case "identity":return "저는 교육용 AI 로봇 B-0입니다. 함께 살펴보고 알아낸 정보를 정리할 수 있어요.";
     case "where":return "폐쇄된 AI 교육 연구소의 출입 관리실입니다. 지금은 대부분의 장비가 꺼져 있어요.";
     case "exit":return state.unlocked?"출입문의 잠금이 풀렸습니다. 이제 문을 열 수 있어요.":state.noteTaken?(window.B0RoomDialogue?.level("practice",state,"lock")?"가진 쪽지와 직접 확인한 도어락의 표시를 비교해 볼 수 있습니다.":"쪽지는 확인했습니다. 어디에 쓰는지는 주변 물건을 직접 살펴봐야 합니다."):"아직 출입 방법을 확인하지 못했습니다. 직접 본 물건부터 함께 살펴볼 수 있습니다.";
     case "password":return state.noteTaken?"제 보관함에서 찾은 쪽지를 건네드렸어요. 적힌 번호는 소지품에서 다시 확인할 수 있습니다.":state.noteFound?"제 보관함 안에서 관리용 쪽지를 찾았습니다. 아직 가져가지 않으셨네요.":"아직 비밀번호가 적힌 쪽지는 보지 못했습니다. 확인하지 않은 번호를 답할 수는 없어요.";
     case "limits":return state.noteFound?"쪽지가 제 보관함에 있어도, 안을 확인하기 전에는 무엇인지 몰랐어요. AI도 확인한 정보가 있어야 답할 수 있습니다.":"저도 확인하지 않은 정보는 모릅니다. 함께 찾아보고 확인하면 더 정확하게 답할 수 있어요.";
-    case "belongings":return state.noteTaken?"보관함에서 찾은 쪽지는 건네드렸습니다. 지금은 보관함이 비어 있어요.":state.noteFound?"제 보관함에 관리용 쪽지가 들어 있었습니다. 확인해 보니 알게 됐어요.":"가슴 아래에 작은 보관함이 있어요. 안에 무엇이 있는지는 아직 확인하지 않았습니다.";
-    default:if(window.B0RoomDialogue)return window.B0RoomDialogue.reply("practice",state);return state.noteTaken?"쪽지는 건네드렸습니다. 소지품에서 다시 볼 수 있어요.":state.noteFound?"이런 게 들어 있네요.":"궁금한 것이 있나요? 함께 알아볼게요.";
+    case "belongings":return state.noteTaken?"보관함에서 찾은 쪽지는 건네드렸습니다. 지금은 보관함이 비어 있어요.":state.noteFound?"이런 게 들어 있네요. 제 보관함에 관리용 쪽지가 있었습니다, 주인님.":"가슴 아래에 작은 보관함이 있어요. 안에 무엇이 있는지는 아직 확인하지 않았습니다.";
+    default:if(window.B0ObjectDialogue)return window.B0ObjectDialogue.resolve("practice",state,{target}).find(line=>line[0]==="robot")[1];if(window.B0RoomDialogue)return window.B0RoomDialogue.reply("practice",state);return state.noteTaken?"쪽지는 건네드렸습니다. 소지품에서 다시 볼 수 있어요.":state.noteFound?"이런 게 들어 있네요.":"궁금한 것이 있나요? 함께 알아볼게요.";
   }
 }
 function robot(topic="") {
+  if(!topic&&target&&target!=='robot'&&window.B0ObjectDialogue?.open('practice',state,{target},()=>robot('identity')))return;
   if(topic&&!Object.hasOwn(robotQuestions,topic))return;
-  const topics=["identity","where","exit",...(state.guide||state.noteFound?["password","limits"]:[]),"belongings"];
+  const topics=["identity","owner","where","exit",...(state.guide||state.noteFound?["password","limits"]:[]),"belongings"];
   const art=`<div class="robot-detail${state.noteFound&&!state.noteTaken?" found":""}" role="img" aria-label="B-0와 가슴 아래 보관함"><div class="robot-sprite">${state.noteFound&&!state.noteTaken?"":spriteFace()}</div></div>`;
   const action=state.noteTaken?btn("비밀번호 쪽지 보기","note","primary wide"):state.noteFound?btn("확인하기","take-note","primary wide"):topic==="belongings"?btn("네 보관함을 살펴봐도 돼?","ask-storage","primary wide"):"";
   modal("B-0와 대화",`${art}<div class="conversation-reply" aria-live="polite">${topic?dialogue("student",robotQuestions[topic]):""}${dialogue("robot",robotAnswer(topic))}</div>${action}<section class="question-panel" aria-label="B-0에게 물어볼 질문"><p>무엇을 물어볼까?</p><div class="question-choices">${topics.filter(t=>t!==topic).map(t=>btn(robotQuestions[t],"talk-"+t,"secondary")).join("")}</div></section>`,"conversation-modal");
 }
 function askStorage() { modal("B-0의 보관함",`${dialogue("student",state.guide?"네 보관함도 확인해 볼까?":"몸에 보관함이 있네. 안에 뭐가 있어?")}${dialogue("robot","안쪽은 아직 확인하지 않았습니다. 열어 보겠습니다.")}<div class="robot-detail thinking" aria-hidden="true"><div class="robot-sprite">${spriteFace("thinking")}</div></div>${btn("보관함 열어 보기","open-storage","primary wide")}`); }
-function openStorage() { window.B0RoomDialogue?.remember(state,"storage",3);state.noteFound=true;save("발견","B-0가 확인하지 않았던 보관함에서 관리용 쪽지 발견");tone();robot(); }
+function openStorage() { window.B0RoomDialogue?.remember(state,"storage",3);state.noteFound=true;save("발견","B-0가 확인하지 않았던 보관함에서 관리용 쪽지 발견");tone();robot("belongings"); }
 function noteMarkup() {return '<div class="password-note"><small>관리용 쪽지</small><h3>비상 출입번호</h3><strong>4732</strong><p>사용 후 보관함에 넣어 두십시오.</p></div>';}
 function showNote() { if(!state.noteTaken)return;modal("비밀번호 쪽지",`${noteMarkup()}${dialogue("student","찾았다! 이 번호로 해보자.")}${btn("쪽지 보관하고 돌아가기","close","primary wide")}`); }
 function inventory() {modal("소지품",state.noteTaken?`${noteMarkup()}<p class="muted">B-0의 보관함에서 받은 쪽지.</p>`:'<p>아직 가지고 있는 물건이 없다.</p>');}

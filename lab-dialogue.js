@@ -6,8 +6,8 @@
   const nearPlate=c=>Math.hypot(c.x,c.z+65)<=220;
   function stairs(s){
     if(s.stairsUnlocked)return conversation('stairs-open',
-      ['student','이제 계단으로 올라가도 되는 거지?'],
-      ['robot','네. 접근 차단이 해제되어 있습니다. 2층으로 올라갈 수 있습니다.']);
+      ['student','이제 또 밀어내는 건 아니겠지?'],
+      ['robot','접근 차단이 해제되어 있습니다. 이번에는 제가 옆에서 같이 올라가겠습니다, 주인님.']);
     const question=s.stairRejected?'계단에서 왜 자꾸 튕기는 거야?':'계단은 있는데 왜 올라갈 수가 없는 거야?';
     return conversation(s.keyTaken?'stairs-key':'stairs-locked',
       ['student',question],
@@ -18,12 +18,12 @@
     const solved=s.cleared[id];
     const lines={
       practice:[['student','여기가 우리가 깨어났던 방이지?'],['robot','네. 출입 관리실입니다. 우리가 나온 문이 복도 끝에 있습니다.']],
-      education:solved?[['student','아이의 풀이를 같이 고쳤던 교실이네.'],['robot','네. 수업 기록을 확인하고 메모리를 꺼냈던 곳입니다.']]:[['student','저쪽 창 너머로 보였던 교실인가?'],['robot','문에 교육 실습실이라고 적혀 있습니다. 수업 화면의 내용은 직접 확인해 봐야 합니다.']],
-      storage:solved?[['student','우리가 창문으로 나왔던 방이네.'],['robot','네. 닫힌 입구 외에도 나갈 수 있는 곳을 함께 찾았습니다.']]:[['student','여기는 뭘 보관하던 곳이야?'],['robot','문 옆에 물류 보관실이라고 적혀 있습니다. 안쪽 상태는 들어가서 확인해야 합니다.']],
-      access:solved?[['student','여기서 네 지도에 없던 문을 찾았잖아.'],['robot','네. 기록과 실제 방을 비교해서 찾았습니다. 확인한 위치로 제 지도를 수정했습니다.']]:[['student','기록을 보면 나갈 길도 알 수 있을까?'],['robot','이곳은 기록 보관실입니다. 다만 오래된 기록이 지금 모습과 같은지는 직접 확인해야 합니다.']],
-      mirror:solved?[['student','유리 너머로 떨어져 있으니까 답답하더라.'],['robot','네. 어느 장치를 어떻게 움직일지 알려 주셔서, 서로 다른 쪽에서도 함께 문을 열 수 있었습니다.']]:[['student','유리 관찰실? 여기는 어떤 곳이야?'],['robot','유리로 구역을 나누어 관찰하던 방입니다. 지금 안쪽 상황은 아직 확인하지 못했습니다.']],
+      education:solved?[['student','아이의 풀이를 같이 고쳤던 교실이네.'],['robot','네. 수업 기록을 확인하고 메모리를 꺼냈던 곳입니다.']]:[['student','저쪽 창 너머로 보였던 교실인가?'],['robot','문에 교육 실습실이라고 적혀 있습니다. 창으로 본 방과 같은지 들어가서 비교할 수 있겠습니다.']],
+      storage:solved?[['student','우리가 창문으로 나왔던 방이네.'],['robot','네. 닫힌 입구 외에도 나갈 수 있는 곳을 함께 찾았습니다.']]:[['student','보관실이면 쓸 만한 게 있겠지?'],['robot','있을 가능성은 있습니다. 무엇을 보관하는지는 안에서 확인해야겠습니다.']],
+      access:solved?[['student','여기서 네 지도에 없던 문을 찾았잖아.'],['robot','네. 기록과 실제 방을 비교해서 찾았습니다. 확인한 위치로 제 지도를 수정했습니다.']]:s.recordMemory?[['student','우리가 가져온 메모리랑 표시가 같아.'],['robot','네, 주인님. 모양만 비슷한지 실제로 연결되는지도 확인해 보겠습니다.']]:[['student','이 문도 그냥 열리지는 않네.'],['robot','문 옆 단자에 교육 실습실의 기록 표시가 있습니다.'],['student','같은 표시가 있는 물건을 찾아야겠네.']],
+      mirror:solved?[['student','유리 너머로 떨어져 있으니까 답답하더라.'],['robot','네. 어느 장치를 어떻게 움직일지 알려 주셔서, 서로 다른 쪽에서도 함께 문을 열 수 있었습니다.']]:[['student','관찰실이면 누가 누구를 보는 거야?'],['robot','원래는 연구원이 실험을 관찰했을 겁니다.'],['student','지금은 우리가 연구소를 관찰하는 거네.']],
       outside:[['student','여기가 바깥으로 나가는 문 아니야?'],['robot','문 옆 표시에는 외부 출입 승인을 2층 중앙관리실에서 확인하라고 적혀 있습니다.']],
-      central:[['student','이 안이 중앙관리실이야?'],['robot','네. 문 옆 이름이 지도와 일치합니다. 안에서 어떤 일이 벌어지고 있는지는 직접 확인해야 합니다.']]
+      central:[['student','드디어 여기네.'],['robot','네, 주인님. 이번에는 혼자 먼저 들어가지 않겠습니다.']]
     };
     return conversation('room-'+id,...lines[id]);
   }
@@ -51,6 +51,12 @@
     if(lookingAtKeybox(s,c,selected,doors))return keybox(s);
     if(s.floor===2)return c.z<=-2290?room(s,'central'):conversation('upper-hall',
       ['student','여기가 2층이구나. 중앙관리실은 어디지?'],['robot','이 복도 끝에 있습니다. 문 옆 표시도 확인해 보세요.']);
+    if(selected==='shutter'&&Math.abs(c.z+610)<=350)return conversation(s.cleared.storage?'shutter-open':'shutter',
+      ['student',s.cleared.storage?'아까 막혀 있던 데가 열렸네?':'못 가게 막아 버렸네.'],
+      ['robot',s.cleared.storage?'네. 이제 복도의 앞뒤가 이어져 있습니다.':'이 통로가 막힌 것은 맞습니다. 다른 문까지 모두 막혔다는 뜻은 아닙니다.']);
+    if(selected==='glass'&&Math.abs(c.z+1510)<=350)return conversation(s.cleared.mirror?'glass-open':'glass',
+      ['student',s.cleared.mirror?'이제 같이 갈 수 있겠네.':'보이는데 못 가니까 더 답답해.'],
+      ['robot',s.cleared.mirror?'유리 차단문이 올라가 복도가 이어졌습니다.':'보이는 곳과 갈 수 있는 곳이 다릅니다. 지도에서도 그 둘을 구분해야겠습니다.']);
     if(c.z<=-1550)return stairs(s);
     if(['practice','education','storage','access','mirror','outside'].includes(selected)&&at(selected))return room(s,selected);
     if(nearPlate(c)){

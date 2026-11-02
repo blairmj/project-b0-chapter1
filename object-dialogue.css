@@ -1,0 +1,10 @@
+.object-dialogue{width:min(540px,calc(100% - 28px));max-height:calc(100dvh - 32px)}
+.object-dialogue .object-dialogue-subject{color:#abc2cc;font-size:.82rem;margin:0 0 20px}
+.object-dialogue .speech{position:static;display:block;width:100%;max-width:none;box-sizing:border-box;margin:0;min-height:110px;padding:16px;border-radius:12px}
+.object-dialogue .speech p{line-height:1.7;margin:10px 0 0;white-space:normal;overflow-wrap:anywhere}
+.object-dialogue .speech b{position:static;display:block;color:inherit;text-shadow:none;opacity:1;font-size:.85rem}
+.object-dialogue .speech p{padding:0;background:none;border:0}
+.object-dialogue .speech.robot{background:#afe4ee;color:#173c49}
+.object-dialogue .speech.student{background:#edf0ed;color:#26343b}
+.object-dialogue-buttons{display:flex;justify-content:flex-end;gap:10px;margin-top:24px;flex-wrap:wrap}
+.object-dialogue-buttons button{min-width:72px;min-height:44px}

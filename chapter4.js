@@ -119,7 +119,7 @@
       if(id==='handle')handleActions();if(id==='robot')robotMenu(true);
     }
     function handleActions(){actions('문 옆 개방 손잡이',[['살펴보기','inspect-handle'],['직접 당겨 보기','own-side'],['B-0에게 부탁하기','robot'],['선택 닫기','clear']]);}
-    function robotMenu(respond=false){if(respond)say('robot',window.B0RoomDialogue?.reply('central',s,{target:selection,lifted:r.lifted,latch:r.latch})||'확인한 장치에 대해 이야기해 주세요.');actions('B-0에게 부탁하기',[
+    function robotMenu(respond=false){if(respond&&window.B0ObjectDialogue?.open('central',s,{target:selection,lifted:r.lifted,latch:r.latch},()=>robotMenu(false))){speech.hidden=true;return;}if(respond)say('robot',window.B0RoomDialogue?.reply('central',s,{target:selection,lifted:r.lifted,latch:r.latch})||'확인한 장치에 대해 이야기해 주세요.');actions('B-0에게 부탁하기',[
       ['몸의 상태를 확인해 줘','ask-body'],['내가 고른 곳 확인해 줘','choose-target'],['나를 들어 올려 줘','request-lift'],['당긴 채 잡고 있어','request-hold'],
       ...(r.lifted?[['내려 줘','lower']]:[]),...(s.holding?[['계속 잡고 있어','keep-hold'],['이제 놓아도 돼','release-b0']]:[]),...(s.met&&!s.boss?[['같이 가자','return-b0']]:[]),['닫기','clear']]);}
     function meet(){if(s.met)return;s.met=true;save();update();talk(offer,()=>select('door'));}
