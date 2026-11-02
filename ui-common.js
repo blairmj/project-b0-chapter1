@@ -4,7 +4,7 @@
   const button=(text,action,namespace='ui',extra='')=>`<button type="button" data-${namespace}="${action}" ${extra}>${text}</button>`;
   const common=(text,action)=>button(text,action);
   let returnMenu=null;
-  const destinations=[['hall','1층 복도'],['practice','출입 관리실'],['education','교육 실습실'],['storage','물류 보관실'],['access','기록 보관실'],['mirror','유리 관찰실'],['hall2','2층 복도'],['central','중앙관리실']];
+  const destinations=[['hall','1층 복도'],['practice','출입 관리실'],['education','교육 실습실'],['storage','물류 보관실'],['access','기록 보관실'],['mirror','유리 관찰실'],['hall2','2층 복도'],['central','중앙관리실'],['survey','설문 바로 가기']];
   function locationControl(place,namespace){return `<div class="b0-location-control"><h1 class="b0-location ${namespace==='lab'?'lab-location':''}" hidden>${esc(place)}</h1><select class="b0-location-select" data-ui-location aria-label="위치 이동 (임시)" title="개발 확인용 임시 위치 이동"><option value="" selected disabled data-current-location>${esc(place)}</option>${destinations.map(([id,name])=>`<option value="${id}">${name}</option>`).join('')}</select></div>`;}
   function setLocation(place,scope=document){const label=scope.querySelector('.b0-location'),option=scope.querySelector('[data-current-location]');if(label)label.textContent=place;if(option)option.textContent=place;}
   function header({place,namespace='action',reset='home',zoomClass='',active=false}){
@@ -54,7 +54,7 @@
   }
   document.addEventListener('click',e=>{const b=e.target.closest('button');if(b&&['action','c2','c3','mr','c4','lab','ed'].some(ns=>b.getAttribute('data-'+ns)==='menu'))returnMenu=b;},true);
   document.addEventListener('click',handle,true);
-  document.addEventListener('change',e=>{const control=e.target.closest?.('select[data-ui-location]');if(!control||!destinations.some(([id])=>id===control.value))return;const id=control.value;control.value='';window.B0CampaignUI?.travel?.(id);});
+  document.addEventListener('change',e=>{const control=e.target.closest?.('select[data-ui-location]');if(!control||!destinations.some(([id])=>id===control.value))return;const id=control.value;control.value='';if(id==='survey'){location.assign('./survey.html');return;}window.B0CampaignUI?.travel?.(id);});
   function cameraActive(active,scope=document){scope.querySelector('.b0-hud')?.querySelectorAll?.('button')?.forEach(b=>{
     if(['action','c2','c3','mr','c4','lab','ed'].some(ns=>['home','view-home','zoom-in','zoom-out'].includes(b.getAttribute('data-'+ns))))b.disabled=!active;
   });}
