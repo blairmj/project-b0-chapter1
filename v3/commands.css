@@ -1,0 +1,22 @@
+.command-modal{width:min(520px,94vw)}
+.command-modal label{display:grid;grid-template-columns:82px 1fr;align-items:center;gap:10px;margin:13px 0}
+.command-modal label[hidden]{display:none}
+.command-modal select,.command-modal input{min-width:0;width:100%;min-height:46px;padding:9px;color:#e1f5f3;background:#122b37;border:1px solid #7a9ca3;border-radius:3px;font:15px 'B0 Digital',monospace}
+.command-modal .command-number input{font-size:22px;letter-spacing:.2em}
+.command-context{color:#b9d3d5;margin-top:0}
+.command-preview{padding:12px;border-left:2px solid #7cc8d6;background:#15313d99;min-height:45px}
+.command-error{color:#e9b49d;min-height:1.4em}
+.command-buttons{display:flex;justify-content:flex-end;gap:9px;margin-top:18px}
+.command-buttons button:first-child{background:#1d5264!important}
+.command-learned{font-size:12px;color:#b5d4c8}
+.command-modal details{font-size:12px;color:#b6cacb}.command-modal li{margin:7px 0;line-height:1.5}
+.v3-working{font:19px/1.8 'B0 Digital',monospace;padding:14px;border-left:2px solid #9ccac8;background:#142a33aa}
+.v3-command-card{margin:14px 0;padding:12px;background:#132d38b3;border-left:2px solid #9ac8c9}
+.v3-command-card p{margin:5px 0}
+.v3-heading-version{font-size:14px;letter-spacing:.12em;color:#b4ced5}
+.c2-robot.carrying>.robot-sprite{background:url('../assets/b0-bracing-v1.webp') center/contain no-repeat!important}
+.c2-robot.carrying .live-portrait{visibility:hidden}
+.robot-anchor.walking .robot-sprite{animation:v3-robot-step .32s ease-in-out infinite alternate}
+@keyframes v3-robot-step{from{translate:0 0;rotate:-1deg}to{translate:0 -3px;rotate:1deg}}
+@media(prefers-reduced-motion:reduce){.robot-anchor.walking .robot-sprite{animation:none}}
+@media(max-width:420px){.command-modal label{grid-template-columns:62px 1fr}.command-modal select{font-size:14px}}
