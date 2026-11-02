@@ -18,3 +18,10 @@ const event=(x,y)=>({button:0,pointerId:1,clientX:x,clientY:y,target:{closest(){
 game.down(event(400,300));game.move(event(280,320));game.up(event(280,320));assert.notEqual(game.view().yaw,afterClose.yaw,'a deliberate background drag still rotates the classroom');
 game.select('terminal');finish();assert.ok(Math.abs(game.view().yaw-35)<1e-8,'interactive terminal approach remains available');
 console.log('PASS: stationary empty desks, cancelled stale approach, inspection after popup close, intentional drag and terminal approach');
+
+let lastTalk;context.window.B0ObjectDialogue={present(lines,options){lastTalk={lines,options};return true;}};
+game.act('solve');assert.ok(dialog);const originalChoices=lastTalk;game.act('help');assert.equal(dialog,null,'asking B-0 closes the worksheet popup');assert.notEqual(lastTalk,originalChoices);assert.equal(lastTalk.options.actions.length,4);
+lastTalk.options.actions[0][1]();assert.equal(dialog,null,'a spoken explanation stays below the scene');assert.equal(lastTalk.lines[0][0],'student');assert.match(lastTalk.lines[1][1],/왼쪽부터/);lastTalk.options.actions[0][1]();assert.ok(dialog,'the saved worksheet remains available after help');
+game.act('help-check');assert.equal(dialog,null);assert.match(lastTalk.lines[1][1],/아직 첫 계산/);
+game.act('help-draw');assert.equal(dialog,null);assert.match(lastTalk.lines[1][1],/3묶음/);lastTalk.options.actions[0][1]();assert.ok(dialog,'the requested picture uses the reference-material popup');assert.match(dialog.innerHTML,/ed-groups/);
+console.log('PASS: spoken lesson help uses in-room dialogue, returns to the worksheet, and keeps diagrams as reference popups');

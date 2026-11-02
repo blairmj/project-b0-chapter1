@@ -95,18 +95,27 @@
   }
   let active=null;
   function open(room,s,e={},onRequests){
-    const lines=resolve(room,s,e);if(!lines?.length)return false;
-    const app=root.document.querySelector('#app');if(!app)return false;
-    active?.close();
-    // Replace an existing inspection popup rather than nesting modal focus traps.
-    for(const old of app.querySelectorAll('dialog[open]'))old.close();
-    const d=root.document.createElement('dialog');active=d;d.className='modal object-dialogue';d.setAttribute('aria-label','B-0와 대화');
-    const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    let index=0;const actor=app.querySelector('.robot-sprite');
-    function render(){const [who,raw]=lines[index],text=who==='robot'?(root.B0Preferences?.robotText(raw)||raw):raw;actor?.classList.toggle('speaking',who==='robot');d.innerHTML=`<div class="modal-header"><h2>B-0와 대화</h2></div><div class="modal-body"><p class="object-dialogue-subject">${esc(e.label||'함께 살펴보기')}</p><div class="speech ${who}" aria-live="polite"><b>${who==='robot'?'B-0':'나'}</b><p>${esc(text)}</p></div><div class="object-dialogue-buttons">${index<lines.length-1?'<button type="button" data-object-talk="next">다음</button>':onRequests?'<button type="button" data-object-talk="requests">다른 질문·부탁</button>':''}<button type="button" data-object-talk="close">닫기</button></div></div>`;}
-    d.addEventListener('click',ev=>{const a=ev.target.closest('[data-object-talk]')?.dataset.objectTalk;if(a==='next'&&index<lines.length-1){index++;render();d.querySelector('[data-object-talk]')?.focus({preventScroll:true});}if(a==='close')d.close();if(a==='requests'){d.close();onRequests?.();}});
-    d.addEventListener('close',()=>{actor?.classList.remove('speaking');d.remove();if(active===d)active=null;const stage=app.querySelector('[tabindex="0"]');stage?.focus({preventScroll:true});});
-    render();app.append(d);d.showModal();return true;
+    return present(resolve(room,s,e),{subject:e.label,onRequests});
   }
-  const api={resolve,open};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.B0ObjectDialogue=api;
+  function present(lines,{subject='',onRequests,actions=[],questions=[]}={}){
+    if(!lines?.length)return false;
+    const app=root.document?.querySelector('#app'),stage=app?.querySelector('.c2-stage, .scene, .lab-stage'),game=app?.querySelector('.game');if(!stage||!game)return false;
+    active?.close(false);
+    for(const old of app.querySelectorAll('dialog[open]'))old.close();
+    for(const speech of stage.querySelectorAll('.c2-speech, .room-speech, .ed-speech, .lab-notice'))speech.hidden=true;
+    const panel=root.document.createElement('section');panel.className='b0-conversation';panel.setAttribute('role','region');panel.setAttribute('aria-label','B-0와 대화');
+    const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const button=(label,action)=>`<button type="button" data-object-talk="${action}">${esc(label)}</button>`;
+    let index=0,closed=false,observer;const actor=app.querySelector('.robot-sprite'),session={close};active=session;
+    function close(focus=true){if(closed)return;closed=true;observer?.disconnect();app.removeEventListener('pointerdown',outside,true);app.removeEventListener('click',outside,true);app.removeEventListener('keydown',escape,true);actor?.classList.remove('speaking');panel.remove();game.classList.remove('b0-talking');if(active===session)active=null;if(focus&&stage.isConnected)stage.focus({preventScroll:true});}
+    function outside(ev){if(!panel.contains(ev.target))close(false);}
+    function escape(ev){if(ev.key==='Escape'){ev.preventDefault();ev.stopPropagation();close();}}
+    function render(){const [who,raw]=lines[index],text=who==='robot'?(root.B0Preferences?.robotText(raw)||raw):raw,last=index===lines.length-1;actor?.classList.toggle('speaking',who==='robot');panel.innerHTML=`${subject?`<small class="b0-conversation-subject">${esc(subject)}</small>`:''}<div class="speech ${who}" aria-live="polite"><b>${who==='robot'?'B-0':'나'}</b><p>${esc(text)}</p></div><div class="b0-conversation-buttons">${last?actions.map(([label],i)=>button(label,'action-'+i)).join('')+(onRequests?button('다른 질문·부탁','requests'):''):button('다음','next')}${button('닫기','close')}</div>${last&&questions.length?`<details class="b0-conversation-questions"><summary>다른 질문</summary><div>${questions.map(([label],i)=>button(label,'question-'+i)).join('')}</div></details>`:''}`;}
+    panel.addEventListener('click',ev=>{ev.stopPropagation();const a=ev.target.closest('[data-object-talk]')?.dataset.objectTalk;if(a==='next'&&index<lines.length-1){index++;render();panel.querySelector('[data-object-talk]')?.focus({preventScroll:true});}if(a==='close')close();if(a==='requests'){close(false);onRequests?.();}if(a?.startsWith('action-')||a?.startsWith('question-')){const options=a.startsWith('action-')?actions:questions,option=options[Number(a.split('-')[1])];if(option){close(false);option[1]();}}});
+    for(const type of ['pointerdown','pointerup','wheel','keydown'])panel.addEventListener(type,ev=>ev.stopPropagation());
+    render();stage.append(panel);game.classList.add('b0-talking');app.addEventListener('pointerdown',outside,true);app.addEventListener('click',outside,true);app.addEventListener('keydown',escape,true);
+    if(root.MutationObserver){observer=new root.MutationObserver(()=>{if(!panel.isConnected)close(false);});observer.observe(app,{childList:true,subtree:true});}
+    panel.querySelector('[data-object-talk]')?.focus({preventScroll:true});return true;
+  }
+  const api={resolve,open,present,close:()=>active?.close()};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.B0ObjectDialogue=api;
 })(typeof window!=='undefined'?window:globalThis);

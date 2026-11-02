@@ -8,6 +8,8 @@ const run=s=>vm.runInContext(s,ctx);
 run(fs.readFileSync(path.join(__dirname,'../ui-common.js'),'utf8'));
 run(fs.readFileSync(path.join(__dirname,'../firstperson.js'),'utf8').replace(/boot\(\);\s*$/,''));
 run('tone=()=>{};modal=(title,content)=>{globalThis.panel={title,content}};');
+run('let lastTalk;window.B0ObjectDialogue={open:()=>false,present:(lines,options={})=>{lastTalk={lines,options};return true;}};');
+ctx.window.B0ObjectDialogue.resolve=require('../object-dialogue.js').resolve;
 run('boot();');
 assert.match(app.innerHTML,/campaign-home/);
 run('handle("campaign-start");');
@@ -28,10 +30,10 @@ run('submitCode("1111");');assert.equal(run('state.unlocked'),false);
 assert.equal(el('#lock-status').textContent,'번호가 일치하지 않습니다.');
 run('approach("map");inspect();');assert.equal(run('state.guide'),true);
 assert.match(run('panel.content'),/관리용 쪽지/);
-run('approach("robot");inspect();');assert.match(run('panel.content'),/비밀번호 쪽지를 알아/);
+run('approach("robot");inspect();');assert.match(run('JSON.stringify(lastTalk.options.questions)'),/비밀번호 쪽지를 알아/);
 run('handle("ask-note");handle("open-storage");');
 assert.equal(run('state.noteFound'),true);assert.equal(run('state.noteTaken'),false);
-assert.match(run('panel.content'),/이런 게 들어 있네요\./);
+assert.match(run('JSON.stringify(lastTalk.lines)'),/이런 게 들어 있네요\./);
 run('robot();handle("take-note");');assert.equal(run('state.noteTaken'),true);
 assert.match(run('panel.content'),/4732/);
 run('inventory();');assert.match(run('panel.content'),/4732/);
@@ -84,13 +86,13 @@ run('state=fresh();state.phase="room";approach("filebox")');assert.match(run('pa
 run('approach("envelope")');assert.match(run('panel.content'),/장비 관리 안내/);assert.equal(run('state.noteTaken'),false);assert.equal(run('state.unlocked'),false);
 console.log('PASS: zoom limits, shared focal length, home view without progress reset, pinch cleanup, optional decoys');
 
-run('state=fresh();state.phase="room";robot()');assert.match(run('panel.content'),/무엇을 물어볼까/);assert.doesNotMatch(run('panel.content'),/talk-password|<input|<textarea/);
-for(const t of ['identity','where','exit','belongings']){run('handle("talk-'+t+'")');assert.match(run('panel.content'),/conversation-reply/);assert.equal(run('state.noteFound'),false);}
-assert.match(run('panel.content'),/ask-storage/);
-run('state.guide=true;robot()');assert.match(run('panel.content'),/talk-password/);assert.match(run('panel.content'),/talk-limits/);
-run('handle("talk-password")');assert.doesNotMatch(run('panel.content'),/4732/);assert.match(run('panel.content'),/확인하지 않은 번호/);
-run('handle("talk-belongings");handle("ask-storage");handle("open-storage")');assert.equal(run('state.noteFound'),true);assert.match(run('panel.content'),/확인하기/);
-run('handle("take-note");handle("talk-limits")');assert.match(run('panel.content'),/안을 확인하기 전/);assert.equal(run('state.noteTaken'),true);
+run('state=fresh();state.phase="room";robot()');assert.ok(run('lastTalk.options.questions.length')>0);assert.doesNotMatch(run('JSON.stringify(lastTalk.options.questions)'),/비밀번호 쪽지를 알아/);
+for(const t of ['identity','where','exit','belongings']){run('handle("talk-'+t+'")');assert.equal(run('lastTalk.lines[0][0]'),'student');assert.equal(run('lastTalk.lines[1][0]'),'robot');assert.equal(run('state.noteFound'),false);}
+assert.match(run('lastTalk.options.actions[0][0]'),/네 보관함을 살펴봐도 돼/);
+run('state.guide=true;robot()');assert.match(run('JSON.stringify(lastTalk.options.questions)'),/비밀번호 쪽지를 알아/);assert.match(run('JSON.stringify(lastTalk.options.questions)'),/AI인데 왜 모르는/);
+run('handle("talk-password")');assert.doesNotMatch(run('JSON.stringify(lastTalk.lines)'),/4732/);assert.match(run('JSON.stringify(lastTalk.lines)'),/확인하지 않은 번호/);
+run('handle("talk-belongings");lastTalk.options.actions[0][1]();lastTalk.options.actions[0][1]()');assert.equal(run('state.noteFound'),true);assert.match(run('lastTalk.options.actions[0][0]'),/확인하기/);
+run('lastTalk.options.actions[0][1]();handle("talk-limits")');assert.match(run('JSON.stringify(lastTalk.lines)'),/안을 확인하기 전/);assert.equal(run('state.noteTaken'),true);
 console.log('PASS: selectable questions, context-sensitive topics, no early password reveal, conversation-to-compartment flow');
 
 assert.doesNotMatch(run('JSON.stringify(intro)'),/실망하셨나요|먼저 출입구/);

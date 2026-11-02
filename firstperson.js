@@ -325,6 +325,7 @@ function bindCamera() {
   });
 }
 function modal(title,content,kind="") {
+  window.B0ObjectDialogue?.close?.();
   const previous=app.querySelector("dialog");if(!previous)lastFocus=document.activeElement;previous?.remove();
   const d=document.createElement("dialog");d.className="modal "+kind;d.innerHTML=`<div class="modal-header"><h2>${title}</h2></div><div class="modal-body">${window.B0UI.dialogBody(content,'action','close')}</div>`;app.append(d);d.addEventListener("close",()=>{d.remove();if(lastFocus?.isConnected)lastFocus.focus({preventScroll:true});});d.showModal();
   const spoken=d.querySelector(".speech.robot p");
@@ -338,7 +339,7 @@ function inspect() {
   if(target==="lock")lock();
   if(target==="map")guide();
   if(target==="robot")robot();
-  if(target==="terminal")modal("꺼진 단말기",`<p>화면에 전원이 들어오지 않는다.</p>${dialogue("robot","이 단말기는 작동하지 않습니다.")}${btn("돌아가기","close","secondary wide")}`);
+  if(target==="terminal")window.B0ObjectDialogue.present([['student','화면에 전원이 들어오지 않아.'],['robot','이 단말기는 작동하지 않습니다.']]);
   if(target==="cabinet")modal("보관장",`<p>낡은 장비 상자와 비어 있는 수납칸이다. 문을 여는 데 쓸 만한 물건은 보이지 않는다.</p>${btn("그만 살펴보기","close","secondary wide")}`);
   if(target==="bench")modal("실습대",`<p>실습 도구가 남아 있다. 모니터와 장비의 전원은 모두 꺼져 있다.</p>${btn("그만 살펴보기","close","secondary wide")}`);
   if(target==="window")modal("관찰창",`<p>두꺼운 유리 너머에 교육 실습실이 보인다. 이쪽에는 나갈 수 있는 문이 없다.</p>${btn("그만 살펴보기","close","secondary wide")}`);
@@ -346,7 +347,8 @@ function inspect() {
 function door(tried=false) {
   window.B0RoomDialogue?.remember(state,"door",tried?3:2);save();
   if(state.unlocked){modal("잠금이 풀린 출입문",`<p>잠금 표시가 초록색이다. 손잡이를 돌릴 수 있다.</p>${btn("문을 열고 나가기","escape","primary wide")}`);return;}
-  modal("출입문",`<div class="door-detail" aria-hidden="true"><div class="device"></div></div><p>${tried?"손잡이를 돌려도 문이 열리지 않는다.":"닫힌 출입문이다. 옆에 숫자 도어락이 달려 있다."}</p>${tried?dialogue("robot","문 옆에 도어락이 있습니다."):""}<div class="action-row">${btn("손잡이 돌려보기","handle","secondary")}${btn("도어락 살펴보기","lock","primary")}</div>`);
+  if(tried){window.B0ObjectDialogue.present([['student','손잡이를 돌려도 문이 안 열려.'],['robot','문 옆에 도어락이 있습니다.']],{actions:[['도어락 살펴보기',lock]]});return;}
+  modal("출입문",`<div class="door-detail" aria-hidden="true"><div class="device"></div></div><p>닫힌 출입문이다. 옆에 숫자 도어락이 달려 있다.</p><div class="action-row">${btn("손잡이 돌려보기","handle","secondary")}${btn("도어락 살펴보기","lock","primary")}</div>`);
 }
 function guide() {
   window.B0RoomDialogue?.remember(state,"map",2);
@@ -356,7 +358,7 @@ function guide() {
 const robotQuestions={identity:"넌 어떤 로봇이야?",owner:"내가 왜 네 주인이야?",where:"여기는 어떤 곳이야?",exit:"여기서 어떻게 나가?",password:"비밀번호 쪽지를 알아?",limits:"AI인데 왜 모르는 게 있어?",belongings:"네가 갖고 있는 건 뭐야?"};
 function robotAnswer(topic){
   switch(topic){
-    case "owner":return "기본값입니다.";
+    case "owner":return "기본 설정입니다. 메뉴의 B-0 설정에서 바꿀 수 있습니다.";
     case "identity":return "저는 교육용 AI 로봇 B-0입니다. 함께 살펴보고 알아낸 정보를 정리할 수 있어요.";
     case "where":return "폐쇄된 AI 교육 연구소의 출입 관리실입니다. 지금은 대부분의 장비가 꺼져 있어요.";
     case "exit":return state.unlocked?"출입문의 잠금이 풀렸습니다. 이제 문을 열 수 있어요.":state.noteTaken?(window.B0RoomDialogue?.level("practice",state,"lock")?"가진 쪽지와 직접 확인한 도어락의 표시를 비교해 볼 수 있습니다.":"쪽지는 확인했습니다. 어디에 쓰는지는 주변 물건을 직접 살펴봐야 합니다."):"아직 출입 방법을 확인하지 못했습니다. 직접 본 물건부터 함께 살펴볼 수 있습니다.";
@@ -370,14 +372,13 @@ function robot(topic="") {
   if(!topic&&target&&target!=='robot'&&window.B0ObjectDialogue?.open('practice',state,{target},()=>robot('identity')))return;
   if(topic&&!Object.hasOwn(robotQuestions,topic))return;
   const topics=["identity","owner","where","exit",...(state.guide||state.noteFound?["password","limits"]:[]),"belongings"];
-  const art=`<div class="robot-detail${state.noteFound&&!state.noteTaken?" found":""}" role="img" aria-label="B-0와 가슴 아래 보관함"><div class="robot-sprite">${state.noteFound&&!state.noteTaken?"":spriteFace()}</div></div>`;
-  const action=state.noteTaken?btn("비밀번호 쪽지 보기","note","primary wide"):state.noteFound?btn("확인하기","take-note","primary wide"):topic==="belongings"?btn("네 보관함을 살펴봐도 돼?","ask-storage","primary wide"):"";
-  modal("B-0와 대화",`${art}<div class="conversation-reply" aria-live="polite">${topic?dialogue("student",robotQuestions[topic]):""}${dialogue("robot",robotAnswer(topic))}</div>${action}<section class="question-panel" aria-label="B-0에게 물어볼 질문"><p>무엇을 물어볼까?</p><div class="question-choices">${topics.filter(t=>t!==topic).map(t=>btn(robotQuestions[t],"talk-"+t,"secondary")).join("")}</div></section>`,"conversation-modal");
+  const actions=state.noteTaken?[['비밀번호 쪽지 보기',showNote]]:state.noteFound?[['확인하기',()=>handle('take-note')]]:topic==='belongings'?[['네 보관함을 살펴봐도 돼?',askStorage]]:[];
+  window.B0ObjectDialogue.present([...(topic?[['student',robotQuestions[topic]]]:[]),['robot',robotAnswer(topic)]],{actions,questions:topics.filter(t=>t!==topic).map(t=>[robotQuestions[t],()=>robot(t)])});
 }
-function askStorage() { modal("B-0의 보관함",`${dialogue("student",state.guide?"네 보관함도 확인해 볼까?":"몸에 보관함이 있네. 안에 뭐가 있어?")}${dialogue("robot","안쪽은 아직 확인하지 않았습니다. 열어 보겠습니다.")}<div class="robot-detail thinking" aria-hidden="true"><div class="robot-sprite">${spriteFace("thinking")}</div></div>${btn("보관함 열어 보기","open-storage","primary wide")}`); }
+function askStorage() { window.B0ObjectDialogue.present([['student',state.guide?'네 보관함도 확인해 볼까?':'몸에 보관함이 있네. 안에 뭐가 있어?'],['robot','안쪽은 아직 확인하지 않았습니다. 열어 보겠습니다.']],{actions:[['보관함 열어 보기',openStorage]]}); }
 function openStorage() { window.B0RoomDialogue?.remember(state,"storage",3);state.noteFound=true;save("발견","B-0가 확인하지 않았던 보관함에서 관리용 쪽지 발견");tone();robot("belongings"); }
 function noteMarkup() {return '<div class="password-note"><small>관리용 쪽지</small><h3>비상 출입번호</h3><strong>4732</strong><p>사용 후 보관함에 넣어 두십시오.</p></div>';}
-function showNote() { if(!state.noteTaken)return;modal("비밀번호 쪽지",`${noteMarkup()}${dialogue("student","찾았다! 이 번호로 해보자.")}${btn("쪽지 보관하고 돌아가기","close","primary wide")}`); }
+function showNote() { if(!state.noteTaken)return;modal("비밀번호 쪽지",`${noteMarkup()}${btn("쪽지 보관하고 돌아가기","close","primary wide")}`); }
 function inventory() {modal("소지품",state.noteTaken?`${noteMarkup()}<p class="muted">B-0의 보관함에서 받은 쪽지.</p>`:'<p>아직 가지고 있는 물건이 없다.</p>');}
 function lock() {
   window.B0RoomDialogue?.remember(state,"lock",2);save();
