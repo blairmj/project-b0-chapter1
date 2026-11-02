@@ -81,7 +81,7 @@
       const name={circle:'원',triangle:'삼각형',square:'사각형'};
       if(['reunited','complete'].includes(s.phase))return '유리벽이 올라가 다시 같은 쪽에서 만났습니다. 서로 다른 쪽에서 본 것과 부탁한 동작을 함께 확인했습니다.';
       const observed=restore(s.observations).last;
-      if(s.holding)return name[s.holding]+' 표시 손잡이를 내린 채 잡고 있습니다. '+(observed&&observed!==s.holding?about(room,s,observed,e):'놓으라는 부탁을 받기 전까지 유지하겠습니다.');
+      if(s.holding)return (s.instruction&&root.B0Mirror?.describe?root.B0Mirror.describe(s.instruction):name[s.holding]+' 표시 손잡이를 내린 채 잡고 있습니다. ')+(observed&&observed!==s.holding?about(room,s,observed,e):s.instruction?'':'놓으라는 부탁을 받기 전까지 유지하겠습니다.');
       if(s.last&&(!observed||observed===s.last.target))return s.last.verb==='down'?name[s.last.target]+' 표시 손잡이를 내렸다가 놓았습니다. 어느 부분이 달라졌는지는 그쪽에서도 확인해 주세요.':s.last.verb==='up'?'요청한 손잡이를 올렸습니다.':'요청하신 손잡이에서 손을 놓았습니다.';
     }
     if(room==='central'){

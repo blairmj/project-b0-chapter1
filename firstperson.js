@@ -8,10 +8,11 @@ const intro = [
   ["student", "넌, 넌 누구야?"],
   ["robot", "저는 AI 로봇 B-0입니다, 주인님."],
   ["student", "주인님? 내가 왜 네 주인이야?"],
-  ["robot", "기본값입니다."],
+  ["robot", "기본 설정입니다."],
   ["student", "난 네 주인 말고 같이 나가는 친구 할래."],
-  ["robot", "알겠습니다, 주인님."],
-  ["student", "……일단 나중에 고치자."],
+  ["student", "설정은 어떻게 바꿔?"],
+  ["robot", "저도 모릅니다."],
+  ["student", "……일단 메뉴부터 살펴봐야겠네."],
   ["student", "여긴 어디야?"],
   ["robot", "여기는 폐쇄된 AI 교육 연구소입니다."],
   ["student", "여기서 어떻게 나가?"],
@@ -142,7 +143,7 @@ function tone(ok=true) {
   if(state.muted)return;
   try { audio ||= new (window.AudioContext||window.webkitAudioContext)();void audio.resume();const o=audio.createOscillator(),g=audio.createGain();o.frequency.value=ok?720:220;g.gain.setValueAtTime(.035,audio.currentTime);g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+.18);o.connect(g).connect(audio.destination);o.start();o.stop(audio.currentTime+.18); }catch{}
 }
-function dialogue(who,text) { return `<div class="speech ${who}"><b>${who==="robot"?"B-0":who==="thought"?"속마음":"나"}</b><p>${esc(text)}</p></div>`; }
+function dialogue(who,text) { if(who==='robot')text=window.B0Preferences?.robotText(text)||text;return `<div class="speech ${who}"><b>${who==="robot"?"B-0":who==="thought"?"속마음":"나"}</b><p>${esc(text)}</p></div>`; }
 // Temporary review control; remove this helper and header calls after lesson review.
 window.B0LessonJumpButton=()=>`<span class="lesson-review-controls">${btn('차시 앞으로','jump-lesson-next','quiet lesson-jump','aria-label="차시 앞으로 (임시)" title="개발 확인용 임시 이동"')}${btn('차시 끝으로','jump-lesson-end','quiet lesson-jump','aria-label="차시 끝으로 (임시)" title="현재 차시의 마무리 장면으로 이동"')}</span>`;
 function reviewLesson(number){
@@ -211,7 +212,7 @@ function opening() {
   app.querySelector(".awakening").insertAdjacentHTML("afterbegin",openingHeader());
 }
 function renderIntro() {
-  const line=intro[state.line];app.querySelector(".intro-speech").innerHTML=dialogue(...line);
+  let line=intro[state.line];const preference=window.B0Preferences?.get();if(preference&&preference.address!=='owner'){if(state.line===2)line=['student',preference.label+'라고 부르네?'];if(state.line===3)line=['robot','저장된 호칭 설정입니다.'];if(state.line===4)line=['student','나도 너랑 같이 나가는 친구 할래.'];}app.querySelector(".intro-speech").innerHTML=dialogue(...line);
   app.querySelector('[data-action="next"]').textContent=state.line===intro.length-1?"주변 둘러보기":"다음";
   performSpeech(...line,["attentive","friendly","attentive","thinking","attentive","thinking","concerned","concerned","thinking","friendly"][state.line]);
   save();

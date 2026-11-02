@@ -1,4 +1,5 @@
 /* Shared room chrome. Scene artwork, world geometry and puzzle hit areas are untouched. */
+.b0-address-options{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}.b0-address-options button[aria-pressed=true]{border:2px solid #9af2d0;background:#24483e;color:#d9fff0}.b0-common-modal .speech{margin-top:20px}
 #app>main.game,#app>main.awakening{max-width:760px;width:100%;box-sizing:border-box}
 /* A single header row: location / review controls / zoom and menu. */
 .game>header.b0-hud,.awakening>.b0-hud{display:block;flex:none;min-height:64px;height:64px;width:100%;padding:10px 12px;background:#101e2b;border-bottom:1px solid #405766;position:relative;z-index:20;box-sizing:border-box;overflow-x:auto;overflow-y:hidden}

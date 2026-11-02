@@ -22,6 +22,7 @@
     function pose(id){const d=M.doors[id];if(id==='practice')return {x:0,z:80,yaw:180,pitch:-3};return {x:0,z:d.floor===2?-2370:d.z+(id==='stairs'?145:0),yaw:d.yaw,pitch:-3};}
     function actions(title,items=[]){if(!items.length&&title==='문과 물건을 직접 눌러 살펴보세요.')title='';bar.innerHTML=`<strong>${esc(title)}</strong><div>${items.map(([t,a,c])=>b(t,a,c||'')).join('')}</div>`;}
     function say(text,who='system'){
+      if(who==='robot')text=window.B0Preferences?.robotText(text)||text;
       const ticket=++speechTicket;notice.innerHTML=`<div class="speech ${who}"><b>${who==='robot'?'B-0':who==='student'?'나':'시설 안내'}</b><p>${esc(text)}</p></div>`;notice.hidden=false;
       const actor=app.querySelector('.lab-b0 .robot-sprite');actor?.classList.toggle('speaking',who==='robot');
       if(renderer)renderer.update(camera,companion,{lit:!stage.classList.contains('power-out'),walking:botMoving,speaking:who==='robot'});

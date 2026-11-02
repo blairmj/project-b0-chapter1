@@ -30,3 +30,16 @@ parallel.act('command-triangle-hold');parallel.select('own');flush();
 assert.match(node('.mr-actions').innerHTML,/data-mr="pull"/,'B-0 finishing a walk must preserve the student current object controls');
 assert.equal(nextState.holding,'triangle');parallel.act('robot');assert.doesNotMatch(node('.mr-speech').innerHTML,/data-mr="dismiss"/);parallel.act('target-mode');parallel.act('clear');assert.equal(node('.mr-speech').hidden,true);assert.equal(nextState.holding,'triangle','closing the UI preserves the active instruction');parallel.select('own');assert.match(node('.mr-actions').innerHTML,/data-mr="pull"/);parallel.dispose();
 console.log('PASS: robot walk completion preserves a newer student object selection');
+
+for(const stop of ['door','signal','crossing']){
+ const instructionState=M.fresh();instructionState.phase='split';
+ M.setDraft(instructionState,'target','triangle');M.setDraft(instructionState,'direction','down');M.setDraft(instructionState,'stop',stop);
+ let exits=0;const current=context.window.startMirrorRoom({app,portrait:()=>'',state:instructionState,onSave(){},onBack(){},onComplete(){exits++;}});
+ current.act('plan-send');flush();assert.equal(instructionState.holding,'triangle');assert.equal(instructionState.instruction.stop,stop);
+ current.act('pull');flush();
+ if(stop==='door')assert.equal(instructionState.phase,'reunited','Door completion releases and reunites without an extra signal');
+ if(stop==='signal'){assert.equal(instructionState.phase,'unlocked');assert.equal(instructionState.holding,'triangle','Door opening alone cannot satisfy a signal rule');current.act('plan-signal');flush();assert.equal(instructionState.phase,'reunited');}
+ if(stop==='crossing'){assert.equal(instructionState.phase,'unlocked');current.act('cross-door');assert.equal(instructionState.holding,'triangle','Crossing must complete before B-0 releases');flush();assert.equal(instructionState.phase,'reunited');assert.ok(current.state().camera.z<-294,'Student crosses the actual door plane before the condition fires');}
+ current.act('leave');assert.equal(exits,1);current.dispose();
+}
+console.log('PASS: composed instructions execute in the real controller, with distinct door/signal/physical crossing completion and reunion');

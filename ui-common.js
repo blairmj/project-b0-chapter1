@@ -12,7 +12,7 @@
   }
   function menuContent({namespace='action',close='close-modal',home='campaign-home',record='',extras=''}={}){
     const native=(text,action)=>button(text,action,namespace);
-    return `<div class="b0-menu-list">${native('계속하기',close)}${namespace==='lab'?native('지도','map'):common('지도','map')}${common('소지품','inventory')}${common('사용법','help')}${record?native('기록 보기',record):common('기록 보기','record')}${native('시작 화면으로',home)}</div>${extras?`<details class="b0-settings"><summary>추가 설정</summary><div class="options">${extras}</div></details>`:''}`;
+    return `<div class="b0-menu-list">${native('계속하기',close)}${namespace==='lab'?native('지도','map'):common('지도','map')}${common('소지품','inventory')}${common('사용법','help')}${common('B-0 설정','robot-settings')}${record?native('기록 보기',record):common('기록 보기','record')}${native('시작 화면으로',home)}</div>${extras?`<details class="b0-settings"><summary>추가 설정</summary><div class="options">${extras}</div></details>`:''}`;
   }
   function dialogBody(body,namespace,action){
     const existing=body.includes(`data-${namespace}="${action}"`)||body.includes(`data-${namespace}='${action}'`);
@@ -50,8 +50,11 @@
     if(action==='close'||action==='guide-done'){close();return;}
     if(action==='back-menu'){const source=returnMenu;close();if(source?.isConnected)source.click();return;}
     if(action==='map'){const info=window.B0CampaignUI?.location?.()||{};modal('지도',window.B0LabNavigation.mapMarkup(info),false);}
+    if(action==='robot-settings'){settings();return;}
+    if(action.startsWith('address-')){const choice=window.B0Preferences?.set(action.slice(8));if(choice){settings(choice.persisted?'저장했습니다. 다음 대화부터 적용됩니다.':'이 기기에서 저장할 수 없어 이번 접속 중에만 적용됩니다.');document.querySelector(`[data-ui="${action}"]`)?.focus();}return;}
     if(action==='inventory')inventory();if(action==='help')help();if(action==='record')record();
   }
+  function settings(message=''){const prefs=window.B0Preferences,current=prefs?.get()||{address:'owner'};modal('B-0 설정',`<p>B-0가 나를 어떻게 부르면 좋을까?</p><div class="b0-address-options">${Object.entries(prefs?.addresses||{owner:'주인님',friend:'친구',explorer:'탐험가'}).map(([id,label])=>button(label,'address-'+id,'ui',`aria-pressed="${current.address===id}"`)).join('')}</div><div class="speech robot"><b>B-0</b><p>${esc(prefs?.robotText('알겠습니다, 주인님. 함께 살펴보겠습니다.')||'알겠습니다, 주인님.')}</p></div><p role="status">${esc(message)}</p><small>호칭 설정은 게임 진행과 따로 저장됩니다.</small>`);}
   document.addEventListener('click',e=>{const b=e.target.closest('button');if(b&&['action','c2','c3','mr','c4','lab','ed'].some(ns=>b.getAttribute('data-'+ns)==='menu'))returnMenu=b;},true);
   document.addEventListener('click',handle,true);
   document.addEventListener('change',e=>{const control=e.target.closest?.('select[data-ui-location]');if(!control||!destinations.some(([id])=>id===control.value))return;const id=control.value;control.value='';if(id==='survey'){location.assign('./survey.html');return;}window.B0CampaignUI?.travel?.(id);});

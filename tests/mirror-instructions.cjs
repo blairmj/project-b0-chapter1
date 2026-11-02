@@ -1,0 +1,19 @@
+'use strict';
+const assert=require('node:assert/strict'),M=require('../mirror-model.js'),P=require('../robot-settings.js');
+const fresh=()=>({...M.fresh(),phase:'split'});
+const blank=fresh();assert.equal(M.ready(blank.draft),false);assert.equal(M.execute(blank),false);assert.equal(M.setDraft(blank,'target','triangle'),true);assert.equal(M.ready(blank.draft),false);assert.equal(M.setDraft(blank,'direction','sideways'),false);assert.equal(M.setDraft(blank,'stop','automatic-answer'),false);
+for(const target of M.symbols)for(const direction of ['up','down'])for(const stop of ['once','door','signal','crossing']){
+  const s=fresh(),plan={target,direction,stop};assert.ok(M.execute(s,plan));M.setOwn(s,1);
+  assert.equal(s.phase==='unlocked',target==='triangle'&&direction==='down'&&stop!=='once','Only the physical down-and-held triangle path opens the door');
+  assert.equal(M.trigger(s,'door'),stop==='door'&&s.phase==='unlocked');
+  if(stop==='signal'){assert.equal(M.trigger(s,'crossing'),false);assert.equal(M.trigger(s,'signal'),true);assert.equal(s.holding,null);}
+  if(stop==='crossing'){assert.equal(M.trigger(s,'crossing'),s.phase==='unlocked');}
+}
+const wait=fresh();M.execute(wait,{target:'triangle',direction:'down',stop:'door'});assert.equal(M.trigger(wait,'door'),false,'A door condition cannot finish before the real door opens');assert.equal(wait.holding,'triangle');M.setOwn(wait,1);assert.equal(M.trigger(wait,'door'),true);assert.equal(wait.instruction,null);assert.equal(M.join(wait),true);assert.equal(M.finish(wait),true);
+const up=fresh();M.execute(up,{target:'triangle',direction:'up',stop:'signal'});const upCopy=M.restore(JSON.parse(JSON.stringify(up)));assert.equal(upCopy.holding,'triangle');assert.equal(upCopy.active,null);M.setOwn(upCopy,1);assert.equal(upCopy.phase,'split','Restoring an upward hold must never become the downward answer');
+const pulse=fresh();M.execute(pulse,{target:'circle',direction:'down',stop:'once'});const pulseCopy=M.restore(JSON.parse(JSON.stringify(pulse)));assert.equal(pulseCopy.active,null);assert.equal(pulseCopy.instruction,null,'A half-finished one-off movement does not restart after reload');
+const edited=fresh();M.setDraft(edited,'target','circle');M.setDraft(edited,'direction','down');M.setDraft(edited,'stop','signal');M.execute(edited);M.inspect(edited,'door');M.setDraft(edited,'target','triangle');M.execute(edited);assert.equal(edited.lights,false);const log=edited.logs.find(x=>x.action==='instruction-execute');assert.equal(log.plan.target,'circle','The first request remains distinct from the corrected draft');assert.ok(edited.logs.some(x=>x.action==='inspect'&&x.instructionId===1));assert.ok(edited.logs.some(x=>x.action==='plan-change'&&x.afterInstruction===1&&x.value==='triangle'));assert.ok(log.time.endsWith('Z'));
+const legacy=M.restore({version:1,phase:'split',holding:'triangle',logs:[]});assert.equal(legacy.holding,'triangle');assert.equal(legacy.instruction,null);assert.deepEqual(legacy.draft,{target:null,direction:null,stop:null});
+const store=new Map(),storage={getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v)},prefs=P.create(storage);assert.equal(prefs.get().label,'주인님');assert.equal(prefs.set('friend').persisted,true);assert.equal(prefs.robotText('주인님이 주인님을 주인님과 함께'), '친구가 친구를 친구와 함께');assert.equal(P.create(storage).get().address,'friend');assert.equal(prefs.set('<script>'),null);assert.equal(prefs.get().address,'friend');
+const denied=P.create({getItem(){throw Error('blocked');},setItem(){throw Error('blocked');}});assert.equal(denied.set('explorer').persisted,false);assert.equal(denied.robotText('주인님께 말씀드립니다.'),'탐험가에게 말씀드립니다.');
+console.log('PASS: all target/direction/stop combinations, actual-event guards, independent stop conditions, upward/legacy save recovery, revision evidence, and saved address settings');

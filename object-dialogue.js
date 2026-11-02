@@ -73,7 +73,7 @@
         case 'square':return pair('그냥 아무거나 당겨 보면 안 돼?','시험할 수는 있습니다. 무엇을 움직였는지 기억해야 결과를 비교할 수 있습니다.');
         case 'vent':return s.vent?pair('문 말고 저게 움직였네.','시키신 대로 움직였지만 문은 열리지 않았습니다. 다른 것을 움직여 볼까요?'):pair('저쪽 환기 장치도 보이네.','여기서 통로라고 단정하지 않고 장치가 어떻게 반응하는지 확인하겠습니다.');
       }
-      if(s.holding)return pair('계속 잡고 있는 거지?','놓으라는 부탁을 받기 전까지 유지하겠습니다.');
+      if(s.holding)return pair('계속 잡고 있는 거지?',s.instruction&&root.B0Mirror?.describe?root.B0Mirror.describe(s.instruction):'놓으라는 부탁을 받기 전까지 유지하겠습니다.');
       if(s.last?.verb==='down')return pair('왜 놓았어?','내리라고 하셔서 내린 다음 손을 놓았습니다.','아…… 계속 잡고 있으라는 말을 안 했구나.');
       return pair('이번에는 혼자 먼저 가지 마.','네. 주인님이 여기서 어떤 일을 하실지도 함께 확인하겠습니다.');
     }
@@ -103,7 +103,7 @@
     const d=root.document.createElement('dialog');active=d;d.className='modal object-dialogue';d.setAttribute('aria-label','B-0와 대화');
     const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     let index=0;const actor=app.querySelector('.robot-sprite');
-    function render(){const [who,text]=lines[index];actor?.classList.toggle('speaking',who==='robot');d.innerHTML=`<div class="modal-header"><h2>B-0와 대화</h2></div><div class="modal-body"><p class="object-dialogue-subject">${esc(e.label||'함께 살펴보기')}</p><div class="speech ${who}" aria-live="polite"><b>${who==='robot'?'B-0':'나'}</b><p>${esc(text)}</p></div><div class="object-dialogue-buttons">${index<lines.length-1?'<button type="button" data-object-talk="next">다음</button>':onRequests?'<button type="button" data-object-talk="requests">다른 질문·부탁</button>':''}<button type="button" data-object-talk="close">닫기</button></div></div>`;}
+    function render(){const [who,raw]=lines[index],text=who==='robot'?(root.B0Preferences?.robotText(raw)||raw):raw;actor?.classList.toggle('speaking',who==='robot');d.innerHTML=`<div class="modal-header"><h2>B-0와 대화</h2></div><div class="modal-body"><p class="object-dialogue-subject">${esc(e.label||'함께 살펴보기')}</p><div class="speech ${who}" aria-live="polite"><b>${who==='robot'?'B-0':'나'}</b><p>${esc(text)}</p></div><div class="object-dialogue-buttons">${index<lines.length-1?'<button type="button" data-object-talk="next">다음</button>':onRequests?'<button type="button" data-object-talk="requests">다른 질문·부탁</button>':''}<button type="button" data-object-talk="close">닫기</button></div></div>`;}
     d.addEventListener('click',ev=>{const a=ev.target.closest('[data-object-talk]')?.dataset.objectTalk;if(a==='next'&&index<lines.length-1){index++;render();d.querySelector('[data-object-talk]')?.focus({preventScroll:true});}if(a==='close')d.close();if(a==='requests'){d.close();onRequests?.();}});
     d.addEventListener('close',()=>{actor?.classList.remove('speaking');d.remove();if(active===d)active=null;const stage=app.querySelector('[tabindex="0"]');stage?.focus({preventScroll:true});});
     render();app.append(d);d.showModal();return true;
