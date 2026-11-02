@@ -39,7 +39,7 @@
 #app .ed-video-modal>.modal-body{padding:10px;max-height:calc(94dvh - 76px)}
 .ed-video-frame{position:relative;width:100%;background:#02080e;overflow:hidden}
 .ed-video-frame .ed-video{display:block;width:100%;max-height:68dvh;aspect-ratio:16/9;object-fit:contain;border:0}
-.ed-video-frame .ed-video-caption{position:absolute;left:0;right:0;bottom:44px;margin:0;padding:10px 16px;min-height:0;background:#02070dd9;color:#fff;text-align:center;font:clamp(15px,2vw,22px)/1.5 'B0 Digital',monospace;text-shadow:0 1px 3px #000;pointer-events:none}
+.ed-video-frame .ed-video-caption{position:absolute;left:50%;right:auto;bottom:42px;transform:translateX(-50%);width:max-content;max-width:calc(100% - 16px);box-sizing:border-box;margin:0;padding:4px 7px;min-height:0;background:#02070db8;color:#fff;text-align:center;font:clamp(11px,1.35vw,15px)/1.35 'B0 Digital',monospace;text-shadow:0 1px 3px #000;pointer-events:none}
 .ed-video-modal .ed-video-controls{margin:10px 0;gap:8px}
 .ed-video-modal .b0-dialog-footer{margin-top:8px}
-@media(max-width:420px){.ed-video-frame .ed-video-caption{bottom:36px;padding:7px 9px;font-size:15px}}
+@media(max-width:420px){.ed-video-frame .ed-video-caption{bottom:34px;padding:3px 6px;font-size:11px}}
