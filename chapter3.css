@@ -118,3 +118,33 @@
 .c3-intro .corridor-scene{isolation:isolate}
 .c3-intro .corridor-b0{z-index:1;isolation:isolate}
 .c3-intro .corridor-dialogue{z-index:6}
+
+/* Physical archive storage: textured cabinets, removable disk bays and vents. */
+.c3-server-rack{position:absolute;left:-48px;top:-160px;width:96px;height:340px;transform-style:preserve-3d;cursor:pointer}
+.c3-server-rack:focus-visible{outline:2px solid #d6ebdf;outline-offset:5px}
+.c3-server-cube{cursor:pointer}
+.c3-server-cube>.c2-face{border:4px solid #34483d;background:linear-gradient(#20372dbb,#0b1b16dd),url('./assets/chapter2-metal-v1.webp') center/160px;box-shadow:inset 0 0 0 1px #87947d,inset 0 0 15px #020b09}
+.c3-server-cube>.c2-front{padding:35px 8px 48px;background:linear-gradient(90deg,#58634b 0 6px,#0b1715b8 7px 81px,#59634c 82px),url('./assets/chapter2-metal-v1.webp') center/150px}
+.c3-server-cube>.c2-front>small{position:absolute;left:7px;top:12px;color:#b7c9ae;font:7px monospace;letter-spacing:.6px}
+.c3-drive-bays{display:grid;grid-template-columns:1fr 1fr;gap:6px 4px;pointer-events:none}
+.c3-drive{position:relative;height:32px;background:linear-gradient(#89907955,#263a30dd),url('./assets/chapter2-metal-v1.webp') center/70px;border:1px solid #8e9475;box-shadow:0 2px 3px #0009,inset 0 0 0 2px #172b22}
+.c3-drive:before{content:'';position:absolute;left:4px;top:6px;bottom:6px;width:4px;border:1px solid #a4ae94;background:#23352c}
+.c3-drive:after{content:'';position:absolute;right:4px;bottom:5px;width:3px;height:3px;background:#59604b;box-shadow:0 -5px #242c24}
+.c3-drive:nth-child(4n+1):after{background:#a4c397;box-shadow:0 0 5px #9dd68277}
+.c3-drive:nth-child(5n):after{background:#c29d57;box-shadow:0 0 4px #bd8e4666}
+.c3-drive i{position:absolute;inset:5px 8px 6px 12px;background:repeating-linear-gradient(0deg,#1b3027 0 2px,#69725a 3px 4px)}
+.c3-drive b{position:absolute;left:13px;top:10px;font:6px monospace;color:#c9c8aa;background:#25352b}
+.c3-rack-vent{position:absolute;left:12px;right:12px;bottom:13px;height:27px;background:repeating-linear-gradient(0deg,#0b1813 0 3px,#7c8266 4px 5px);border:2px solid #52634d}
+.c3-cable-tray{position:absolute;left:-120px;top:170px;width:390px;height:26px;transform:translateZ(292px) rotateX(-90deg);border-block:5px solid #364d3f;background:repeating-linear-gradient(90deg,#101d17 0 8px,#65795b 9px 11px,#192d21 12px 18px);pointer-events:none}
+.c3-world .c3-monitor{pointer-events:auto;cursor:pointer;filter:none}
+.c3-world .c3-monitor:after{opacity:0}
+.c3-world .c3-monitor>span{position:absolute;left:36px;right:35px;top:29px;height:45px;border:1px solid #61796c;background:#091713;visibility:visible;overflow:hidden}
+.c3-world .c3-monitor>span>small,.c3-world .c3-monitor>span>em{position:static;display:block;padding:3px;font:7px/1.2 monospace;color:#8ca18b;visibility:visible;white-space:normal}
+.c3-world .c3-monitor>span>i{display:none}
+.c3-world .c3-monitor.powered>span{background:repeating-linear-gradient(0deg,#8fae7633 0 1px,transparent 2px 4px),#142c1d;box-shadow:0 0 10px #b0ce7f44}
+.c3-world .c3-monitor.powered>span>em{color:#d7e7b4}
+.c3-world .c3-monitor .computer-port{visibility:visible;position:absolute;left:123px;top:90px;width:15px;height:6px;border:2px solid #829779;background:#0a1811}
+.c3-world .c3-monitor.connected .computer-port{background:#ced5ad;box-shadow:0 0 5px #c8d593}
+.c3-stage{cursor:grab}
+.c3-stage:active{cursor:grabbing}
+@media(prefers-reduced-motion:reduce){.c3-server-rack *{animation:none}}

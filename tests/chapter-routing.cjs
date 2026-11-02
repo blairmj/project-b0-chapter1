@@ -11,7 +11,7 @@ const run=s=>vm.runInContext(s,context);
 run(fs.readFileSync(require.resolve('../firstperson.js'),'utf8').replace(/boot\(\);\s*$/,''));
 run('boot()');assert.ok(two,'explicit Chapter 2 URL enters the saved room');assert.equal(two.preview,undefined,'normal entry uses persistent browser storage');
 two.onNext();assert.ok(hall);assert.equal(hall.state.cleared.storage,true);assert.equal(new URL(location.href).searchParams.get('area'),'hall');assert.equal(three,undefined,'room exit must not teleport into the next room');
-hall.onEnter('access');assert.ok(three);assert.equal(new URL(location.href).searchParams.get('chapter'),'3');assert.equal(new URL(location.href).searchParams.has('area'),false);
+hall.onEnter('access');assert.equal(three,undefined,'cannot enter archive before collecting the memory');rooms.set('project-b0-education-v1',JSON.stringify({version:1,verified:true,memoryTaken:true}));run('showHall()');hall.onEnter('access');assert.ok(three);assert.equal(new URL(location.href).searchParams.get('chapter'),'3');assert.equal(new URL(location.href).searchParams.has('area'),false);
 three.onCorridor();assert.equal(hall.state.cleared.access,true);hall.onEnter('mirror');assert.equal(new URL(location.href).searchParams.get('room'),'mirror');
 three.onNext();assert.equal(hall.state.cleared.mirror,true);assert.equal(hall.state.keyTaken,false);assert.equal(new URL(location.href).searchParams.has('room'),false);
 hall.onEnter('central');assert.equal(four,undefined,'final room requires opening the stairs and reaching floor 2');
@@ -43,7 +43,7 @@ assert.equal(reviewNav.keyTaken,false);assert.equal(reviewNav.stairsUnlocked,fal
 assert.equal(M.restore(reviewNav).floor,2,'temporary floor survives reload without a real key');
 run('window.B0CampaignUI.travel("hall2")');assert.equal(hall.state.floor,2);assert.equal(hall.state.keyTaken,false);
 run('window.B0CampaignUI.travel("mirror")');run('window.B0CampaignUI.travel("hall")');assert.equal(hall.state.cleared.access,false,'visiting the mirror room for review must not solve the archive');assert.equal(hall.state.floor,1);run('boot()');assert.equal(hall.state.mode,'hall');
-run('window.B0CampaignUI.travel("access")');assert.equal(new URL(location.href).searchParams.get('chapter'),'3');assert.equal(three.arrived,true);
+rooms.set('project-b0-education-v1',JSON.stringify({version:1,verified:true,memoryTaken:true}));run('window.B0CampaignUI.travel("access")');assert.equal(new URL(location.href).searchParams.get('chapter'),'3');assert.equal(three.arrived,true);
 assert.deepEqual([...rooms.entries()].filter(([key])=>key.includes('room2')||key.includes('room3')),originalRooms);
 run('startAdventure()');assert.equal(JSON.parse(rooms.get('project-b0-lab-navigation-v1')).reviewMode,undefined);
 console.log('PASS: temporary location travel preserves puzzle saves and inventory, floor checkpoint and restart');
@@ -53,3 +53,10 @@ run('enterRoom=(...args)=>openPractice(...args);window.B0CampaignUI.travel("prac
 assert.equal(new URL(location.href).searchParams.get('room'),'practice');assert.equal(practiceViews.length,2);
 assert.equal(practiceViews[0][1],true);assert.equal(practiceViews[1][1],true,'a first-room revisit survives refresh without falling into an ending');
 console.log('PASS: first room review and reload retain the real room view');
+
+rooms.delete('project-b0-education-v1');
+run('modal=(title)=>{globalThis.archiveGateTitle=title;};window.B0CampaignUI.travel("access")');
+assert.equal(context.archiveGateTitle,'기록 메모리 필요');assert.equal(hall.state.mode,'hall');
+assert.equal(rooms.has('project-b0-education-v1'),false,'review travel must not manufacture the required memory');
+run('enterChapterThree("access")');assert.equal(hall.state.mode,'hall','direct room entry uses the same inventory gate');
+console.log('PASS: archive item requirement also covers direct and temporary entry without item auto-grants');

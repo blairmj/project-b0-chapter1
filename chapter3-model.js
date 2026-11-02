@@ -46,6 +46,18 @@
     for(const id of objects)if(raw.seen?.[id]===true)s.seen[id]=true;
     s.logs=Array.isArray(raw.logs)?raw.logs.filter(x=>x&&typeof x.action==='string').slice(-100):[];if(raw.observations&&typeof raw.observations==='object')s.observations={seen:{...raw.observations.seen},last:raw.observations.last};return s;
   }
-  const api={fresh,clear,note,inspect,toggleOldDoor,moveShelf,openExit,leave,request,beginMirror,finish,reply,powerComputer,connectMemory,openFiles,readDiary,hearAxiom,restore};
+  // Same perspective and expanded world coordinates as the room camera.
+  // Only a ray that actually reaches the floor inside the room can walk.
+  function floorTarget(c,sx,sy,width,height,focal,scale=1.95){
+    if(![sx,sy,width,height,focal,scale].every(Number.isFinite)||width<=0||height<=0||focal<=0||scale<=0)return null;
+    const yaw=c.yaw*Math.PI/180,pitch=c.pitch*Math.PI/180,u=(sx-width/2)/focal,v=(sy-height/2)/focal;
+    const ry=v*Math.cos(pitch)-Math.sin(pitch),rz=-v*Math.sin(pitch)-Math.cos(pitch);
+    if(ry<=.02)return null;
+    const t=180/scale/ry,dx=u*Math.cos(yaw)-rz*Math.sin(yaw),dz=u*Math.sin(yaw)+rz*Math.cos(yaw);
+    const x=c.x+dx*t,z=c.z+dz*t;
+    if(Math.abs(x)>298||Math.abs(z)>298)return null;
+    return {x:Math.max(-180,Math.min(180,x)),z:Math.max(-200,Math.min(180,z))};
+  }
+  const api={fresh,clear,note,inspect,toggleOldDoor,moveShelf,openExit,leave,request,beginMirror,finish,reply,powerComputer,connectMemory,openFiles,readDiary,hearAxiom,restore,floorTarget};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.B0RoomThree=api;
 })(typeof window!=='undefined'?window:globalThis);

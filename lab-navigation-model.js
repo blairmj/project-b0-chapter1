@@ -11,11 +11,11 @@
     outside:{name:'외부 출입구',floor:1,x:-268,z:-1160,yaw:-90},
     central:{name:'중앙관리실',floor:2,x:0,z:-2540,yaw:0}
   };
-  const fresh=()=>({version:1,mode:'hall',floor:1,camera:{x:0,z:80,yaw:0,pitch:-4},cleared:{practice:false,education:false,storage:false,access:false,mirror:false},keyboxOpen:false,keyTaken:false,stairsUnlocked:false,stairRejected:false,barrierTriggered:false,powerOut:false,powerTalked:false,emergencyOn:false,companion:null,visited:[]});
+  const fresh=()=>({version:1,mode:'hall',floor:1,camera:{x:0,z:80,yaw:0,pitch:-4},cleared:{practice:false,education:false,storage:false,access:false,mirror:false},recordMemory:false,keyboxOpen:false,keyTaken:false,stairsUnlocked:false,stairRejected:false,barrierTriggered:false,powerOut:false,powerTalked:false,emergencyOn:false,companion:null,visited:[]});
   function restore(raw){
     const s=fresh();if(!raw||raw.version!==1)return s;
     for(const id of Object.keys(s.cleared))s.cleared[id]=raw.cleared?.[id]===true;
-    for(const id of ['keyboxOpen','keyTaken','stairsUnlocked','stairRejected','powerTalked'])s[id]=raw[id]===true;
+    for(const id of ['recordMemory','keyboxOpen','keyTaken','stairsUnlocked','stairRejected','powerTalked'])s[id]=raw[id]===true;
     if(s.stairsUnlocked)s.keyTaken=true;
     s.floor=raw.floor===2&&s.stairsUnlocked?2:1;s.mode=raw.mode==='room'?'room':'hall';
     s.reviewMode=raw.reviewMode===true;
@@ -29,14 +29,14 @@
     if(['education','practice'].includes(raw.room))s.room=raw.room;
     s.visited=Array.isArray(raw.visited)?raw.visited.filter(id=>doors[id]):[];return s;
   }
-  function merge(s,p){for(const id of Object.keys(s.cleared))s.cleared[id]||=p[id]===true;return s;}
+  function merge(s,p){s.recordMemory=p.education===true;for(const id of Object.keys(s.cleared))s.cleared[id]||=p[id]===true;return s;}
   function bound(s,x,z){
     x=Math.max(-180,Math.min(180,x));
     if(s.floor===2)return {x,z:Math.max(-2435,Math.min(-2150,z))};
     const min=!s.cleared.mirror?-1460:-1700;
     return {x,z:Math.max(min,Math.min(160,z))};
   }
-  function canEnter(s,id){if(['practice','education','storage','access','mirror'].includes(id))return true;if(id==='central')return s.floor===2&&(s.stairsUnlocked||s.reviewMode);return false;}
+  function canEnter(s,id){if(id==='access')return s.recordMemory===true;if(['practice','education','storage','access','mirror'].includes(id))return true;if(id==='central')return s.floor===2&&(s.stairsUnlocked||s.reviewMode);return false;}
   function returned(s,from,completed=true){
     // Backtracking uses the same doorway without marking its puzzle complete.
     // Solved rooms retain their distinct exits (window / hidden passage).

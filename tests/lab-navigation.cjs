@@ -1,7 +1,7 @@
 const assert=require('node:assert/strict'),M=require('../lab-navigation-model.js');
 const s=M.fresh();assert.equal(M.unlock(s),false);assert.equal(M.floor(s,2),false);assert.equal(M.takeKey(s),false);
 assert.equal(M.bound(s,0,-1700).z,-1460);M.returned(s,'storage');assert.equal(M.bound(s,0,-1700).z,-1460);
-for(const id of ['practice','storage','access','mirror'])assert.equal(M.canEnter(M.fresh(),id),true,'all first-floor rooms allow free exploration');M.returned(s,'access');assert.equal(M.canEnter(s,'mirror'),true);
+for(const id of ['practice','storage','mirror'])assert.equal(M.canEnter(M.fresh(),id),true,'other first-floor rooms allow exploration');assert.equal(M.canEnter(M.fresh(),'access'),false,'archive entry requires a carried record memory');const keyed=M.fresh();M.merge(keyed,{education:true});assert.equal(M.canEnter(keyed,'access'),true);M.merge(keyed,{education:false});assert.equal(M.canEnter(keyed,'access'),false,'an old cleared flag cannot substitute for the actual item');M.returned(s,'access');assert.equal(M.canEnter(s,'mirror'),true);
 assert.equal(M.takeKey(s),false);M.returned(s,'mirror');assert.equal(s.camera.z,-1610);assert.equal(M.bound(s,0,-1700).z,-1700);
 assert.equal(M.takeKey(s),false);s.keyboxOpen=true;assert.equal(M.takeKey(s),true);assert.equal(M.takeKey(s),false);
 assert.equal(M.canEnter(s,'central'),false,'a key alone does not put the player upstairs');assert.equal(M.unlock(s),true);assert.equal(M.canEnter(s,'central'),false);

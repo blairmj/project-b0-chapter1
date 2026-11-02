@@ -94,3 +94,20 @@ assert.equal(explicitArchive.state().s.phase,'room');assert.match(app.innerHTML,
 assert.equal(explicitArchive.state().s.mirror.phase,'approach','switching rooms retains mirror puzzle progress');
 assert.equal(JSON.parse(saved).phase,'room','reloading an explicit archive visit must stay in the archive');
 console.log('PASS: explicit archive travel overrides a saved mirror view without erasing the mirror state');
+
+storage.getItem=()=>null;
+const walking=context.window.startChapterThree({app,portrait:()=>'',onBack(){},preview:true,arrived:true});
+walking.act('robot');walking.act('request-check');
+assert.equal(node('.c3-speech').hidden,true,'target selection clears the preceding B-0 speech');
+walking.act('clear');assert.equal(walking.state().mode,null);assert.equal(node('.c3-speech').hidden,true);
+const beforeWalk={...walking.state().camera};
+node('.c3-stage').listeners.click({detail:1,clientX:308,clientY:410,target:{closest(){return null;}}});flush();
+assert.notEqual(walking.state().camera.z,beforeWalk.z,'a floor click after dialogue dismissal walks the camera');
+const beforeLook={...walking.state().camera};walking.down(ev(400,250));walking.move(ev(340,250));walking.up(ev(340,250));
+node('.c3-stage').listeners.click({detail:1,clientX:340,clientY:250,target:{closest(){return null;}}});flush();
+assert.equal(walking.state().camera.x,beforeLook.x);assert.equal(walking.state().camera.z,beforeLook.z,'a drag must not become a floor-walk click');
+walking.act('robot');walking.act('clear');walking.select('computer');flush();walking.act('computer-power');
+hasLessonMemory=false;walking.select('computer');assert.match(node('.c3-actions').innerHTML,/외부 메모리 안내/);walking.act('memory-info');
+assert.match(lastDialog.innerHTML,/교육 실습실/);walking.act('close-modal');
+walking.select('shelf');flush();assert.match(node('.c3-actions').innerHTML,/밀어 보기/);
+console.log('PASS: B-0 target mode dismissal, walking after close, drag-click separation, memory source and resumed puzzle controls');

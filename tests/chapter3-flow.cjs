@@ -27,3 +27,14 @@ assert.equal(damaged.phase,'intro');assert.equal(damaged.shelfZ,0);assert.equal(
 console.log('PASS: independent exploration, both cabinet directions, solo/helper movement, no early exit disclosure, evidence comparison, gate and saved progress');
 
 const legacy=M.restore({version:1,phase:'complete',shelfZ:175,realDoorOpen:true,approval:'rejected'});assert.equal(M.beginMirror(legacy),true);assert.equal(legacy.shelfZ,175,'adding the mirror room preserves old office progress');
+
+const camera={x:0,z:30,yaw:0,pitch:-8,zoom:1};
+const near=M.floorTarget(camera,338,650,676,870,419.12);
+const far=M.floorTarget(camera,338,590,676,870,419.12);
+assert.ok(near.z<30&&far.z<near.z,'farther visible floor means farther walking');
+assert.equal(M.floorTarget(camera,338,50,676,870,419.12),null,'ceiling clicks do not move');
+assert.equal(M.floorTarget(camera,338,440,676,870,419.12),null,'a wall ray is not a floor destination');
+const reversed=M.floorTarget({...camera,yaw:180},338,650,676,870,419.12);
+assert.ok(reversed.z>camera.z,'turning around permits walking back');
+assert.equal(M.floorTarget(camera,NaN,650,676,870,419.12),null);
+console.log('PASS: archive floor ray, walking distance, reverse walking and wall/ceiling rejection');

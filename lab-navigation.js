@@ -128,7 +128,7 @@
       if(id==='keybox'){if(!s.cleared.mirror){say('유리 차단문 너머에 있다. 여기서는 손이 닿지 않는다.');actions('벽면 보관함',[['돌아가기','clear']]);return;}actions('벽면 열쇠 보관함',[[s.keyboxOpen?'보관함 닫기':'열어 보기','keybox-open'],...(s.keyboxOpen&&!s.keyTaken?[['열쇠 집기','take-key']]:[]),['돌아가기','clear']]);return;}
       if(id==='stairs'||id==='stair-control'){actions(id==='stairs'?'2층 계단':'계단 차단 제어기',s.stairsUnlocked?[['계단으로 올라가기','upstairs'],['돌아가기','clear']]:[['계단 올라가 보기','upstairs'],['차단 제어기 살펴보기','inspect-stairs'],...(s.keyTaken?[['열쇠로 차단 해제','unlock-stairs']]:[]),['돌아가기','clear']]);return;}
       if(id==='outside'){say('문 옆 화면에 외부 출입 승인은 2층 중앙관리실에서 확인하라고 적혀 있다.');actions('잠긴 외부 출입구',[['돌아가기','clear']]);return;}
-      if(!M.canEnter(s,id)){say(id==='mirror'?'안쪽에서 잠겨 있다. 기록 보관실과 연결된 통로가 있을까?':'문까지 가는 통로가 막혀 있다.');actions(dLabel(id),[['돌아가기','clear']]);return;}
+      if(!M.canEnter(s,id)){if(id==='access'){say('기록 메모리가 필요합니다. 문 옆 단자에 교육 실습실 수업 기록과 같은 표시가 있다.');actions('기록 보관실 · 메모리 미소지',[['돌아가기','clear']]);return;}say(id==='mirror'?'안쪽에서 잠겨 있다. 기록 보관실과 연결된 통로가 있을까?':'문까지 가는 통로가 막혀 있다.');actions(dLabel(id),[['돌아가기','clear']]);return;}
       actions(dLabel(id),[['문 열고 들어가기','enter-'+id,'primary'],['돌아가기','clear']]);
     }
     const dLabel=id=>M.doors[id]?.name||'복도';

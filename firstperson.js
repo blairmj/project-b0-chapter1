@@ -80,6 +80,7 @@ function enterChapterTwo(visit=false){
   chapterTwo=window.startChapterTwo({app,portrait,visit,onNext:()=>showHall('storage'),onHome:campaignHome,onBack:()=>showHall('storage',false)});
 }
 function enterChapterThree(view='access',arrived=false){
+  if(view!=='mirror'&&!roomProgress().education){navigation.floor=1;navigation.camera={x:0,z:-950,yaw:-90,pitch:-4};showHall();modal('기록 메모리 필요','<p>기록 보관실 입장에는 교육 실습실의 기록 메모리가 필요합니다.</p><p>교육 실습실에서 수업 기록을 복구하고 메모리를 먼저 챙겨야 합니다.</p>');return;}
   educationView?.dispose();educationView=null;
   markRoom();
   if(typeof location!=='undefined'){const url=new URL(location.href);if(view==='mirror')url.searchParams.set('room','mirror');else url.searchParams.delete('room');history.replaceState(null,'',url);}
