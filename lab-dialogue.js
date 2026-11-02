@@ -27,12 +27,28 @@
     };
     return conversation('room-'+id,...lines[id]);
   }
+  function keybox(s){
+    if(s.keyTaken)return conversation('keybox-empty',
+      ['student','열쇠는 챙겼지?'],['robot','네. 소지품에 계단실 열쇠가 있습니다.']);
+    if(s.keyboxOpen)return conversation('keybox-open',
+      ['student','열쇠가 있네. 어디에 쓰는 걸까?'],
+      ['robot','열쇠 고리에 계단실이라고 적혀 있습니다.'],
+      ['student','챙겨서 계단 옆 제어기에 맞는지 확인해 보자.']);
+    return conversation('keybox',
+      ['student','B-0, 이 보관함은 뭐야?'],
+      ['robot','뚜껑이 닫혀 있어 안은 보이지 않습니다. 열어서 확인해 볼까요?']);
+  }
+  function lookingAtKeybox(s,c,selected,doors){
+    const d=doors.keybox;if(s.floor!==1||!d||Math.abs(c.z-d.z)>180)return false;
+    if(selected==='keybox')return true;
+    if(!s.cleared.mirror||!Number.isFinite(c.yaw)||Math.hypot(c.x-d.x,c.z-d.z)>310)return false;
+    const direction=Math.atan2(d.x-c.x,c.z-d.z)*180/Math.PI;
+    return Math.abs(((c.yaw-direction+540)%360)-180)<=45;
+  }
   function resolve(s,c,selected,doors){
     const at=id=>doors[id]&&doors[id].floor===s.floor&&Math.abs(c.z-(id==='practice'?80:doors[id].z))<=180;
     // A deliberately examined object takes precedence only while it is nearby.
-    if(selected==='keybox'&&at('keybox'))return s.keyTaken?
-      conversation('keybox-empty',['student','열쇠는 챙겼지?'],['robot','네. 소지품에 계단실 열쇠가 있습니다.']):
-      conversation('keybox',['student','이 보관함에는 뭐가 있을까?'],['robot',s.keyboxOpen?'안쪽에 작은 금속 열쇠가 보입니다.':'뚜껑이 닫혀 있어 안은 보이지 않습니다. 직접 열어 확인할 수 있습니다.']);
+    if(lookingAtKeybox(s,c,selected,doors))return keybox(s);
     if(s.floor===2)return c.z<=-2290?room(s,'central'):conversation('upper-hall',
       ['student','여기가 2층이구나. 중앙관리실은 어디지?'],['robot','이 복도 끝에 있습니다. 문 옆 표시도 확인해 보세요.']);
     if(c.z<=-1550)return stairs(s);
@@ -53,7 +69,8 @@
     if(Math.abs(c.z-doors[nearest].z)<=145)return room(s,nearest);
     return conversation('hall',['student','어디부터 살펴보는 게 좋을까?'],['robot','문 옆 이름과 눈에 보이는 장치를 확인할 수 있습니다. 아직 살펴보지 않은 곳은 저도 어떤 상태인지 모릅니다.']);
   }
-  function observe(s,c,doors){
+  function observe(s,c,doors,selected=null){
+    if(lookingAtKeybox(s,c,selected,doors))return keybox(s).lines[1][1];
     if(s.floor===2)return '복도 끝 문 위에 중앙관리실이라고 적혀 있습니다. 안쪽은 아직 확인하지 않았습니다.';
     if(nearPlate(c))return '발밑에 밟았던 덮개가 있고, 천장 형광등은 꺼져 있습니다. 양옆에는 방으로 들어가는 문이 보입니다.';
     if(c.z<=-1550)return s.stairsUnlocked?'계단의 접근 차단이 해제되어 있습니다.':'계단 옆 제어기에 접근 제한 표시와 열쇠 구멍이 보입니다.';

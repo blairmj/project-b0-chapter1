@@ -157,16 +157,16 @@
       if(a==='view-home'){camera.zoom=1;selection=null;actions('');animate({x:0,z:s.floor===2?-2170:80,yaw:0,pitch:-4});return;}
       if(a==='zoom-in'||a==='zoom-out'){camera.zoom=Math.max(.65,Math.min(1.6,camera.zoom+(a==='zoom-in'?.15:-.15)));update();return;}
       if(a==='robot'){
-        if(!talk){const context=window.B0LabDialogue.resolve(s,camera,selection,M.doors);talk={...context,index:0};selection=null;}
+        if(!talk){const context=window.B0LabDialogue.resolve(s,camera,selection,M.doors);talk={...context,index:0};}
         showTalk();return;
       }
       if(a==='emergency-light'){
         if(!M.setEmergency(s,!s.emergencyOn))return;cancelTalk();save();update();relaySound();
         talk={id:'abilities',index:0,lines:[['robot',s.emergencyOn?'비상 전원으로 벽면 조명을 켰습니다. 발밑과 문 표지를 확인해 보세요.':'비상 조명을 껐습니다. 필요하면 다시 켤 수 있습니다.']]};showTalk();return;
       }
-      if(a==='robot-observe'){cancelTalk();talk={id:'abilities',index:0,lines:[['robot',window.B0LabDialogue.observe(s,camera,M.doors)]]};showTalk();return;}
+      if(a==='robot-observe'){cancelTalk();talk={id:'abilities',index:0,lines:[['robot',window.B0LabDialogue.observe(s,camera,M.doors,selection)]]};showTalk();return;}
       if(a==='talk-next'){if(talk){talk.index=Math.min(talk.lines.length-1,talk.index+1);showTalk();}return;}
-      if(a==='talk-close'){if(talk){if(talk.id==='power'&&talk.index===talk.lines.length-1){s.powerTalked=true;save();}cancelTalk();notice.hidden=true;}return;}
+      if(a==='talk-close'){if(talk){if(talk.id==='power'&&talk.index===talk.lines.length-1){s.powerTalked=true;save();}cancelTalk();notice.hidden=true;if(selection==='keybox')showObject('keybox');}return;}
       if(a.startsWith('go-')){close();walkTo(a.slice(3));return;}
       if(a==='forward'||a==='backward'){travel(a==='forward'?1:-1);return;}
       if(a==='turn-left'||a==='turn-right'){animate({yaw:camera.yaw+(a==='turn-left'?-90:90)});return;}

@@ -11,6 +11,7 @@
     s.holding=false;s.seen=raw.seen&&typeof raw.seen==='object'?{...raw.seen}:{};
     s.logs=Array.isArray(raw.logs)?raw.logs.slice(-80):[];if(raw.observations&&typeof raw.observations==='object')s.observations={seen:{...raw.observations.seen},last:raw.observations.last};return s;
   }
+  function arrive(raw){const s=restore(raw);if(['farewell','ending','complete'].includes(s.phase)){s.phase='room';s.line=0;}return s;}
   function log(s,action,value){s.logs.push({action,value});s.logs=s.logs.slice(-80);}
   function connect(s,id,on){if(id!=='robot'||!s.boss||!s.bodyChecked||s.opened)return false;s.links.robot=!!on;if(on)s.holding=false;log(s,'remote-control',!!on);return true;}
   const ready=s=>s.boss&&!s.links.robot&&s.upper;
@@ -19,6 +20,6 @@
   function tick(s,r,dt){if(s.opened)return;if(!ready(s)||!s.holding||r.handle<.85||r.lifted){r.latch=0;return;}r.latch=Math.min(1,r.latch+Math.min(100,Math.max(0,dt))/5200);if(r.latch>=1){s.opened=true;log(s,'door','physically-latched-open');}}
   const release=(s,r)=>{r.handle=0;if(!s.opened)r.latch=0;};
   function leave(s){if(!s.opened||s.links.robot||s.holding)return false;s.phase='farewell';s.line=0;return true;}
-  const api={fresh,restore,connect,ready,latch,hold,tick,release,leave,log};
+  const api={fresh,restore,arrive,connect,ready,latch,hold,tick,release,leave,log};
   if(typeof module!=='undefined')module.exports=api;else root.B0Final=api;
 })(typeof window!=='undefined'?window:globalThis);

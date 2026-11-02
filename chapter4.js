@@ -3,7 +3,8 @@
   window.startChapterFour=function({app,portrait,onBack,onHome,preview=false,arrived=false}){
     const SPACE=3.9;
     const M=window.B0Final,storage=preview?sessionStorage:localStorage,key='project-b0-final-v2';
-    let s;try{s=M.restore(JSON.parse(storage.getItem(key)));}catch{s=M.fresh();}
+    let s;try{s=(arrived?M.arrive:M.restore)(JSON.parse(storage.getItem(key)));}catch{s=M.fresh();}
+    if(arrived){try{storage.setItem(key,JSON.stringify(s));}catch{}}
     let dead=false,stage,world,bar,speech,conversation=null,selection=null,modalEl=null,pointer=null,suppress=false,frame=0,camFrame=0,previous=0,mute=false;
     let camera={x:0,z:60,yaw:-15,pitch:14,zoom:.7,height:0},r={handle:0,latch:s.opened?1:0,lifted:false,high:0};
     let robot={x:93,z:-140},journey=null,journeyFrame=0,wakeUntil=0,recoveryPending=false,carryingTransition=false,lastControlled=s.met&&s.links.robot;

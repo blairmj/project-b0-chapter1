@@ -25,3 +25,17 @@ for(const page of ['index.html']){
  const html=fs.readFileSync(require.resolve('../'+page),'utf8');
  assert.ok(html.indexOf('lab-dialogue.js?')>0&&html.indexOf('lab-dialogue.js?')<html.indexOf('lab-navigation.js?'),page+': dialogue data loads before its controller');
 }
+
+// Cabinet dialogue remains local, respects closed contents, and follows its state.
+s.floor=1;s.cleared.mirror=true;s.keyboxOpen=false;s.keyTaken=false;
+const cabinetCamera={x:0,z:-1640,yaw:-90};
+assert.equal(D.resolve(s,cabinetCamera,null,M.doors).id,'keybox');
+assert.doesNotMatch(D.resolve(s,cabinetCamera,null,M.doors).lines.map(x=>x[1]).join(' '),/금속|고리|계단실|열쇠/);
+s.keyboxOpen=true;assert.equal(D.resolve(s,cabinetCamera,null,M.doors).id,'keybox-open');
+assert.match(D.observe(s,cabinetCamera,M.doors),/계단실/);
+s.keyTaken=true;assert.equal(D.resolve(s,cabinetCamera,null,M.doors).id,'keybox-empty');
+assert.match(D.resolve(s,cabinetCamera,null,M.doors).lines[1][1],/소지품/);
+assert.equal(D.resolve(s,{...cabinetCamera,yaw:0},null,M.doors).id,'stairs-open');
+assert.notEqual(D.resolve(s,{...cabinetCamera,z:-950},'keybox',M.doors).id,'keybox-empty');
+s.floor=2;assert.notEqual(D.resolve(s,cabinetCamera,'keybox',M.doors).id,'keybox-empty');
+console.log('PASS: cabinet dialogue persists while facing it, without unseen contents or distant spoilers');

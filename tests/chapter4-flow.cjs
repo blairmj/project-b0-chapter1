@@ -18,3 +18,12 @@ const interrupted=M.restore({...s,opened:false,phase:'room',holding:true});asser
 assert.equal(M.restore({...s,links:{robot:true}}).opened,false);
 assert.equal(M.restore({version:1,evidence:true}).phase,'intro','old chapter 4 story restarts without changing other chapters');
 console.log('PASS: body inspection, physical reach, two-person hold, false completion, recoverable mistake, reunion, save integrity');
+
+for(const phase of ['farewell','ending','complete']){
+ const saved={...s,phase,line:5};const entry=M.arrive(saved);
+ assert.equal(entry.phase,'room','entering through the corridor must show the central room');
+ assert.equal(entry.line,0);assert.equal(entry.opened,true);assert.equal(entry.links.robot,false);
+ assert.equal(M.restore(saved).phase,phase,'resume keeps the actual ending checkpoint');
+}
+assert.equal(M.arrive({...s,phase:'room',opened:false}).opened,false,'incomplete puzzles remain incomplete');
+console.log('PASS: corridor re-entry never replays the bedroom while explicit resume retains its checkpoint');

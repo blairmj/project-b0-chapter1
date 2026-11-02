@@ -82,3 +82,10 @@ assert.ok(arrivingGame.state().conversation,'arrival preserves the introduction 
 assert.equal(arrivingGame.state().s.boss,false);assert.equal(arrivingGame.state().s.upper,false);
 arrivingGame.dispose();
 console.log('PASS: hall entry preserves the introduction in the 3D room without solving any puzzle');
+
+// Actual controller distinguishes corridor arrival from resuming the ending.
+Object.assign(initial,{...M.fresh(),phase:'ending',opened:true,upper:true,links:{robot:false},met:true,boss:true});
+const revisit=ctx.window.startChapterFour({app,portrait:()=>'',onBack(){},arrived:true});
+assert.equal(revisit.state().s.phase,'room');assert.equal(saved.phase,'room','room arrival checkpoint persists after refresh');
+assert.match(app.innerHTML,/2층 중앙관리실/);assert.doesNotMatch(app.innerHTML,/c4-bedroom/);revisit.dispose();
+console.log('PASS: arriving from the corridor reopens and saves the central room instead of the bedroom ending');
