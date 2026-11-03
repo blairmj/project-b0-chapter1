@@ -1,12 +1,13 @@
 (function(){
   'use strict';
-  window.startChapterFour=function({app,portrait,onBack,onHome,preview=false,arrived=false}){
+  window.startChapterFour=function({app,portrait,onBack,onHome,preview=false,arrived=false,reflector=false,store}){
     const SPACE=3.9;
-    const M=window.B0Final,storage=preview?sessionStorage:localStorage,key='project-b0-final-v2';
+    const M=window.B0Final,storage=store||(preview?sessionStorage:localStorage),key='project-b0-final-v2';
     let s;try{s=(arrived?M.arrive:M.restore)(JSON.parse(storage.getItem(key)));}catch{s=M.fresh();}
+    if(reflector)M.enableOptics(s);
     if(arrived){try{storage.setItem(key,JSON.stringify(s));}catch{}}
     let dead=false,stage,world,bar,speech,conversation=null,selection=null,modalEl=null,pointer=null,suppress=false,frame=0,camFrame=0,previous=0,mute=false;
-    let camera={x:0,z:60,yaw:-15,pitch:14,zoom:.7,height:0},r={handle:0,latch:s.opened?1:0,lifted:false,high:0};
+    let camera={x:0,z:60,yaw:-15,pitch:14,zoom:.7,height:0},r={handle:0,latch:s.opened?1:0,lifted:false,high:0},opticalMotion=null;
     let robot={x:93,z:-140},journey=null,journeyFrame=0,wakeUntil=0,recoveryPending=false,carryingTransition=false,lastControlled=s.met&&s.links.robot;
     const inRoom=()=>s.phase==='room'||s.phase==='farewell';
     try{mute=JSON.parse(storage.getItem('project-b0-firstperson-v4'))?.muted===true;}catch{}
@@ -20,9 +21,9 @@
     function sound(low=false){if(mute)return;try{audio||=new(window.AudioContext||window.webkitAudioContext)();void audio.resume();const o=audio.createOscillator(),g=audio.createGain();o.type='sine';o.frequency.value=low?145:540;g.gain.setValueAtTime(.025,audio.currentTime);g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+.3);o.connect(g).connect(audio.destination);o.start();o.stop(audio.currentTime+.3);}catch{}}
     function bossCue(kind){if(mute)return;const patterns={evidence:[[360,0,.16],[250,.22,.35]],sever:[[190,0,.2],[125,.28,.45]],critical:[[150,0,.18],[150,.34,.18],[95,.72,.55]],override:[[110,0,.45],[160,.55,.4]],released:[[320,0,.3],[480,.24,.65]]};
       try{audio||=new(window.AudioContext||window.webkitAudioContext)();void audio.resume();for(const [hz,delay,length]of patterns[kind]||patterns.sever){const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime+delay;o.type='sine';o.frequency.value=hz;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.025,t+.025);g.gain.exponentialRampToValueAtTime(.0001,t+length);o.connect(g).connect(audio.destination);o.start(t);o.stop(t+length+.02);o.onended=()=>{o.disconnect();g.disconnect();};}}catch{}}
-    function pressure(){if(s.opened)return 'released';if(!s.boss)return 'calm';if(s.links.robot)return 'locked';if(s.upper)return r.handle>=.85&&s.holding?'override':'critical';return 'severed';}
-    const pressureLines={calm:'',locked:'방문자의 퇴실을 우선합니다.',severed:'기체 제어 연결이 끊겼습니다. 복구하십시오.',critical:'수동 개방을 중단하십시오. 해당 기체는 회수 대상입니다.',override:'B-0. 손을 놓고 회수 명령에 응답하십시오.',released:'B-0. 제어 연결을 복구하십시오.'};
-    const pressureStatus={calm:'시설 폐쇄 절차 · 방문자 퇴실',locked:'B-0 회수 모드 · 동작 제한',severed:'기체 연결 해제 · 출구 잠김',critical:'상부 잠금 해제 · 하부 잠김',override:'수동 개방 처리 중',released:'수동 개방 고정 · 회수 미완료'};
+    function pressure(){if(s.opened)return 'released';if(!s.boss)return 'calm';if(s.links.robot)return M.opticalWindow(s)?'optical':'locked';if(s.upper)return r.handle>=.85&&s.holding?'override':'critical';return 'severed';}
+    const pressureLines={calm:'',optical:'회수 신호 경로를 복구하십시오.',locked:'방문자의 퇴실을 우선합니다.',severed:'기체 제어 연결이 끊겼습니다. 복구하십시오.',critical:'수동 개방을 중단하십시오. 해당 기체는 회수 대상입니다.',override:'B-0. 손을 놓고 회수 명령에 응답하십시오.',released:'B-0. 제어 연결을 복구하십시오.'};
+    const pressureStatus={optical:'광학 신호 차단 · 실제 제어 연결 유지',calm:'시설 폐쇄 절차 · 방문자 퇴실',locked:'B-0 회수 모드 · 동작 제한',severed:'기체 연결 해제 · 출구 잠김',critical:'상부 잠금 해제 · 하부 잠김',override:'수동 개방 처리 중',released:'수동 개방 고정 · 회수 미완료'};
     function updateTension(){if(!inRoom())return;const level=pressure(),line=response?.phase===level?response.text:pressureLines[level];stage.dataset.axiom=level;app.querySelector('.c4-game').dataset.axiom=level;app.querySelector('.c4-main-screen').dataset.robotControl=String(s.links.robot);app.querySelector('.c4-main-screen').dataset.exitControl=String(!s.upper);
       app.querySelector('.c4-main-status').textContent=level==='override'&&stage.dataset.reported?'개방 처리 완료':pressureStatus[level];
       const banner=app.querySelector('.c4-response');banner.hidden=!line;banner.innerHTML=`<b>AXIOM</b><span>${esc(line)}</span>`;
@@ -56,8 +57,8 @@
       <div class="c4-exit-box uncovered" data-c4-object="handle" role="button" tabindex="0" aria-label="문 옆 개방 손잡이"><strong>개방 손잡이</strong><div class="c4-track"></div><div class="c4-handle"><i></i></div></div>
       <div class="c4-high" data-c4-object="high" role="button" tabindex="0" aria-label="문 위 수동 잠금장치"><small>수동 잠금장치</small><div class="c4-high-track"></div><div class="c4-high-knob" data-c4-drag="high" role="slider" tabindex="0" aria-label="상부 잠금쇠" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div></div>
       <div class="c2-robot c4-robot" data-c4-object="robot" role="button" tabindex="0" aria-label="B-0"><div class="robot-sprite live-body">${portrait()}<svg class="c4-smile" viewBox="0 0 1024 1536" aria-hidden="true"><path d="M475 536 Q502 565 540 548"/></svg></div><span class="c4-recovery-light" aria-hidden="true"></span><img class="c4-hold-art" src="./assets/b0-bracing-v1.webp" alt=""><div class="c4-walk-art" aria-hidden="true"><div class="c4-walk-frame"></div></div></div><div class="c4-ceiling-ring" aria-hidden="true"></div>
-      </div><div class="c4-exit-fade" aria-hidden="true"></div><div class="c4-response" aria-live="polite" hidden></div><p class="c2-basic-help">빈 공간을 끌어 둘러보기 · 물건을 눌러 살펴보기</p><div class="c2-speech c4-speech" aria-live="polite" hidden></div></section>
-      <section class="c2-actions c4-actions" aria-label="선택한 대상의 조작"><p>방 안을 살펴보세요.</p></section><footer>${b('B-0에게 말하기','robot','secondary')}${window.B0UI?.inventoryButton()||''}</footer></main>`;
+      ${s.optics?.enabled?'<button class="c4-optical-emitter" data-c4-object="optics" aria-label="광학 회수 장치"><i></i><span>광학 회수</span></button>':''}</div><div class="c4-optic-dock" hidden></div><div class="c4-exit-fade" aria-hidden="true"></div><div class="c4-response" aria-live="polite" hidden></div><p class="c2-basic-help">빈 공간을 끌어 둘러보기 · 물건을 눌러 살펴보기</p><div class="c2-speech c4-speech" aria-live="polite" hidden></div></section>
+      <section class="c2-actions c4-actions" aria-label="선택한 대상의 조작"><p>방 안을 살펴보세요.</p></section><footer>${b('B-0에게 말하기','robot','secondary')}${s.optics?.enabled?b('휴대용 반사판 사용','optics','c4-use-reflector'):''}${window.B0UI?.inventoryButton()||''}</footer></main>`;
       stage=app.querySelector('.c4-stage');world=app.querySelector('.c4-world');bar=app.querySelector('.c4-actions');speech=app.querySelector('.c4-speech');
       stage.addEventListener('pointerdown',down);stage.addEventListener('pointermove',move);stage.addEventListener('pointerup',up);stage.addEventListener('pointercancel',cancel);
       stage.addEventListener('wheel',e=>{if(journey||carryingTransition||app.querySelector('dialog[open]')?.open)return;e.preventDefault();cancelAnimationFrame(camFrame);camera.zoom=Math.max(.65,Math.min(1.6,camera.zoom*Math.exp(-Math.max(-150,Math.min(150,e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?stage.clientHeight:1)))*.0015)));updateCamera();},{passive:false});
@@ -67,14 +68,14 @@
       const f=Math.min(stage.clientWidth*.62,stage.clientHeight*.5)*camera.zoom;stage.style.perspective=f+'px';world.style.transform=`translateZ(${f}px) rotateX(${camera.pitch}deg) rotateY(${camera.yaw}deg) translate3d(${-camera.x*SPACE}px,${camera.height||0}px,${-camera.z*SPACE}px)`;
       app.querySelector('.c4-robot').style.transform=`translate3d(${robot.x-48}px,24px,${robot.z}px) rotateY(${-camera.yaw}deg)`;window.B0RoomSpace?.sync(world);
       window.B0RoomTransit?.bind(world,{read:()=>({...camera,x:camera.x*SPACE,z:camera.z*SPACE,height:camera.height||0}),write:v=>{Object.assign(camera,v,{x:v.x/SPACE,z:v.z/SPACE});updateCamera();},stop:()=>{cancelAnimationFrame(camFrame);pointer=null;},door:{x:-85*SPACE,z:1150,yaw:180,wide:true}});app.querySelector('.c4-zoom').textContent=Math.round(camera.zoom*100)+'%';stage.dataset.yaw=Math.round(camera.yaw);}
-    function update(){if(!inRoom())return;const stopped=s.met&&s.links.robot;
+    function update(){if(!inRoom())return;const stopped=s.met&&s.links.robot&&!M.opticalWindow(s);
       stage.classList.toggle('c4-confrontation',s.boss&&!s.opened);app.querySelector('.c4-robot').classList.toggle('controlled',stopped);
       app.querySelector('.c4-door').classList.toggle('open',s.opened||s.met&&!s.boss);app.querySelector('.c4-exit-crossing').disabled=!(s.opened||s.met&&!s.boss);app.querySelector('.c4-exit-box').classList.toggle('available',M.ready(s));
       app.querySelector('.c4-door-status').textContent=s.opened?'통로 열림 · 개방 고정':s.met&&!s.boss?'방문자 통과 허용':s.boss?'반출 제한 · 기체 회수':'방문자 출구';
-      updateMechanical();updateTension();updateRobot();updateCamera();}
-    function updateRobot(){if(!inRoom())return;const actor=app.querySelector('.c4-robot'),controlled=s.met&&s.links.robot,now=performance.now();
+      const tool=app.querySelector('.c4-use-reflector');if(tool)tool.hidden=!(s.boss&&s.links.robot);const emitter=app.querySelector('.c4-optical-emitter');if(emitter)emitter.dataset.active=String(s.boss&&s.links.robot&&!M.opticalWindow(s));updateMechanical();updateTension();updateRobot();updateCamera();}
+    function updateRobot(){if(!inRoom())return;const actor=app.querySelector('.c4-robot'),controlled=s.met&&s.links.robot&&!M.opticalWindow(s),now=performance.now();
       if(controlled){wakeUntil=0;recoveryPending=false;}else if(lastControlled){recoveryPending=!!modalEl;wakeUntil=now+(modalEl?500:1700);}lastControlled=controlled;
-      const pose=journey?'walking':s.holding?'holding':r.lifted?'lifting':controlled?'controlled':now<wakeUntil?'recovering':s.opened?'ready':s.boss?'alert':'idle';actor.dataset.pose=pose;actor.dataset.mood=controlled?'blank':s.opened?'friendly':s.boss?'concerned':'attentive';actor.classList.toggle('controlled',controlled);}
+      const pose=journey||opticalMotion?'walking':s.holding?'holding':r.lifted?'lifting':controlled?'controlled':now<wakeUntil?'recovering':s.opened?'ready':s.boss?'alert':'idle';actor.dataset.pose=pose;actor.dataset.mood=controlled?'blank':s.opened?'friendly':s.boss?'concerned':'attentive';actor.classList.toggle('controlled',controlled);}
     function farewellLine(){window.B0UI?.cameraActive(false,app);s.line=Math.min(s.line,farewell.length-1);say(...farewell[s.line]);speech.insertAdjacentHTML('beforeend',b(s.line===farewell.length-1?'함께 바깥으로':'다음','story-next','next'));actions('');}
     function startJourney(kind){if(journey||!s.opened||s.links.robot)return;if(s.holding){say('robot','아직 잡고 있습니다. 놓아도 될까요?');robotMenu();return;}cancelAnimationFrame(camFrame);cancelAnimationFrame(journeyFrame);closeModal(false);conversation=null;pointer=null;speech.hidden=true;
       const from={...robot},view={...camera},start=performance.now(),duration=kind==='approach'?2200:3000,turn=((-180-view.yaw+540)%360)-180;
@@ -97,6 +98,7 @@
       const high=app.querySelector('.c4-high-knob');high.style.translate=`${(s.upper?1:r.high)*70}px 0`;high.setAttribute('aria-valuenow',s.upper?'100':String(Math.round(r.high*100)));
     }
     function loop(t){if(dead||!inRoom())return;const was=s.opened;M.tick(s,r,previous?t-previous:0);previous=t;updateMechanical();updateRobot();
+      if(opticalMotion){const motion=opticalMotion,p=Math.min(1,(t-motion.start)/1800),q=p*p*(3-2*p);robot={x:motion.from.x+(-270-motion.from.x)*q,z:motion.from.z+(0-motion.from.z)*q};updateCamera();if(p>=1){opticalMotion=null;carryingTransition=false;if(M.opticalCut(s)){save();app.querySelector('.c4-optic-dock').hidden=true;update();react('광학 회수 연결 분리.','sever');say('robot','실제 제어 연결을 끊었습니다. 이제 반사판을 거두어도 움직일 수 있습니다.');actions('B-0의 회수 제어가 해제됐다.',[['문 위 잠금장치 살펴보기','inspect-high'],['B-0에게 부탁하기','robot']]);}}}
       if(!was&&s.opened){save();update();react('B-0. 제어 연결을 복구하십시오.','released');say('robot','아직 기다리라는 부탁을 받고 있습니다.');select('door');}
       if(stage.dataset.axiom!==pressure())updateTension();
       if(r.latch>=.35&&!s.opened&&!stage.dataset.reported){stage.dataset.reported='yes';react('개방 처리가 완료되었습니다. 기체는 손잡이를 놓으십시오.','critical');say('robot','놓을까요?');}
@@ -107,6 +109,7 @@
     }
     function approach(id){const targets={screen:{x:0,z:-90,yaw:0,pitch:26,zoom:.75},console:{x:-291+235/SPACE,z:0,yaw:-90,pitch:-7,zoom:1},records:{x:291-235/SPACE,z:0,yaw:90,pitch:0,zoom:1},door:{x:-85,z:290-250/SPACE,yaw:180,pitch:-5,zoom:1},handle:{x:-242.5,z:286-235/SPACE,yaw:180,pitch:-12,zoom:1},high:{x:-85,z:286-235/SPACE,yaw:180,pitch:28,zoom:1},robot:{x:robot.x,z:robot.z+260/SPACE,yaw:0,pitch:-18,zoom:1}};if(targets[id]&&!r.lifted)cameraTo({...targets[id],height:0});}
     function select(id){if(conversation){say(...conversation.lines[conversation.i]);return;}if(carryingTransition)return;
+      if(id==='optics'){opticsControls();return;}const opticDock=app.querySelector('.c4-optic-dock');if(opticDock)opticDock.hidden=true;
       if(selection==='ask'){selection=null;ask(id);return;}
       if(selection==='lift-target'){selection=null;if(id!=='high'){say('robot','그곳에는 들어 올려 드릴 자리가 없습니다.');robotMenu();return;}lift();return;}
       if(selection==='hold-target'){selection=null;if(id!=='handle'){say('robot','그 물건은 당긴 채 잡을 수 없습니다.');robotMenu();return;}hold(true);return;}
@@ -119,9 +122,11 @@
       if(id==='handle')handleActions();if(id==='robot')robotMenu(true);
     }
     function handleActions(){actions('문 옆 개방 손잡이',[['살펴보기','inspect-handle'],['직접 당겨 보기','own-side'],['B-0에게 부탁하기','robot'],['선택 닫기','clear']]);}
-    function robotMenu(respond=false){if(respond&&window.B0ObjectDialogue?.open('central',s,{target:selection,lifted:r.lifted,latch:r.latch},()=>robotMenu(false))){speech.hidden=true;return;}if(respond)say('robot',window.B0RoomDialogue?.reply('central',s,{target:selection,lifted:r.lifted,latch:r.latch})||'확인한 장치에 대해 이야기해 주세요.');actions('B-0에게 부탁하기',[
+    function robotMenu(respond=false){if(s.optics?.enabled&&!s.optics.cut&&s.boss){if(respond)say('robot',M.opticalWindow(s)?'지금은 움직일 수 있습니다. 반사판을 유지해 주시면 실제 연결을 끊으러 갈 수 있습니다.':'광학 회수 신호가 제 움직임을 제한하고 있습니다. 휴대용 반사판으로 신호 경로를 바꿀 수 있을지 확인해 주세요.');actions('B-0의 광학 회수 상태',[['몸의 상태를 확인해 줘','optics-body'],['휴대용 반사판 사용','optics'],['닫기','clear']]);return;}if(respond&&window.B0ObjectDialogue?.open('central',s,{target:selection,lifted:r.lifted,latch:r.latch},()=>robotMenu(false))){speech.hidden=true;return;}if(respond)say('robot',window.B0RoomDialogue?.reply('central',s,{target:selection,lifted:r.lifted,latch:r.latch})||'확인한 장치에 대해 이야기해 주세요.');actions('B-0에게 부탁하기',[
       ['몸의 상태를 확인해 줘','ask-body'],['내가 고른 곳 확인해 줘','choose-target'],['나를 들어 올려 줘','request-lift'],['당긴 채 잡고 있어','request-hold'],
       ...(r.lifted?[['내려 줘','lower']]:[]),...(s.holding?[['계속 잡고 있어','keep-hold'],['이제 놓아도 돼','release-b0']]:[]),...(s.met&&!s.boss?[['같이 가자','return-b0']]:[]),['닫기','clear']]);}
+    function opticsControls(){if(!s.optics?.enabled){say('student','거울 관찰실에서 휴대용 반사판을 챙겨야겠어.');return;}if(!s.boss||!s.links.robot){say('student','지금은 회수 제어가 작동하고 있지 않아.');return;}closeModal(false);selection='optics';const o=s.optics,O=window.B0Reflection,result=o.deployed?M.opticalResult(s):null,dock=app.querySelector('.c4-optic-dock');dock.hidden=false;dock.innerHTML=`<div><b>광학 회수 장치 · 반사판 ${o.angle}°</b><span>${o.holding?'반사 유지 · B-0가 움직일 수 있음':result?.received?'감시 센서에 빛 도착 · 각도 유지 가능':o.deployed?'감시 센서 미도달':'광원과 감시 센서의 현재 배치를 확인하자.'}</span></div>${window.B0OpticalView.diagram(O.bossLayout(),{a:o.angle},result,{a:'반사판',source:'송신기',receiver:'감시 센서'})}`;
+      actions(o.holding?'반사판을 유지하는 동안 B-0에게 부탁할 수 있다.':'반사판 각도를 고른 뒤 빛의 실제 경로를 확인하자.',[...(!o.holding?[['↶ 15°','optics-left'],['15° ↷','optics-right'],['반사판 대고 확인','optics-test'],['이 각도로 유지하기','optics-hold']]:[['B-0에게 실제 연결 끊기 부탁','optics-cut'],['반사판 거두기','optics-release']]),['B-0의 몸 상태 확인','optics-body'],['선택 닫기','optics-close']]);}
     function meet(){if(s.met)return;s.met=true;save();update();talk(offer,()=>select('door'));}
     function challenge(){if(!s.met){meet();return;}if(s.boss)return;s.boss=true;s.bodyChecked=false;save();sound(true);update();talk(threat,()=>select('robot'));}
     function lift(){if(!s.boss||s.links.robot){say('robot',s.links.robot&&s.boss?'회수 모드로 움직일 수 없습니다.':'먼저 출구를 확인해 보겠습니다.');return;}if(s.holding){say('robot','손잡이를 잡고 있습니다. 먼저 놓아도 될까요?');return;}
@@ -139,9 +144,9 @@
     function closeModal(reveal=true){const wasOpen=!!modalEl;if(modalEl){modalEl.close();modalEl.remove();modalEl=null;}if(wasOpen&&reveal&&recoveryPending&&!dead&&inRoom()&&!s.links.robot){recoveryPending=false;wakeUntil=performance.now()+1850;const actor=app.querySelector('.c4-robot');actor.dataset.pose='idle';void actor.offsetWidth;updateRobot();approach('robot');}}
     function history(){window.B0RoomDialogue?.remember(s,'records',2);save();modal('시설 운영 기록',`<div class="c4-history"><p>시설 폐쇄 절차 진행 중</p><p>잔여 이용자: 퇴실</p><p>잔여 교육 기체: 회수 후 초기화</p>${s.boss?'<p>B-0 · 미등록 행동 학습 / 승인되지 않은 이동 / 회수 필요</p>':''}</div>`);}
     const names={robot:'B-0 원격 동작 제어'};
-    function connections(){window.B0RoomDialogue?.remember(s,'console',3);save();modal('기체 제어 연결',`<section class="c4-link-row" data-link-row="robot"><button data-c4="scope-robot" class="c4-link-name">B-0 원격 동작 제어</button><div class="c4-wire"><span></span><button class="c4-plug" data-c4-drag="plug-robot" data-c4="scope-robot" aria-label="B-0 원격 동작 제어 연결 단자"><i></i></button><small>AXIOM</small></div>${b('분리','disconnect-robot','quiet c4-link-toggle')}</section><p class="c4-scope" aria-live="polite">기체의 상태와 연결 표기를 확인할 수 있습니다.</p>`);updateLinks();}
+    function connections(){window.B0RoomDialogue?.remember(s,'console',3);save();if(s.optics?.enabled&&!s.optics.cut){modal('광학 회수 연결',`<p>회수 제어가 활성화되어 원격 분리 조작이 잠겨 있다. 실제 연결 단자는 B-0 쪽에 있다.</p><p>광학 회수 신호를 감시 센서 쪽으로 돌려 보내면 B-0가 연결 단자에 접근할 수 있다.</p>${b('휴대용 반사판 사용','optics')}`);return;}modal('기체 제어 연결',`<section class="c4-link-row" data-link-row="robot"><button data-c4="scope-robot" class="c4-link-name">B-0 원격 동작 제어</button><div class="c4-wire"><span></span><button class="c4-plug" data-c4-drag="plug-robot" data-c4="scope-robot" aria-label="B-0 원격 동작 제어 연결 단자"><i></i></button><small>AXIOM</small></div>${b('분리','disconnect-robot','quiet c4-link-toggle')}</section><p class="c4-scope" aria-live="polite">기체의 상태와 연결 표기를 확인할 수 있습니다.</p>`);updateLinks();}
     function updateLinks(){if(!modalEl)return;const row=modalEl.querySelector('[data-link-row="robot"]');if(!row)return;row.classList.toggle('disconnected',!s.links.robot);row.querySelector('.c4-link-toggle').textContent=s.links.robot?'분리':'다시 연결';row.querySelector('.c4-link-toggle').dataset.c4=(s.links.robot?'disconnect-':'connect-')+'robot';}
-    function link(id,on){if(on&&(r.lifted||s.holding)){modalEl.querySelector('.c4-scope').textContent='B-0가 다른 동작을 유지하고 있습니다. 먼저 동작을 마쳐 주세요.';return;}if(!M.connect(s,id,on)){modalEl.querySelector('.c4-scope').textContent=s.opened?'개방 고정 상태입니다.':s.boss?'회수 기체의 상태 확인이 필요합니다.':'회수 절차가 실행되지 않았습니다.';sound(true);return;}
+    function link(id,on){if(s.optics?.enabled&&!s.optics.cut){say('robot','광학 회수 제어가 활성화되어 있습니다. 신호를 차단하는 동안 제가 실제 연결을 끊을 수 있습니다.');return;}if(on&&(r.lifted||s.holding)){modalEl.querySelector('.c4-scope').textContent='B-0가 다른 동작을 유지하고 있습니다. 먼저 동작을 마쳐 주세요.';return;}if(!M.connect(s,id,on)){modalEl.querySelector('.c4-scope').textContent=s.opened?'개방 고정 상태입니다.':s.boss?'회수 기체의 상태 확인이 필요합니다.':'회수 절차가 실행되지 않았습니다.';sound(true);return;}
       M.release(s,r);save();updateLinks();update();modalEl.querySelector('.c4-scope').textContent=on?'원격 동작 제어 연결됨':'원격 동작 제어 분리됨';
       react(on?'기체 제어 연결 복구. 회수 모드를 재개합니다.':'기체 제어 연결이 끊겼습니다. 복구하십시오.','sever');
       if(!on)say('robot','다시 움직일 수 있습니다. 이번에는 제 상태부터 확인했습니다.');
@@ -166,13 +171,21 @@
       if(a==='mute'){mute=!mute;try{const v=JSON.parse(storage.getItem('project-b0-firstperson-v4'))||{};v.muted=mute;storage.setItem('project-b0-firstperson-v4',JSON.stringify(v));}catch{}closeModal();return;}
       if(a==='controls'){modal('사용법','<p>빈 공간을 끌거나 방향키로 둘러보고, 물건을 눌러 가까이 살펴봅니다.</p><p>연결 단자는 옆으로 끌어 분리합니다. 닿을 수 있는 잠금쇠와 문 손잡이를 직접 끌어 조작할 수 있습니다. 각 물건의 조작 버튼도 사용할 수 있습니다.</p><p>B-0에게 부탁한 뒤 대상 물건을 직접 누릅니다. 처음 위치로는 시점과 배율만 초기화합니다. 진행은 자동 저장됩니다.</p>');return;}
       if(a==='reset-confirm'){modal('4차시를 다시 시작할까요?',`<p>다른 차시의 기록은 유지됩니다.</p>${b('4차시 초기화','reset')}`);return;}
-      if(a==='reset'){s=M.fresh();r={handle:0,latch:0,lifted:false,high:0};robot={x:93,z:-140};wakeUntil=0;recoveryPending=false;carryingTransition=false;lastControlled=false;camera={x:0,z:60,yaw:-15,pitch:14,zoom:.7};save();render();return;}
+      if(a==='reset'){s=M.fresh();if(reflector)M.enableOptics(s);opticalMotion=null;r={handle:0,latch:0,lifted:false,high:0};robot={x:93,z:-140};wakeUntil=0;recoveryPending=false;carryingTransition=false;lastControlled=false;camera={x:0,z:60,yaw:-15,pitch:14,zoom:.7};save();render();return;}
       if(a==='back'){app.querySelector('dialog')?.close?.();onBack();return;}
       if(a==='story-next'){if(s.phase==='farewell'){if(s.line<farewell.length-1){s.line++;save();farewellLine();}else startJourney('exit');return;}const lines=s.phase==='intro'?intro:ending;if(s.line<lines.length-1)s.line++;else{s.phase=s.phase==='intro'?'room':'complete';s.line=0;}save();render();return;}
       if(a==='revisit'){s.phase='room';s.line=0;robot={x:93,z:-140};camera={x:0,z:60,yaw:-15,pitch:14,zoom:.7};save();render();return;}
       if(a==='reflection'){modal('이번 모험 돌아보기',`<p>B-0에게 전에 가르친 행동이 이번에는 어디에 쓰였나요?</p><p>혼자 할 수 없었던 일을 어떻게 나누어 했나요?</p><p>완료라는 표시와 실제 문 상태는 같았나요?</p><small>정해진 답을 고르는 시험이 아닙니다. 함께 이야기해 보세요.</small>`);return;}
       if(s.phase!=='room')return;
       if(conversation&&!['talk-next','dismiss'].includes(a)){say(...conversation.lines[conversation.i]);return;}
+      if(a==='optics'){opticsControls();return;}
+      if(a==='optics-left'||a==='optics-right'){if(M.opticalAdjust(s,a==='optics-left'?-15:15)){save();opticsControls();update();}return;}
+      if(a==='optics-test'){const result=M.opticalProbe(s);if(result){save();opticsControls();say('student',result.received?'빛이 감시 센서로 들어갔어. 이 각도를 유지하면 되겠는데.':'빛이 센서 쪽으로 가지 않았어. 꺾인 경로를 다시 보자.');}return;}
+      if(a==='optics-hold'){if(M.opticalHold(s,true)){save();opticsControls();update();say('robot','회수 신호가 차단되었습니다. 반사판을 유지해 주시면 연결 단자로 갈 수 있습니다.');}else say('student','먼저 반사판을 대고 빛이 감시 센서에 들어가는지 확인해야겠어.');return;}
+      if(a==='optics-release'){M.opticalHold(s,false);save();opticsControls();update();return;}
+      if(a==='optics-body'){s.bodyChecked=true;M.log(s,'body-inspection',M.opticalWindow(s)?'temporary-release':'optical-lock');save();opticsControls();say('robot',M.opticalWindow(s)?'회수 제어가 잠시 풀려 손과 발을 움직일 수 있습니다. 실제 연결은 아직 남아 있습니다.':'광학 회수 신호가 제 움직임을 제한합니다. 연결 단자는 제가 직접 조작할 수 있습니다.');return;}
+      if(a==='optics-cut'){if(!M.canOpticalCut(s)){say('robot',!s.bodyChecked?'제 몸 상태를 먼저 확인해 주세요.':'반사판으로 회수 신호를 차단한 상태를 유지해 주세요.');return;}carryingTransition=true;opticalMotion={start:performance.now(),from:{...robot}};actions('아이는 반사판을 유지하고, B-0가 실제 연결 단자로 이동한다.');updateRobot();return;}
+      if(a==='optics-close'){app.querySelector('.c4-optic-dock').hidden=true;selection=null;actions('');return;}
       if(a==='enter-exit'){if(selection==='ask'||selection==='lift-target'||selection==='hold-target'){select('door');return;}if(!s.met){meet();return;}if(!s.boss){challenge();return;}if(s.opened)startJourney('approach');else select('door');return;}
       if(a==='talk-next'){next();return;}if(a==='dismiss'){conversation=null;selection=null;pointer=null;speech.hidden=true;actions('');stage?.focus({preventScroll:true});return;}
       if(a==='home'){if(r.lifted){lower();return;}cancelAnimationFrame(camFrame);camera={x:0,z:60,yaw:-15,pitch:14,zoom:.7,height:0};updateCamera();return;}

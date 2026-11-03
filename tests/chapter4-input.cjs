@@ -91,3 +91,10 @@ const revisit=ctx.window.startChapterFour({app,portrait:()=>'',onBack(){},arrive
 assert.equal(revisit.state().s.phase,'room');assert.equal(saved.phase,'room','room arrival checkpoint persists after refresh');
 assert.match(app.innerHTML,/2층 중앙관리실/);assert.doesNotMatch(app.innerHTML,/c4-bedroom/);revisit.dispose();
 console.log('PASS: arriving from the corridor reopens and saves the central room instead of the bedroom ending');
+
+Object.assign(initial,{...M.fresh(),phase:'room',met:true,boss:true,bodyChecked:false});now=0;
+ctx.window.B0Reflection=require('../reflection-model.js');ctx.window.B0OpticalView={diagram:()=>'<svg></svg>'};
+const optical=ctx.window.startChapterFour({app,portrait:()=>'',onBack(){},reflector:true});optical.act('optics');assert.match(node('.c4-optic-dock').innerHTML,/감시 센서/);optical.act('disconnect-robot');assert.equal(optical.state().s.links.robot,true,'manual console action cannot bypass the optical encounter');
+optical.act('optics-test');assert.equal(optical.state().s.optics.trials,1);optical.act('optics-hold');assert.equal(optical.state().s.optics.holding,false,'wrong angle cannot free B-0');
+for(let i=0;i<4;i++)optical.act('optics-right');optical.act('optics-test');optical.act('optics-hold');assert.equal(optical.state().s.optics.holding,true);optical.act('optics-cut');assert.equal(optical.state().s.links.robot,true,'body inspection is still required');optical.act('optics-body');optical.act('optics-cut');step(1900);assert.equal(optical.state().s.links.robot,false);assert.equal(saved.optics.cut,true);optical.dispose();assert.equal(frames.size,0);
+console.log('PASS: actual optical controller blocks bypass, handles failed and corrected aim, requires inspection, moves B-0 to sever the physical link and cleans up');

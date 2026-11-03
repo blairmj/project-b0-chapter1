@@ -6,14 +6,16 @@
     storage:{name:'물류 보관실',floor:1,x:268,z:-320,yaw:90},
     access:{name:'기록 보관실',floor:1,x:-268,z:-950,yaw:-90},
     mirror:{name:'유리 관찰실',floor:1,x:268,z:-1320,yaw:90},
+    reflection:{name:'거울 관찰실',floor:1,x:-268,z:-1450,yaw:-90},
     keybox:{name:'열쇠 보관함',floor:1,x:-268,z:-1640,yaw:-90},
     stairs:{name:'2층 계단',floor:1,x:0,z:-1810,yaw:0},
     outside:{name:'외부 출입구',floor:1,x:-268,z:-1160,yaw:-90},
     central:{name:'중앙관리실',floor:2,x:0,z:-2540,yaw:0}
   };
-  const fresh=()=>({version:1,mode:'hall',floor:1,camera:{x:0,z:80,yaw:0,pitch:-4},cleared:{practice:false,education:false,storage:false,access:false,mirror:false},recordMemory:false,keyboxOpen:false,keyTaken:false,stairsUnlocked:false,stairRejected:false,barrierTriggered:false,powerOut:false,powerTalked:false,emergencyOn:false,companion:null,visited:[]});
+  const fresh=()=>({version:1,mode:'hall',floor:1,camera:{x:0,z:80,yaw:0,pitch:-4},cleared:{practice:false,education:false,storage:false,access:false,mirror:false,reflection:false},opticsRoute:true,reflector:false,recordMemory:false,keyboxOpen:false,keyTaken:false,stairsUnlocked:false,stairRejected:false,barrierTriggered:false,powerOut:false,powerTalked:false,emergencyOn:false,companion:null,visited:[]});
   function restore(raw){
     const s=fresh();if(!raw||raw.version!==1)return s;
+    s.opticsRoute=raw.opticsRoute===true;s.reflector=raw.reflector===true;
     for(const id of Object.keys(s.cleared))s.cleared[id]=raw.cleared?.[id]===true;
     for(const id of ['recordMemory','keyboxOpen','keyTaken','stairsUnlocked','stairRejected','powerTalked'])s[id]=raw[id]===true;
     if(s.stairsUnlocked)s.keyTaken=true;
@@ -26,17 +28,17 @@
     s.powerOut=raw.powerOut===true||(raw.powerOut===undefined&&(s.barrierTriggered||s.cleared.access||s.cleared.mirror));
     s.emergencyOn=s.powerOut&&raw.emergencyOn===true;
     if(raw.companion&&Number.isFinite(raw.companion.x)&&Number.isFinite(raw.companion.z)&&raw.companion.floor===s.floor)s.companion=companionSpot(raw.companion.x,raw.companion.z,s.floor);
-    if(['education','practice'].includes(raw.room))s.room=raw.room;
+    if(['education','practice','reflection'].includes(raw.room))s.room=raw.room;
     s.visited=Array.isArray(raw.visited)?raw.visited.filter(id=>doors[id]):[];return s;
   }
-  function merge(s,p){s.recordMemory=p.education===true;for(const id of Object.keys(s.cleared))s.cleared[id]||=p[id]===true;return s;}
+  function merge(s,p){s.recordMemory=p.education===true;s.reflector=p.reflector===true;for(const id of Object.keys(s.cleared))s.cleared[id]||=p[id]===true;return s;}
   function bound(s,x,z){
     x=Math.max(-180,Math.min(180,x));
     if(s.floor===2)return {x,z:Math.max(-2435,Math.min(-2150,z))};
     const min=!s.cleared.mirror?-1460:-1700;
     return {x,z:Math.max(min,Math.min(160,z))};
   }
-  function canEnter(s,id){if(id==='access')return s.recordMemory===true;if(['practice','education','storage','access','mirror'].includes(id))return true;if(id==='central')return s.floor===2&&(s.stairsUnlocked||s.reviewMode);return false;}
+  function canEnter(s,id){if(id==='access')return s.recordMemory===true;if(id==='reflection')return s.cleared.mirror===true||s.reviewMode===true;if(['practice','education','storage','access','mirror'].includes(id))return true;if(id==='central')return s.floor===2&&(s.stairsUnlocked||s.reviewMode);return false;}
   function returned(s,from,completed=true){
     // Backtracking uses the same doorway without marking its puzzle complete.
     // Solved rooms retain their distinct exits (window / hidden passage).
@@ -52,12 +54,13 @@
     if(from==='storage'){s.cleared.storage=true;s.camera.z=-790;}
     if(from==='access'){s.cleared.access=true;s.camera.z=-1100;}
     if(from==='mirror'){s.cleared.mirror=true;s.camera.z=-1610;s.camera.yaw=-22;}
+    if(from==='reflection'){s.cleared.reflection=true;s.camera.z=-1610;s.camera.yaw=0;}
     if(from==='central'){s.floor=2;s.camera.z=-2350;s.camera.yaw=0;}
     if(from==='practice')s.cleared.practice=true;
     return s;
   }
   function setEmergency(s,on){if(!s.powerOut)return false;s.emergencyOn=on===true;return true;}
-  function takeKey(s){if(s.floor!==1||!s.cleared.mirror||!s.keyboxOpen||s.keyTaken)return false;s.keyTaken=true;return true;}
+  function takeKey(s){if(s.floor!==1||!s.cleared.mirror||!s.keyboxOpen||s.keyTaken||s.opticsRoute&&!s.reflector)return false;s.keyTaken=true;return true;}
   function unlock(s){if(!s.keyTaken||s.floor!==1)return false;s.stairsUnlocked=true;return true;}
   function floor(s,n){if(n===2&&!s.stairsUnlocked)return false;s.floor=n===2?2:1;s.companion=null;s.camera={x:0,z:s.floor===2?-2170:-1700,yaw:s.floor===2?0:180,pitch:-4};return true;}
   function companionSpot(x,z,floor){return {x:Math.max(-175,Math.min(175,x)),z:Math.max(floor===2?-2440:-2120,Math.min(160,z)),floor};}

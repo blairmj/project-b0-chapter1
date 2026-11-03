@@ -97,7 +97,7 @@
       const row=signs.length;signs.push({label:d.name,sub:d.floor===2?'02 / CENTRAL CONTROL':'01 / RESEARCH FACILITY'});
       panel(-w/2-17,top-45,w/2+17,top-17,5,{color:[1,1,1],kind:2},[[0,row/8],[1,row/8],[1,(row+1)/8],[0,(row+1)/8]]);
     }
-    for(const id of ['practice','education','storage','access','mirror','outside','central'])frameDoor(id,doors[id]);
+    for(const id of ['practice','education','storage','access','mirror','reflection','outside','central'])frameDoor(id,doors[id]);
     signs.push({label:'2F · 중앙관리실',sub:'STAIRWAY / AUTHORIZATION REQUIRED'});
     quad([-125,-278,-1805],[125,-278,-1805],[125,-248,-1805],[-125,-248,-1805],{color:[1,1,1],kind:2},'stairs','door',[[0,7/8],[1,7/8],[1,8/8],[0,8/8]]);
     for(const x of [-190,190]){
@@ -130,7 +130,7 @@
       if(hi-lo>18)panel(lo+5,top+13,hi-5,bottom-13,3,{color:[.52,.62,.68],kind:1});
       const grip=side*(wide?16:11)+shift;if(grip-2>=lo&&grip+2<=hi)panel(grip-2,top+h*.46,grip+2,top+h*.65,7,pale);
     }
-    if(progress<=0||!preview||id==='central')return;
+    if(progress<=0||!preview||['central','reflection'].includes(id))return;
     const row={practice:0,education:0,storage:1,access:2,mirror:3}[id]??2;
     panel(-310,top-150,310,bottom,-470,{color:[.85,.9,.94],kind:5},[[0,row/5],[1,row/5],[1,(row+1)/5],[0,(row+1)/5]]);
     for(const side of [-1,1])target.quad(P(side*310,top-150,0),P(side*310,top-150,-470),P(side*310,bottom,-470),P(side*310,bottom,0),metal);
@@ -221,7 +221,7 @@
     function draw(b,count){gl.bindBuffer(gl.ARRAY_BUFFER,b);let offset=0;for(const a of attributes){gl.enableVertexAttribArray(a.location);gl.vertexAttribPointer(a.location,a.size,gl.FLOAT,false,52,offset*4);offset+=a.size;}gl.drawArrays(gl.TRIANGLES,0,count/13);}
     function buildDynamic(time){
       dynamic.data.length=0;dynamic.faces.length=0;const {box,quad}=dynamic;
-      for(const id of ['practice','education','storage','access','mirror','outside','central'])doorway(dynamic,id,model.doors[id],current?.passage?.id===id?current.passage.open:0,!current?.portal);
+      for(const id of ['practice','education','storage','access','mirror','reflection','outside','central'])doorway(dynamic,id,model.doors[id],current?.passage?.id===id?current.passage.open:0,!current?.portal);
       if(!state.cleared.storage){
         const y=-290-(1-shutter)*490;
         box(-269,y,-613,538,470,8,{color:[.32,.42,.49],kind:1},'shutter');

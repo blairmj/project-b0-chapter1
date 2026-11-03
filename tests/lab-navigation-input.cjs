@@ -50,7 +50,7 @@ g.act('talk-next');assert.match(node('.lab-notice').innerHTML,/열쇠가 있어�
 g.walkTo('keybox');finish();state.keyboxOpen=false;
 g.act('robot');assert.match(node('.lab-notice').innerHTML,/이 보관함/);g.act('talk-next');assert.doesNotMatch(node('.lab-notice').innerHTML,/계단실/);g.act('talk-close');assert.match(node('.lab-actions').innerHTML,/열어 보기/);
 g.act('keybox-open');g.act('robot');g.act('talk-next');assert.match(node('.lab-notice').innerHTML,/계단실/);g.act('talk-close');assert.match(node('.lab-actions').innerHTML,/열쇠 집기/);
-const writes=htmlWrites;g.act('take-key');assert.ok(state.keyTaken);assert.equal(htmlWrites,writes,'picking up a key must not rebuild the corridor or replace B-0');
+g.act('take-key');assert.equal(state.keyTaken,false,'the optical room must be completed in new adventures');state.reflector=true;const writes=htmlWrites;g.act('take-key');assert.ok(state.keyTaken);assert.equal(htmlWrites,writes,'picking up a key must not rebuild the corridor or replace B-0');
 g.walkTo('stairs');finish();g.act('robot');g.act('talk-next');g.act('talk-next');assert.match(node('.lab-notice').innerHTML,/우리가 주운 열쇠/);g.act('talk-close');
 g.act('unlock-stairs');g.act('robot');g.act('talk-next');assert.match(node('.lab-notice').innerHTML,/차단이 해제/);g.act('talk-close');g.act('upstairs');finish();assert.equal(state.floor,2);assert.equal(state.companion.floor,2);assert.equal(M.groundAt(state.companion.z),360);
 g.act('downstairs');finish();assert.equal(state.floor,1);assert.equal(M.groundAt(state.companion.z),0);assert.ok(state.stairsUnlocked);

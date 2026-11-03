@@ -48,7 +48,7 @@
       app.innerHTML=`<main class="game lab-game">${window.B0UI?.header({place:`${s.floor}층 연구소 복도`,namespace:"lab",reset:"view-home",zoomClass:"lab-zoom",active:true})||""}<section class="lab-stage ${s.powerOut?'power-out':''}" tabindex="0" aria-label="직접 이동하는 연구소 복도. 바닥을 누르면 그곳으로 걷고 빈 공간을 끌면 둘러봅니다. 방향키와 이동 버튼도 사용할 수 있습니다."><canvas class="lab-webgl-canvas" role="img" aria-label="하나로 연결된 연구소 복도와 계단"></canvas><div class="lab-world"><div class="lab-trip-panel ${s.powerOut?'tripped':''}" aria-hidden="true"></div>
       ${Array.from({length:7},(_,i)=>{const z=90-i*300;return [-1,1].map(side=>`<div class="lab-wall" style="transform:translate3d(${side*270}px,0,${z}px) rotateY(${-side*90}deg)"><span class="lab-wall-light"></span><span class="lab-pipe"></span></div>`).join('');}).join('')}<div class="lab-floor"></div><div class="lab-ceiling"></div>${Array.from({length:8},(_,i)=>{const z=80-i*260;return `<div class="lab-fluorescent" style="transform:translate3d(0,-282px,${z}px) rotateX(-90deg);--light-order:${i}" aria-hidden="true"><i></i></div><div class="lab-light-pool" style="transform:translate3d(0,179px,${z}px) rotateX(90deg)" aria-hidden="true"></div>`;}).join('')}${[-184,184].map(x=>`<div class="lab-ceiling-conduit" style="transform:translate3d(${x}px,-279px,-840px) rotateX(-90deg)" aria-hidden="true"></div>`).join('')}<div class="lab-end"></div>
       <div class="lab-barrier ${s.cleared.storage?'open':s.barrierTriggered?'':'raised'}" data-lab-object="shutter" role="button" tabindex="0" aria-label="복도 안전 차단문"><span>구역 폐쇄</span></div><div class="lab-glass-gate ${s.cleared.mirror?'open':''}" data-lab-object="glass" role="button" tabindex="0" aria-label="북쪽 복도의 유리 차단문"><i></i><i></i></div>
-      ${['practice','education','storage','access','mirror','outside','central'].map(door).join('')}
+      ${['practice','education','storage','access','mirror','reflection','outside','central'].map(door).join('')}
       <div class="lab-keybox ${s.keyboxOpen?'open':''}" data-lab-object="keybox" role="button" tabindex="0" aria-label="벽면 열쇠 보관함"><div class="lab-keybox-back">${s.keyTaken?'':keyArt}</div><div class="lab-keybox-lid"><i></i></div></div>
       <div class="lab-stair-entry ${s.stairsUnlocked?'authorized':''}" data-lab-object="stairs" role="button" tabindex="0" aria-label="2층 계단"><span>2F · 중앙관리실</span><i class="lab-stair-field" aria-hidden="true"></i></div><div class="lab-stair-control ${s.stairsUnlocked?'authorized':''}" data-lab-object="stair-control" role="button" tabindex="0" aria-label="계단 차단 제어기"><span>2F</span><i></i><b>제어</b></div>
       ${Array.from({length:14},(_,i)=>`<div class="lab-step" style="transform:translate3d(0,${180-(i+1)*360/14}px,${-1820-i*22}px) rotateX(90deg)"></div><div class="lab-riser" style="transform:translate3d(0,${180-(i+1)*360/14}px,${-1809-i*22}px)"></div>`).join('')}
@@ -89,7 +89,7 @@
       if(walking)return;lookInterruptible=false;cancelTalk();selection=null;actions('');notice.hidden=true;cancel();
       const d=M.doors[id],a=d.yaw*Math.PI/180,forward={x:Math.sin(a),z:-Math.cos(a)},checkpoint={...camera};
       // The control room is entered through its live interior, without the hall's placeholder room.
-      if(inward&&id==='central'){onEnter(id);return;}
+      if(inward&&['central','reflection'].includes(id)){onEnter(id);return;}
       passage={id,open:inward?0:1};walking=true;botMoving=false;
       const doorEl=app.querySelector('.lab-door-'+id);
       function phase(to,ms,opening,next){
@@ -176,7 +176,7 @@
       if(a==='clear'){cancelTalk();selection=null;notice.hidden=true;actions('문과 물건을 직접 눌러 살펴보세요.');return;}
       if(a==='inspect-stairs'){say('문은 없다. 계단 옆 차단 제어기에 열쇠 구멍과 접근 제한 표시가 있다.');return;}
       if(a==='keybox-open'){s.keyboxOpen=!s.keyboxOpen;app.querySelector('.lab-keybox').classList.toggle('open',s.keyboxOpen);save();showObject('keybox');return;}
-      if(a==='take-key'){if(M.takeKey(s)){save();app.querySelector('.lab-keybox-back').innerHTML='';app.querySelector('.lab-pocket').innerHTML=b('열쇠 1','inventory','quiet');showObject('keybox');say('작은 금속 열쇠를 집었다. 고리에 계단실이라고 적혀 있다.');}return;}
+      if(a==='take-key'){if(s.opticsRoute&&!s.reflector){say('보관함 안쪽 고정핀이 잠겨 있다. 안내에는 거울 관찰실에서 광학 교정을 마치고 휴대용 반사판을 챙기면 열쇠 고정핀이 풀린다고 적혀 있다.');actions('광학 교정 필요',[['거울 관찰실 문으로 가기','go-reflection'],['돌아가기','clear']]);return;}if(M.takeKey(s)){save();app.querySelector('.lab-keybox-back').innerHTML='';app.querySelector('.lab-pocket').innerHTML=b('열쇠 1','inventory','quiet');showObject('keybox');say('작은 금속 열쇠를 집었다. 고리에 계단실이라고 적혀 있다.');}return;}
       if(a==='unlock-stairs'){if(M.unlock(s)){save();app.querySelector('.lab-stair-entry').classList.add('authorized');app.querySelector('.lab-stair-control').classList.add('authorized');showObject('stairs');say('열쇠를 돌리자 계단의 접근 차단이 해제됐다.');}return;}
       if(a==='upstairs'){s.stairsUnlocked?ascend():rejectStairs();return;}if(a==='downstairs'){descend();return;}
       if(a.startsWith('enter-')){const id=a.slice(6);if(M.canEnter(s,id))doorTravel(id,true);return;}
