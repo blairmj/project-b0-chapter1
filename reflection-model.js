@@ -18,6 +18,22 @@
   }
   function bossLayout(){const turn=p=>({x:p.x*Math.cos(30*rad)-p.z*Math.sin(30*rad),z:p.x*Math.sin(30*rad)+p.z*Math.cos(30*rad)}),source=turn({x:-3,z:-2}),target=turn({x:3,z:-2}),length=Math.hypot(target.x,target.z);return {source,heading:Math.atan2(-source.z,-source.x)/rad,mirrors:[{id:'a',x:0,z:0,half:.8}],receiver:{...target,r:.24,accept:{x:target.x/length,z:target.z/length}},bound:4};}
   const bossTrace=angle=>trace({a:angle},bossLayout());
+  function floorTarget(camera,sx,sy,width,height){
+    if(!(width>0&&height>0))return null;const yaw=camera.yaw*rad,pitch=camera.pitch*rad,focal=height*.82*camera.zoom,u=(sx-width/2)/focal,v=(height/2-sy)/focal;
+    const dy=Math.sin(pitch)+v*Math.cos(pitch);if(dy>=-.025)return null;const t=-1.48/dy,dx=Math.sin(yaw)*Math.cos(pitch)+u*Math.cos(yaw)-v*Math.sin(yaw)*Math.sin(pitch),dz=-Math.cos(yaw)*Math.cos(pitch)+u*Math.sin(yaw)+v*Math.cos(yaw)*Math.sin(pitch);
+    return {x:Math.max(-3.72,Math.min(3.72,camera.x+dx*t)),z:Math.max(-3.72,Math.min(3.72,camera.z+dz*t))};
+  }
+  function moveCamera(from,to,angles,taken=false){
+    const overlap=(x,z)=>{
+      let amount=Math.max(0,Math.abs(x)-3.72,Math.abs(z)-3.72,.48-Math.hypot(x-layout.source.x,z-layout.source.z),.43-Math.hypot(x-.55,z-1.7));
+      if(x>1.15&&x<2.25&&z< -3.34)amount=Math.max(amount,Math.min(x-1.15,2.25-x,-3.34-z));
+      for(const m of layout.mirrors){if(taken&&m.id==='a')continue;const a=angles[m.id]*rad,dx=x-m.x,dz=z-m.z,along=Math.max(-m.half,Math.min(m.half,dx*Math.cos(a)+dz*Math.sin(a))),px=m.x+along*Math.cos(a),pz=m.z+along*Math.sin(a);amount=Math.max(amount,.24-Math.hypot(x-px,z-pz));}return amount;
+    };
+    const allowed=(x,z,p)=>{const next=overlap(x,z);return next<=1e-8||next<overlap(p.x,p.z)-1e-8;};
+    let p={x:from.x,z:from.z};const dx=to.x-from.x,dz=to.z-from.z,steps=Math.max(1,Math.ceil(Math.hypot(dx,dz)/.06));
+    for(let i=0;i<steps;i++){const nx=Math.max(-3.72,Math.min(3.72,p.x+dx/steps)),nz=Math.max(-3.72,Math.min(3.72,p.z+dz/steps));if(allowed(nx,nz,p))p={x:nx,z:nz};else{if(allowed(nx,p.z,p))p.x=nx;if(allowed(p.x,nz,p))p.z=nz;}}
+    return p;
+  }
   const fresh=()=>({version:1,phase:'intro',rotated:false,angles:{a:0,b:0},lit:false,solved:false,taken:false,inspected:[],prediction:'',trialSeq:0,totals:{predictions:0,singleChanges:0,multipleChanges:0},trials:[],logs:[]});
   function log(s,kind,data={}){s.logs.push({at:new Date().toISOString(),kind,...data});s.logs=s.logs.slice(-300);}
   function restore(raw){const s=fresh();if(!raw||raw.version!==1)return s;s.rotated=raw.rotated===true;s.angles={a:clampAngle(raw.angles?.a),b:clampAngle(raw.angles?.b)};s.inspected=Array.isArray(raw.inspected)?raw.inspected.filter(id=>['a','b','source','receiver','protocol'].includes(id)):[];s.logs=Array.isArray(raw.logs)?raw.logs.slice(-300):[];s.trials=Array.isArray(raw.trials)?raw.trials.filter(t=>Number.isInteger(t.id)&&typeof t.received==='boolean'&&t.angles&&Number.isFinite(t.angles.a)&&Number.isFinite(t.angles.b)).slice(-60):[];s.trialSeq=Math.max(Math.trunc(Number(raw.trialSeq)||0),...s.trials.map(t=>t.id));for(const [id,fn]of Object.entries({predictions:t=>!!t.prediction,singleChanges:t=>t.changes?.length===1,multipleChanges:t=>t.changes?.length>1})){const value=raw.totals?.[id];s.totals[id]=Number.isInteger(value)&&value>=0?Math.min(s.trialSeq,value):s.trials.filter(fn).length;}s.solved=raw.solved===true&&s.trials.some(t=>t.received);s.taken=s.solved&&raw.taken===true;s.phase=raw.phase==='complete'&&s.taken?'complete':s.rotated?'room':'intro';return s;}
@@ -31,5 +47,5 @@
   function summary(s){return {played:s.rotated,completed:s.phase==='complete',reflector:s.taken,trials:s.trialSeq,inspected:s.inspected.length,predictions:s.totals.predictions,singleChanges:s.totals.singleChanges,multipleChanges:s.totals.multipleChanges};}
   function session(storage){try{let id=storage.getItem('project-b0-play-id-v1');if(!id){id=root.crypto?.randomUUID?.()||'play-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);storage.setItem('project-b0-play-id-v1',id);}return id;}catch{return null;}}
   function capture(storage){try{const raw=JSON.parse(storage.getItem(key));if(!raw?.rotated)return null;const s=restore(raw),final=JSON.parse(storage.getItem('project-b0-final-v2'));return {playId:session(storage),reflection:summary(s),final:{played:final?.boss===true&&final?.optics?.enabled===true,trials:Math.max(0,Math.trunc(Number(final?.optics?.trials)||0)),severed:final?.optics?.cut===true}};}catch{return null;}}
-  const api={key,layout,fresh,restore,rotate,setAngle,inspect,predict,test,take,finish,trace,bossLayout,bossTrace,clampAngle,summary,session,capture};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.B0Reflection=api;
+  const api={key,layout,fresh,restore,rotate,setAngle,inspect,predict,test,take,finish,trace,bossLayout,bossTrace,clampAngle,summary,session,capture,floorTarget,moveCamera};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.B0Reflection=api;
 })(typeof window!=='undefined'?window:globalThis);

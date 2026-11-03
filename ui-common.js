@@ -26,20 +26,20 @@
     });close();
     const d=document.createElement('dialog');d.className='b0-common-modal';
     d.innerHTML=`<header><h2>${title}</h2></header><div class="b0-modal-body">${dialogBody(body+(back&&returnMenu?common('메뉴로','back-menu'):''),'ui','close')}</div>`;
-    document.querySelector('#app').append(d);d.addEventListener('close',()=>d.remove());d.showModal();
+    document.querySelector('#app').append(d);d.addEventListener('close',()=>d.remove());d.showModal();return d;
   }
   function read(key){try{return JSON.parse(localStorage.getItem(key));}catch{return null;}}
   function inventory(){
     const one=read('project-b0-firstperson-v4'),nav=read('project-b0-lab-navigation-v1');
     const memory=read('project-b0-education-v1'),archive=read('project-b0-room3-v1');
     const items=[];if(memory?.memoryTaken)items.push('<li><b>기록 메모리</b><p>교육 실습실에서 복구한 수업 기록. '+(archive?.memoryConnected?'기록 보관실 컴퓨터에 연결되어 있습니다.':'외부 기록 컴퓨터에 연결할 수 있습니다.')+'</p></li>');if(one?.noteTaken)items.push('<li><b>관리용 쪽지</b><p>비상 출입번호: 4732</p></li>');if(nav?.keyTaken)items.push('<li><b>계단실 열쇠</b><p>계단 차단 제어기에서 사용하는 금속 열쇠.</p></li>');
-    if(read('project-b0-reflection-v1')?.taken)items.push('<li><b>휴대용 반사판</b><p>거울 관찰실에서 분리한 각도 조절식 반사판. 빛을 다른 방향으로 보낼 수 있습니다.</p></li>');
+    if(read('project-b0-reflection-v1')?.taken)items.push('<li><b>휴대용 반사판</b><p>거울방에서 챙긴 작은 거울. 빛을 다른 쪽으로 보낼 수 있습니다.</p></li>');
     modal('소지품',items.length?`<ul class="b0-items">${items.join('')}</ul>`:'<p>아직 가지고 있는 물건이 없습니다.</p>');
   }
   function help(first=false){
     const body='<ul class="b0-help"><li><b>둘러보기</b><p>빈 공간을 끌어 시선을 돌립니다. 복도에서는 바닥을 누른 곳으로 걷습니다. 이동 버튼과 방향키도 사용할 수 있습니다.</p></li><li><b>조사하고 조작하기</b><p>물건을 눌러 살펴봅니다. 상자·손잡이처럼 움직이는 물건은 직접 끌거나 조사 창의 버튼으로 조작합니다.</p></li><li><b>B-0와 협력하기</b><p>B-0에게 말한 뒤 확인하거나 조작할 대상을 직접 고릅니다. 상자 위에서는 내려가기 버튼을 사용할 수 있습니다.</p></li><li><b>화면 조절</b><p>마우스 휠을 위로 굴리면 확대하고 아래로 굴리면 축소합니다. 오른쪽 위 −·+로도 조절할 수 있습니다. 팝업 안에서는 내용을 스크롤합니다. 처음 위치로는 시점과 배율만 되돌립니다.</p></li><li><b>지도와 기록</b><p>메뉴에서 지도·소지품·사용법·기록 보기를 엽니다. 차시 이동 버튼은 개발 확인용 임시 기능입니다.</p></li></ul>';
     const room=document.querySelector('#app main');
-    const detail=room?.classList.contains('ed-game')?'수업 화면에서 영상을 재생하거나 멈출 수 있습니다. 풀이 복원 단말기에서는 고칠 계산과 값을 직접 정합니다. B-0에게 필요한 설명이나 확인을 부탁할 수 있습니다.':room?.classList.contains('mr-game')?'손잡이는 누른 채 아래로 끌거나, 조사 창의 당기기 버튼으로 조작합니다.':room?.classList.contains('rf-game')?'거울 관찰실에서는 장치 이름표나 장치 목록을 눌러 조사합니다. 반사판의 각도는 버튼이나 슬라이더로 조절하고, 빛을 켜 실제 도착 위치를 확인합니다. 시험 기록에서 바꾼 조건과 결과를 비교할 수 있습니다.':room?.classList.contains('c4-game')?'연결 단자를 옆으로 끌어 분리하고 손잡이·잠금쇠를 직접 끌 수 있습니다. 각 장치의 조작 버튼도 사용할 수 있습니다.':room?.classList.contains('c3-game')?'보관장은 직접 끌거나 조사 창의 밀기 버튼으로 움직입니다.':room?.classList.contains('c2-game')?'상자는 누른 채 끌어서 옮깁니다. 짧게 눌러 올라서거나 내려갈 수 있습니다. 다른 상자 위에도 놓을 수 있습니다.':'';
+    const detail=room?.classList.contains('ed-game')?'수업 화면에서 영상을 재생하거나 멈출 수 있습니다. 풀이 복원 단말기에서는 고칠 계산과 값을 직접 정합니다. B-0에게 필요한 설명이나 확인을 부탁할 수 있습니다.':room?.classList.contains('mr-game')?'손잡이는 누른 채 아래로 끌거나, 조사 창의 당기기 버튼으로 조작합니다.':room?.classList.contains('rf-game')?'거울방에서는 바닥을 누르거나 ↑·↓ 버튼으로 걸어요. 빈 곳을 끌면 둘러볼 수 있어요. 거울 A나 B를 누르고 방향을 바꾼 뒤 빛을 켜 보세요. 방 안내를 누르면 설명을 다시 볼 수 있어요.':room?.classList.contains('c4-game')?'연결 단자를 옆으로 끌어 분리하고 손잡이·잠금쇠를 직접 끌 수 있습니다. 각 장치의 조작 버튼도 사용할 수 있습니다.':room?.classList.contains('c3-game')?'보관장은 직접 끌거나 조사 창의 밀기 버튼으로 움직입니다.':room?.classList.contains('c2-game')?'상자는 누른 채 끌어서 옮깁니다. 짧게 눌러 올라서거나 내려갈 수 있습니다. 다른 상자 위에도 놓을 수 있습니다.':'';
     modal(first?'처음 조작 안내':'사용법',body+(detail?`<p>${detail}</p>`:'')+(first?common('알겠어, 시작하자','guide-done'):''),!first);
   }
   function record(){
