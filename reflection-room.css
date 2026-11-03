@@ -5,10 +5,9 @@
 .rf-actions button,.rf-game>footer button{font-size:12px}.rf-status{font-size:12px}.rf-labels>button{font-size:12px;min-height:42px}
 .rf-movement{position:absolute;right:12px;bottom:calc(var(--b0-actions-height,100px) + 14px);z-index:8;display:flex;gap:5px;padding:6px;background:#102331e8;border:1px solid #7095a7;border-radius:10px}
 .rf-movement button{width:42px;min-height:44px;padding:4px;font-size:22px;background:#214556;color:#e6faff}
-.rf-walk-help{position:absolute;bottom:calc(var(--b0-actions-height,100px) + 18px);left:12px;max-width:calc(100% - 225px);margin:0;padding:8px 10px;background:#102331e8;border-radius:8px;font-size:11px;color:#d6edf4;pointer-events:none}
-.rf-stage[data-ready=false] .rf-movement,.rf-stage[data-ready=false] .rf-walk-help,.b0-talking .rf-movement,.b0-talking .rf-walk-help{visibility:hidden;pointer-events:none}
+.rf-stage[data-ready=false] .rf-movement,.b0-talking .rf-movement{visibility:hidden;pointer-events:none}
 .rf-guide{font-size:14px;line-height:1.65}.rf-guide-goal{padding:14px;background:#224755;border-radius:10px;color:#e1f6f5}.rf-guide-goal>b{font-size:18px;display:inline-block;margin-bottom:8px}
-.rf-guide-controls{padding:12px;background:#102531;border:1px solid #527785;border-radius:8px;font-size:12px}.rf-guide>button{display:block;min-height:46px;width:100%;margin-top:18px;background:#b8e9ef;color:#153645}
+.rf-guide>button{display:block;min-height:46px;width:100%;margin-top:18px;background:#b8e9ef;color:#153645}
 .rf-coach{position:absolute;top:46px;left:12px;max-width:min(420px,calc(100% - 24px));box-sizing:border-box;padding:12px 14px;border:1px solid #82c6d1;border-radius:12px;background:#102b38f5;z-index:7;color:#e3f8fc}
 .rf-coach>div{display:flex;align-items:center;gap:10px;font-size:13px}.rf-coach-step{color:#9fc8d2;font-size:11px}
 .rf-coach .rf-status{position:static;inset:auto;margin:8px 0 10px;padding:0;background:none;color:#e3f8fc;font-size:13px;line-height:1.65}
@@ -24,4 +23,4 @@
 .rf-game:has(.rf-stage[data-ready=false]) .rf-next,#app:has(dialog[open]) .rf-next,.b0-talking .rf-next{animation:none}
 .rf-stage[data-ready=false] .rf-target-ring,.b0-talking .rf-target-ring{visibility:hidden}
 @media(prefers-reduced-motion:reduce){.rf-game .rf-next,.rf-cue-outline,.rf-fallback [data-rf-part]{animation:none!important}}
-@media(max-width:480px){.rf-walk-help{display:none}.rf-movement{right:8px;gap:4px;padding:5px}.rf-actions button,.rf-game>footer button{font-size:11px}.rf-game>footer{gap:5px;padding:8px}.rf-game>footer button{padding:7px}.rf-guide{font-size:13px}.rf-labels>button{font-size:11px}}
+@media(max-width:480px){.rf-movement{right:8px;gap:4px;padding:5px}.rf-actions button,.rf-game>footer button{font-size:11px}.rf-game>footer{gap:5px;padding:8px}.rf-game>footer button{padding:7px}.rf-guide{font-size:13px}.rf-labels>button{font-size:11px}}
