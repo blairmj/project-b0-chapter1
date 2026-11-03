@@ -1,0 +1,14 @@
+/* Conversations stay in the room; menus and reference materials use dialogs. */
+.b0-conversation{position:absolute;z-index:18;left:12px;right:12px;bottom:12px;max-height:55%;overflow:auto;overscroll-behavior:contain;padding:10px 12px;background:#102331ed;border:1px solid #6d8b9c;border-radius:12px;box-shadow:0 4px 16px #0004;pointer-events:auto}
+.b0-conversation-subject{display:block;color:#b8cbd5;font-size:11px;margin-bottom:8px}
+.b0-conversation .speech{position:static;max-width:90%;font-size:14px;pointer-events:auto}
+.b0-conversation .speech p{margin:0;line-height:1.65;white-space:normal;overflow-wrap:anywhere}
+.b0-conversation .speech b{position:static;display:block;font-size:11px;margin:0 0 6px}
+.b0-conversation-buttons{display:flex;justify-content:flex-end;gap:8px;margin-top:10px;flex-wrap:wrap}
+.b0-conversation button,.b0-conversation summary{min-height:44px;font-size:12px}
+.b0-conversation-questions{margin-top:8px;border-top:1px solid #526a78}
+.b0-conversation-questions summary{display:flex;align-items:center;color:#cce3ec;cursor:pointer}
+.b0-conversation-questions>div{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 0 4px}
+.b0-conversation-questions button{text-align:left;line-height:1.5}
+.b0-talking .c2-actions,.b0-talking .approach-controls,.b0-talking .c2-speech,.b0-talking .room-speech,.b0-talking .lab-notice{visibility:hidden;pointer-events:none}
+@media(max-width:420px){.b0-conversation{left:8px;right:8px;padding:10px}.b0-conversation .speech{font-size:13px;max-width:96%}.b0-conversation-questions>div{grid-template-columns:1fr}}

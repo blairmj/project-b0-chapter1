@@ -1,0 +1,29 @@
+const assert=require('node:assert/strict'),M=require('../chapter4-model.js');
+const s=M.fresh(),r={handle:0,latch:0,lifted:false};s.phase='room';
+assert.equal(M.connect(s,'robot',false),false);
+s.met=s.boss=true;
+assert.equal(M.connect(s,'robot',false),false,'must inspect the immobilized body before unplugging');
+s.bodyChecked=true;assert.equal(M.connect(s,'robot',false),true);
+assert.equal(M.latch(s,r),false,'cannot reach high latch from floor');
+r.lifted=true;assert.equal(M.latch(s,r),true);r.lifted=false;
+r.handle=1;for(let i=0;i<60;i++)M.tick(s,r,100);assert.equal(r.latch,0,'turning door grip alone does not open door');
+M.hold(s,true);for(let i=0;i<22;i++)M.tick(s,r,100);
+assert.ok(r.latch>.35&&r.latch<1);assert.equal(s.opened,false,'screen completion cannot unlock physical bolt');
+M.hold(s,false);M.tick(s,r,100);assert.equal(r.latch,0);assert.equal(s.upper,true,'failed lower operation retains upper latch');
+M.hold(s,true);for(let i=0;i<53;i++)M.tick(s,r,100);assert.equal(s.opened,true);
+assert.equal(M.leave(s),false,'cannot abandon robot maintaining grip');
+M.hold(s,false);M.release(s,r);assert.equal(r.latch,1);assert.equal(M.leave(s),true);
+const resumed=M.restore(s);assert.equal(resumed.opened,true);assert.equal(resumed.holding,false);
+const interrupted=M.restore({...s,opened:false,phase:'room',holding:true});assert.equal(interrupted.upper,true);assert.equal(interrupted.holding,false);
+assert.equal(M.restore({...s,links:{robot:true}}).opened,false);
+assert.equal(M.restore({version:1,evidence:true}).phase,'intro','old chapter 4 story restarts without changing other chapters');
+console.log('PASS: body inspection, physical reach, two-person hold, false completion, recoverable mistake, reunion, save integrity');
+
+for(const phase of ['farewell','ending','complete']){
+ const saved={...s,phase,line:5};const entry=M.arrive(saved);
+ assert.equal(entry.phase,'room','entering through the corridor must show the central room');
+ assert.equal(entry.line,0);assert.equal(entry.opened,true);assert.equal(entry.links.robot,false);
+ assert.equal(M.restore(saved).phase,phase,'resume keeps the actual ending checkpoint');
+}
+assert.equal(M.arrive({...s,phase:'room',opened:false}).opened,false,'incomplete puzzles remain incomplete');
+console.log('PASS: corridor re-entry never replays the bedroom while explicit resume retains its checkpoint');

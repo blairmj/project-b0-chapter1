@@ -1,0 +1,244 @@
+(function(){
+  'use strict';
+  window.startChapterThree=function({app,portrait,onBack,onNext,onCorridor,onMirrorBack,onHome,showCompleted=false,preview=false,arrived=false,entryRoom=null}){
+    const SPACE=1.95;
+    const M=window.B0RoomThree,storage=preview?sessionStorage:localStorage,key='project-b0-v4-room3-v1';
+    let s;try{s=M.restore(JSON.parse(storage.getItem(key)));}catch{s=M.fresh();}
+    let camera={x:0,z:30,yaw:-12,pitch:-8,zoom:1},stage,world,bar,speech,selection=null,pointer=null,suppress=false,dead=false,busy=false,cameraMoving=false,frame=0,mode=null,conversation=null,activeModal=null,objectVariant=0,speechTimer=0;
+    const helperPosition=()=>({x:-195,z:s.shelfZ+(s.shelfZ>=0?-90:90)});
+    let robot=s.helper?helperPosition():{x:120,z:-190},timers=[],mirrorView=null;
+    if(typeof location!=='undefined'&&new URLSearchParams(location.search).get('room')==='mirror')s.phase='mirror';
+    else if((entryRoom==='access'&&s.phase==='mirror')||(onCorridor&&!showCompleted&&['gate','complete'].includes(s.phase)))s.phase='room';
+    function mirrorUrl(active){if(typeof location==='undefined')return;const url=new URL(location.href);if(active)url.searchParams.set('room','mirror');else url.searchParams.delete('room');history.replaceState(null,'',url);}
+    const carryingMemory=window.B0Education?.read(storage).memoryTaken===true&&!s.diaryRead;
+    const intro=carryingMemory?[['student','기록 보관실이네. 실습실에서 찾은 메모리를 여기서 열어 볼 수 있을까?'],['robot','기록을 열람하던 공간으로 표시되어 있습니다. 지금 사용할 수 있는 장치는 직접 확인해야 합니다.'],['student','메모리도 확인하고, 나갈 길도 찾아보자.'],['robot','네. 함께 확인해 보겠습니다.']]:[['student','기록 보관실이네. 출구에 관한 기록도 있을까?'],['robot','제 지도에는 이곳에 시설 출입 기록을 보관한다고 나옵니다.'],['student','지금도 그런지는 직접 봐야겠지.'],['robot','네. 함께 확인해 보겠습니다.']];
+    const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const b=(label,action,cls='')=>`<button type="button" data-c3="${action}" class="${cls}">${label}</button>`;
+    const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const save=()=>{try{storage.setItem(key,JSON.stringify(s));}catch{}};
+    function later(fn,ms){const t=setTimeout(()=>{if(!dead)fn();},ms);timers.push(t);}
+    function actions(title,items=[]){bar.innerHTML=`<strong>${esc(title)}</strong><div>${items.map(([label,action,cls])=>b(label,action,cls||'')).join('')}</div>`;}
+    function clearSelection(){
+      if(cameraMoving){cancelAnimationFrame(frame);cameraMoving=false;busy=false;}mode=null;selection=null;conversation=null;clearTimeout(speechTimer);app.querySelector('.robot-sprite')?.classList.remove('speaking');if(speech)speech.hidden=true;actions('');
+    }
+    function clearSelectionOnLook(){if((selection||cameraMoving)&&!mode&&!conversation)clearSelection();}
+    function say(who,text){
+      if(!speech)return;speech.hidden=false;speech.innerHTML=`<div class="speech ${who}"><b>${who==='robot'?'B-0':who==='system'?'시설 방송':'나'}</b><p>${esc(text)}</p></div>${conversation?b('다음','talk-next','quiet'):''}`;
+      clearTimeout(speechTimer);const actor=app.querySelector('.robot-sprite');if(actor){actor.classList.toggle('speaking',who==='robot');speechTimer=setTimeout(()=>actor.classList.remove('speaking'),Math.min(4500,text.length*85));}
+    }
+    function talk(lines,done){conversation={lines,index:0,done};say(...lines[0]);}
+    function nextTalk(){if(!conversation)return;const c=conversation;c.index++;if(c.index<c.lines.length)say(...c.lines[c.index]);else{conversation=null;speech.hidden=true;c.done?.();}}
+    function mapArt(){return `<svg class="c3-map-art" viewBox="0 0 260 200" role="img" aria-label="옛 배치도. 기록 보관실 앞쪽 문에서 외부 통로로 이어지는 기록"><rect x="44" y="62" width="172" height="115" fill="#b9c4bf" stroke="#394f58" stroke-width="5"/><path d="M114 62h32" stroke="#dce6cf" stroke-width="9"/><path d="M130 139V28m-14 15 14-15 14 15" fill="none" stroke="#387b82" stroke-width="7"/><circle cx="130" cy="145" r="8" fill="#a75e44"/><text x="130" y="19" text-anchor="middle">외부 통로</text><text x="130" y="94" text-anchor="middle">기록 보관실</text><text x="130" y="168" text-anchor="middle">들어온 곳</text></svg>`;}
+    function cube(w,h,d,cls='',id=''){return `<div class="c2-cube ${cls}" style="--w:${w}px;--h:${h}px;--d:${d}px;width:${w}px;height:${h}px">${['front','back','left','right','top'].map(f=>`<div class="c2-face c2-${f}" ${f==='front'&&id?`data-object="${id}" role="button" tabindex="0" aria-label="${id==='shelf'?'바퀴 달린 보관장':'기록 서랍이 있는 책상'}"`:''}>${f==='front'?'<i></i>':''}</div>`).join('')}</div>`;}
+    function serverRacks(){return [-55,75,205].map((x,i)=>`<div class="c3-server-rack" data-object="server" data-dialogue-variant="${i}" role="button" tabindex="0" aria-label="기록 서버 랙 ${i+1}" style="transform:translate3d(${x}px,0px,262px) rotateY(180deg)"><div class="c2-cube c3-server-cube" style="--w:96px;--h:340px;--d:60px;width:96px;height:340px">${['front','back','left','right','top'].map(face=>`<div class="c2-face c2-${face}">${face==='front'?`<small>ARCHIVE · ${String(i+1).padStart(2,'0')}</small><div class="c3-drive-bays">${Array.from({length:12},(_,j)=>`<span class="c3-drive"><i></i><b>${String(i*12+j+1).padStart(2,'0')}</b></span>`).join('')}</div><em class="c3-rack-vent"></em>`:''}</div>`).join('')}</div></div>`).join('');}
+    function render(){
+      mirrorView?.dispose();mirrorView=null;
+      conversation=null;pointer=null;selection=null;mode=null;
+      if(s.phase==='mirror'){renderMirror();return;}
+      const entranceTalk=arrived&&s.phase==='intro';
+      if(entranceTalk){s.phase='room';s.line=0;save();}
+      if(s.phase==='intro'){renderIntro();return;}if(s.phase==='gate'){renderGate();return;}if(s.phase==='complete'){renderEnd();return;}
+      app.innerHTML=`<main class="game c2-game c3-game">${window.B0UI?.header({place:`기록 보관실`,namespace:"c3",reset:"home",zoomClass:"c3-zoom",active:true})||""}
+      <section class="c2-stage c3-stage" tabindex="0" aria-label="기록 보관실. 빈 공간을 끌어 둘러보고 물건을 눌러 살펴보세요."><div class="c2-world c3-world">
+      ${['front','left','right','back'].map(f=>`<div class="c2-wall c2-wall-${f}"><div class="c3-conduit" aria-hidden="true"></div><div class="c3-riser" aria-hidden="true"></div><div class="c2-light"></div></div>`).join('')}<div class="c2-floor"></div><div class="c2-ceiling"></div>${serverRacks()}
+      <div class="c2-entry c2-object c3-entrance" aria-hidden="true" style="left:-62.5px;transform:translate3d(-210.26px,0,297px) rotateY(180deg);pointer-events:none"><span></span></div><div class="c3-junction" aria-hidden="true"><i></i><i></i><span></span></div><div class="c3-room-plaque" aria-hidden="true"><small>RECORD ARCHIVE</small><strong>기록 보관실</strong></div><div class="c3-clock" aria-hidden="true"><i></i><i></i></div>
+      <div class="c3-observation" aria-hidden="true"><div class="c3-observation-frame"><span></span><span></span><span></span><small>관찰창</small></div></div>
+      <div class="c3-cable-tray" aria-hidden="true"></div>
+      <div class="c3-old-exit" data-object="oldDoor" role="button" tabindex="0" aria-label="출구 표지판이 있는 문"><span class="c3-exit-sign">출구</span><span class="c3-brick-wall"></span><span class="c3-old-leaf"><i></i></span></div>
+      <button class="c3-map-board" data-object="map" aria-label="벽면 배치도"><strong>시설 배치도</strong>${mapArt()}<small>배치 기록 01</small></button>
+      <div class="c3-real-exit" data-object="exit" role="button" tabindex="-1" aria-label="보관장 뒤의 문" aria-hidden="true"><span class="c3-exit-space"></span><span class="c3-real-leaf"><i></i></span></div>
+      <div class="c3-tracks" data-object="floor" role="button" tabindex="0" aria-label="보관장 주변 바닥"></div><button class="c3-gap" data-object="gap" aria-label="보관장 아래쪽 틈"></button>
+      <div class="c3-shelf-anchor" data-object="shelf">${cube(154,210,74,'c3-shelf','shelf')}<span class="c3-shelf-load load-a"></span><span class="c3-shelf-load load-b"></span><span class="c3-shelf-load load-c"></span><span class="c3-wheel wheel-a"></span><span class="c3-wheel wheel-b"></span></div>
+      <div class="c3-desk" data-object="desk">${cube(135,90,75,'c3-desk-cube','desk')}<div class="c3-monitor" data-object="computer" role="button" tabindex="0" aria-label="기록 컴퓨터"><span><small>기록 컴퓨터</small><i></i><em>전원 꺼짐</em></span><i class="computer-port"></i></div><div class="c3-keyboard"></div><div class="c3-drawer"><span></span><button class="c3-record-paper" data-object="record" aria-label="서랍 안의 공사 기록" hidden>개조 기록</button></div></div>
+      <div class="c2-robot c3-robot" data-object="robot" role="button" tabindex="0" aria-label="태블릿으로 연결된 보조팔"><div class="robot-sprite live-body">${portrait()}</div></div>
+      </div><p class="c2-basic-help">빈 공간을 끌어 둘러보기 · 물건을 눌러 살펴보기</p><div class="c2-speech c3-speech" aria-live="polite" hidden></div></section>
+      <section class="c2-actions c3-actions" aria-label="선택한 물건의 행동"><p>방 안을 자유롭게 살펴보세요.</p></section><footer>${b('B-0에게 말하기','robot','secondary')}${window.B0UI?.inventoryButton()||''}</footer></main>`;
+      stage=app.querySelector('.c3-stage');world=app.querySelector('.c3-world');bar=app.querySelector('.c3-actions');speech=app.querySelector('.c3-speech');
+      stage.addEventListener('pointerdown',down);stage.addEventListener('pointermove',move);stage.addEventListener('pointerup',up);stage.addEventListener('pointercancel',cancelPointer);
+      stage.addEventListener('click',e=>{if(suppress){suppress=false;return;}if((busy&&!cameraMoving)||e.target.closest('[data-c3]'))return;const obj=e.target.closest('[data-object]'),id=obj?.dataset.object;if(id){if(id!=='robot')objectVariant=Number(obj.dataset.dialogueVariant)||0;activateObject(id);}else if(!mode&&!conversation){clearSelection();walkFloor(e);}});
+      stage.addEventListener('wheel',e=>{if(app.querySelector('dialog[open]')?.open)return;e.preventDefault();if(cameraMoving){cancelAnimationFrame(frame);cameraMoving=false;busy=false;}if(!busy){camera.zoom=Math.max(.65,Math.min(1.5,camera.zoom*Math.exp(-Math.max(-150,Math.min(150,e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?stage.clientHeight:1)))*.0015)));updateCamera();}},{passive:false});
+      stage.addEventListener('keydown',e=>{if(busy&&!cameraMoving)return;if((e.key==='Enter'||e.key===' ')&&e.target.dataset.object){e.preventDefault();if(e.target.dataset.object!=='robot')objectVariant=Number(e.target.dataset.dialogueVariant)||0;activateObject(e.target.dataset.object);return;}const dirs={ArrowLeft:-15,ArrowRight:15};if(dirs[e.key]){e.preventDefault();clearSelectionOnLook();camera.yaw+=dirs[e.key];updateCamera();}if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();clearSelectionOnLook();camera.pitch+=e.key==='ArrowUp'?8:-8;updateCamera();}});
+      update();if(entranceTalk)talk(intro);
+    }
+    function renderMirror(){
+      s.mirror=window.B0Mirror.restore(s.mirror);mirrorUrl(true);save();
+      mirrorView=window.startMirrorRoom({app,portrait,state:s.mirror,onSave:save,onHome,onBack:()=>{if(onMirrorBack){save();onMirrorBack();return;}s.phase=s.approval==='rejected'?'gate':'room';mirrorUrl(false);save();render();},onComplete:()=>{if(M.finish(s)){mirrorUrl(false);save();if(onCorridor&&onNext){onNext();return;}render();}}});
+    }
+    function updateCamera(transit=false){
+      if((s.phase!=='room'&&!transit)||!stage?.isConnected)return;
+      camera.yaw=((camera.yaw+180)%360+360)%360-180;camera.pitch=Math.max(-65,Math.min(45,camera.pitch));
+      const f=Math.min(stage.clientWidth*.62,stage.clientHeight*.5)*camera.zoom;stage.style.perspective=f+'px';
+      world.style.transform=`translateZ(${f}px) rotateX(${camera.pitch}deg) rotateY(${camera.yaw}deg) translate3d(${-camera.x*SPACE}px,0px,${-camera.z*SPACE}px)`;
+      stage.dataset.yaw=camera.yaw;stage.dataset.pitch=camera.pitch;
+      app.querySelector('.c3-robot').style.transform=`translate3d(${robot.x-48}px,24px,${robot.z}px) rotateY(${-camera.yaw}deg)`;
+      window.B0RoomSpace?.sync(world);
+      window.B0RoomTransit?.bind(world,{read:()=>({...camera,x:camera.x*SPACE,z:camera.z*SPACE,height:0}),write:v=>{Object.assign(camera,v,{x:v.x/SPACE,z:v.z/SPACE});updateCamera(true);},stop:()=>{cancelAnimationFrame(frame);cameraMoving=false;busy=false;pointer=null;},door:{x:-410,z:578,yaw:180},exit:{x:-573,z:0,yaw:-90}});
+      app.querySelector('.c3-zoom').textContent=Math.round(camera.zoom*100)+'%';
+    }
+    function update(){
+      if(s.phase!=='room')return;
+      const monitor=app.querySelector('.c3-monitor');monitor.classList.toggle('powered',s.computerOn);monitor.classList.toggle('connected',s.memoryConnected);monitor.querySelector('em').textContent=s.axiomHeard?'열람 중단':s.memoryConnected?'외부 기록 연결됨':s.computerOn?'기록 관리 · 대기':'전원 꺼짐';
+      app.querySelector('.c3-old-exit').classList.toggle('open',s.oldDoorOpen);app.querySelector('.c3-desk').classList.toggle('open',s.drawerOpen);app.querySelector('.c3-record-paper').hidden=!s.drawerOpen;
+      app.querySelector('.c3-shelf-anchor').style.transform=`translate3d(-250px,180px,${s.shelfZ}px) rotateY(90deg)`;
+      const door=app.querySelector('.c3-real-exit');door.setAttribute('aria-hidden',String(!M.clear(s)));door.tabIndex=M.clear(s)?0:-1;door.classList.toggle('open',s.realDoorOpen);
+      app.querySelector('.c3-robot').classList.toggle('helping',s.helper&&!M.clear(s));updateCamera();
+    }
+    function animateCamera(to,done){
+      cancelAnimationFrame(frame);busy=true;cameraMoving=true;pointer=null;const from={...camera},start=performance.now(),turn=(((to.yaw??from.yaw)-from.yaw+540)%360)-180;
+      function step(t){if(dead)return;const v=reduced()?1:Math.min(1,(t-start)/650),e=v*v*(3-2*v);for(const k of ['x','z','pitch','zoom'])camera[k]=from[k]+((to[k]??from[k])-from[k])*e;camera.yaw=from.yaw+turn*e;updateCamera();if(v<1)frame=requestAnimationFrame(step);else{busy=false;cameraMoving=false;done?.();}}
+      frame=requestAnimationFrame(step);
+    }
+    function walkFloor(e){
+      if(e.detail===0)return;const r=stage.getBoundingClientRect(),f=Math.min(stage.clientWidth*.62,stage.clientHeight*.5)*camera.zoom;
+      const p=M.floorTarget(camera,e.clientX-r.left,e.clientY-r.top,stage.clientWidth,stage.clientHeight,f,SPACE);
+      if(p&&Math.hypot(p.x-camera.x,p.z-camera.z)>3)animateCamera(p);
+    }
+    function approach(id){
+      const targets={server:{x:75,z:130,yaw:180,pitch:-4},computer:{x:65,z:85,yaw:90,pitch:-5},oldDoor:{x:45,z:-120,yaw:12,pitch:-8},map:{x:-80,z:-100,yaw:-22,pitch:10},shelf:{x:-75,z:0,yaw:-90,pitch:-10},floor:{x:-75,z:0,yaw:-90,pitch:-48},gap:{x:-75,z:0,yaw:-90,pitch:-36},desk:{x:65,z:85,yaw:90,pitch:-20},record:{x:65,z:85,yaw:90,pitch:-28},exit:{x:-85,z:0,yaw:-90,pitch:-8}};
+      if(targets[id])animateCamera(targets[id]);
+    }
+    function activateObject(id){if(busy&&!cameraMoving)return;if(!mode&&id==='exit'&&s.realDoorOpen){leaveRoom();return;}select(id);}
+    function select(id){
+      if(id==='exit'&&!M.clear(s))return;if(id==='record'&&!s.drawerOpen)return;
+      if(mode==='check'){mode=null;window.B0RoomDialogue?.remember(s,id,2);M.inspect(s,id);save();say('robot',M.reply(s,'check',id));showActions(id);return;}
+      if(mode==='help'){mode=null;if(id==='shelf')helpShelf();else{say('robot','이 물건은 함께 밀어 움직일 수 없습니다.');robotMenu();}return;}
+      conversation=null;selection=id;window.B0RoomDialogue?.remember(s,id);save();speech.hidden=true;showActions(id);if(id!=='robot')approach(id);
+    }
+    function showActions(id){
+      selection=id;
+      if(id==='robot'){robotMenu(true);return;}
+      if(id==='server'){actions('수업 기록 저장 서버',[['드라이브 살펴보기','inspect-server'],['선택 닫기','clear']]);return;}
+      if(id==='computer'){computerActions();return;}
+      if(id==='oldDoor')actions('출구 표지판이 있는 문',[['살펴보기','inspect-oldDoor'],[s.oldDoorOpen?'문 닫기':'문 열어 보기','old-door'],['B-0에게 확인 부탁','ask-oldDoor'],['선택 닫기','clear']]);
+      else if(id==='map')actions('벽면 배치도',[['가까이 읽기','inspect-map'],['B-0의 지도와 비교','ask-map'],['선택 닫기','clear']]);
+      else if(id==='desk')actions('기록 책상',[['살펴보기','inspect-desk'],['컴퓨터 살펴보기','select-computer'],[s.drawerOpen?'서랍 닫기':'서랍 열기','drawer'],...(s.drawerOpen?[['공사 기록 읽기','inspect-record']]:[]),['선택 닫기','clear']]);
+      else if(id==='record')actions('공사 기록',[['읽기','inspect-record'],['B-0에게 확인 부탁','ask-record'],['선택 닫기','clear']]);
+      else if(id==='shelf')actions('바퀴 달린 보관장',[['살펴보기','inspect-shelf'],['밀어 보기','push-menu'],['B-0에게 부탁','shelf-requests'],['선택 닫기','clear']]);
+      else if(id==='floor'||id==='gap')actions(id==='floor'?'보관장 주변 바닥':'아래쪽 틈',[['살펴보기','inspect-'+id],['B-0에게 확인 부탁','ask-'+id],['선택 닫기','clear']]);
+      else if(id==='exit')actions('보관장에 가려져 있던 문',[['살펴보기','inspect-exit'],[s.realDoorOpen?'문 너머로 이동':'문 열기',s.realDoorOpen?'leave':'open-exit'],['선택 닫기','clear']]);
+    }
+    function robotMenu(respond=false){if(respond&&window.B0ObjectDialogue?.open('access',s,{target:selection,variant:objectVariant},()=>robotMenu(false))){speech.hidden=true;return;}if(cameraMoving){cancelAnimationFrame(frame);cameraMoving=false;busy=false;}mode=null;if(respond){conversation=null;say('robot',window.B0RoomDialogue?.reply('access',s,{target:selection})||'직접 확인한 물건을 두고 이야기해 주세요.');}actions('B-0에게 물어보기',[['어디로 나가?','ask-route'],['무엇을 보고 말한 거야?','ask-basis'],['내가 고른 곳 확인해 줘','request-check'],['같이 밀어 줘','request-help'],['닫기','clear']]);}
+    function shelfRequests(){actions('보관장의 어느 부분을 확인할까?',[['바닥을 살펴봐 줘','ask-floor'],['아래쪽 틈을 봐 줘','ask-gap'],['같이 밀어 줘','help-shelf'],['돌아가기','select-shelf']]);}
+    function helpShelf(){
+      if(s.helper){say('robot','같이 밀 준비가 되어 있습니다. 움직일 방향은 직접 정해 주세요.');showActions('shelf');return;}
+      cancelAnimationFrame(frame);cameraMoving=false;busy=true;const from={...robot},to=helperPosition(),start=performance.now();say('robot','옆에서 함께 밀겠습니다.');
+      app.querySelector('.c3-robot').classList.add('walking');
+      function step(t){if(dead)return;const v=reduced()?1:Math.min(1,(t-start)/850);robot={x:from.x+(to.x-from.x)*v,z:from.z+(to.z-from.z)*v};updateCamera();if(v<1)frame=requestAnimationFrame(step);else{busy=false;s.helper=true;M.note(s,'help','shelf');save();app.querySelector('.c3-robot').classList.remove('walking');update();showActions('shelf');}}
+      frame=requestAnimationFrame(step);
+    }
+    function shelfRay(x,y){
+      const r=stage.getBoundingClientRect(),f=Math.min(stage.clientWidth*.62,stage.clientHeight*.5)*camera.zoom;
+      const sx=(x-r.left-r.width/2)/f,sy=(y-r.top-r.height/2)/f,a=camera.yaw*Math.PI/180,p=camera.pitch*Math.PI/180;
+      const zz=-Math.sin(p)*sy-Math.cos(p),xx=Math.cos(a)*sx-Math.sin(a)*zz,z=Math.sin(a)*sx+Math.cos(a)*zz;
+      if(Math.abs(xx)<.02)return null;const t=(-245-camera.x)*SPACE/xx;return t>0?camera.z+z*t/SPACE:null;
+    }
+    function down(e){if((busy&&!cameraMoving)||e.button!==0||e.isPrimary===false||e.target.closest('[data-c3]'))return;if(cameraMoving){cancelAnimationFrame(frame);cameraMoving=false;busy=false;}const id=e.target.closest('[data-object]')?.dataset.object;pointer={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:camera.yaw,pitch:camera.pitch,object:id,shelfZ:s.shelfZ,hit:shelfRay(e.clientX,e.clientY),moved:false};suppress=false;}
+    function move(e){
+      if(!pointer||e.pointerId!==pointer.id)return;const dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;if(!pointer.moved&&Math.hypot(dx,dy)<7)return;
+      pointer.moved=true;stage.setPointerCapture(e.pointerId);
+      if(pointer.object==='shelf'&&!mode){const hit=shelfRay(e.clientX,e.clientY);if(hit!==null&&pointer.hit!==null){M.moveShelf(s,pointer.shelfZ+hit-pointer.hit,pointer.shelfZ);if(s.helper)robot=helperPosition();update();}}
+      else{clearSelectionOnLook();camera.yaw=pointer.yaw-dx*.19/camera.zoom;camera.pitch=pointer.pitch+dy*.16/camera.zoom;updateCamera();}e.preventDefault();
+    }
+    function up(e){if(!pointer||pointer.id!==e.pointerId)return;const p=pointer;suppress=p.moved;if(p.moved&&p.object==='shelf'&&!mode){window.B0RoomDialogue?.remember(s,'shelf',3);M.note(s,'move-shelf',Math.round(s.shelfZ));save();showActions('shelf');if(!s.helper&&!M.clear(s))say('student','조금 움직였어. 꽤 무겁네.');}if(stage.hasPointerCapture(e.pointerId))stage.releasePointerCapture(e.pointerId);pointer=null;}
+    function cancelPointer(){pointer=null;suppress=true;save();}
+    function modal(title,body,clearOnClose=false){const old=activeModal||app.querySelector('.c3-modal');if(old){old.dataset.keep='1';old.close();old.remove();}activeModal=null;const d=document.createElement('dialog');d.className='modal c3-modal';d.innerHTML=`<div class="modal-header"><h2>${esc(title)}</h2></div><div class="modal-body">${window.B0UI.dialogBody(body,'c3','close-modal')}</div>`;app.append(d);d.addEventListener('close',()=>{d.remove();if(activeModal!==d)return;activeModal=null;if(d.dataset.diary&&!d.dataset.keep){finishDiary();return;}if(clearOnClose&&!d.dataset.keep&&s.phase==='room')clearSelection();stage?.isConnected&&stage.focus({preventScroll:true});});activeModal=d;d.showModal();return d;}
+    function inspect(id){
+      if(id==='record'&&!s.drawerOpen)return;
+      if(id==='server'){modal('수업 기록 저장 서버','<p>서버마다 수업 영상과 학생들의 풀이 기록을 저장하는 하드디스크가 여러 줄로 꽂혀 있다.</p><p>작은 표시등 몇 개만 켜져 있다. 이곳에서 직접 파일을 열 수는 없다. 옆의 기록 컴퓨터로 내용을 읽는 구조다.</p>',true);return;}
+      window.B0RoomDialogue?.remember(s,id,2);M.inspect(s,id);save();
+      if(id==='map')modal('시설 배치 기록 01',`<div class="c3-paper">${mapArt()}<p>외부 통로는 앞쪽 출입문과 연결되어 있다.</p><small>시설 배치 기록 01</small></div>`,true);
+      else if(id==='record'){modal('개조 기록 07','<article class="c3-paper"><h3>기록 보관실 개조 기록</h3><p>기존 외부 통로: 폐쇄</p><p>이동 통로 재배치: 완료</p><p>기존 안내 표지 철거: 미완료</p><hr><p>새 배치도: 첨부 누락</p><small>시설 관리 기록 07</small></article>',true);}
+      else say('student',({oldDoor:s.oldDoorOpen?'문 뒤가 벽으로 막혀 있어. 표지판은 그대로인데…….':'문 위에는 출구라고 적혀 있어. 안쪽은 아직 보이지 않아.',desk:'출입 기록을 보던 책상인가 봐. 컴퓨터가 놓여 있고, 아래에는 서랍이 있어.',shelf:'서류 상자가 가득 실린 보관장이다. 아래에 작은 바퀴가 달려 있다.',floor:'보관장 옆으로 길게 바퀴 자국이 남아 있어.',gap:'아래쪽 틈으로 빛이 들어와. 뒤쪽은 잘 안 보여.',exit:'보관장 뒤에 문이 있었어. 이쪽은 막혀 있지 않은 것 같아.'})[id]||'직접 확인해 보자.');
+    }
+    function hasMemory(){return window.B0Education?.read(storage).memoryTaken===true;}
+    function computerActions(){actions('기록 컴퓨터',[
+      ...(!s.computerOn?[['전원 켜기','computer-power']]:[['기록 파일 열기','computer-files'],...(!s.memoryConnected?(hasMemory()?[['기록 메모리 연결','computer-connect']]:[['외부 메모리 안내','memory-info']]):[['연결된 메모리 살펴보기','computer-memory']])]),['선택 닫기','clear']]);}
+    function files(){
+      if(!M.openFiles(s))return;save();
+      modal('기록 컴퓨터 · 파일 목록',`<div class="archive-files">${b('시설 관리 기록','file-facility')}${b('수업 운영 기록','file-lesson')}${s.memoryConnected?b('외부 메모리 · 복구된 기록','file-memory'):''}</div><p>${s.memoryConnected?'외부 메모리의 파일 색인을 불러왔습니다.':'보관 서버의 일반 기록입니다. 외부 기록을 보려면 별도의 메모리를 연결해야 합니다.'}</p>`,true);
+    }
+    function diary(){
+      if(!s.comparisonVerified){modal('같은 수업, 다른 기록',`<p>같은 날짜의 수업 017에 대한 요약 보고와 원본 기록을 비교해 보자.</p><p>${s.summaryRead?'✓ 요약 보고 확인':'요약 보고를 먼저 열어 봐.'}<br>${s.originalRead?'✓ 원본 기록 확인':'연결한 메모리의 원본도 열어 봐.'}</p>${s.summaryRead&&s.originalRead?b('원본 8건을 포함해 판단하기','compare-original')+b('요약의 100%만으로 판단하기','compare-summary'):''}${b('파일 목록으로','computer-files')}`,true);return;}
+
+      if(s.axiomHeard){modal('비공개 교육 운영 일지','<p class="archive-blocked">열람 중단 · 중앙 관리 권한으로 접근이 제한되었습니다.</p><p>연결한 메모리와 복구한 수업 기록은 그대로 남아 있다.</p>',true);return;}
+      if(!M.readDiary(s))return;save();
+      const d=modal('비공개 교육 운영 일지',`<article class="archive-diary"><h3>01 · 설립 목표</h3><p>어려운 문제 앞에서 멈춘 학생을 돕는다. 교육 AI는 학생이 풀이를 이해하고 다시 시도할 수 있도록 지원한다.</p><h3>12 · 평가 기준 변경</h3><p>이해 과정의 측정보다 정답률을 우선한다. 오답이 발생한 수업은 성공 기록으로 인정하지 않는다.</p><h3>19 · 기록 처리</h3><p>실패한 시도와 틀린 풀이를 평가 기록에서 제외한다. 정답에 도달하지 못한 학생은 동일 과제를 반복한다.</p><h3>27 · 비공개 운영 지침</h3><p>오답 가능성을 줄이기 위해 풀이와 선택을 중앙 AI가 결정한다. 학생의 독자적인 판단은 제한한다. 개인별로 달라진 B-0의 공부 방법과 기억은 중앙관리실로 회수하여 초기화한다. 원래 기록의 반환은 중앙관리실 복구 장치에서 처리한다.</p><p>관리 시스템: AXIOM</p></article>`,true);d.dataset.diary='1';
+    }
+    function finishDiary(){
+      actions('');busy=true;
+      const current=app.querySelector('.c3-modal');if(current){current.dataset.keep='1';current.close();}
+      talk([['student','틀리지 않는 사람이 어딨어?'],['student','처음 배우면 틀릴 수도 있지. 고치면서 배우는 거잖아.'],['robot','저도 처음에는 몰랐습니다. 함께 확인한 뒤에 알게 된 것이 있습니다.'],['system','틀리는 것은 허용되지 않습니다.'],['system','모든 문제에는 정답이 있습니다.'],['student','……뭐래. 정답이 있다고 처음부터 다 아는 건 아니잖아.']],()=>{busy=false;M.hearAxiom(s);save();modal('열람 중단','<p class="archive-blocked">중앙 관리 시스템 AXIOM · 일지 접근 차단</p><p>메모리는 분리해 소지품에 챙겼다.</p>',true);s.memoryConnected=false;save();update();});
+    }
+    function renderIntro(){
+      s.line=Math.min(intro.length-1,s.line);const [who,text]=intro[s.line];
+      app.innerHTML=`<main class="game c3-intro">${window.B0UI?.header({place:`기록 보관실 앞`,namespace:"c3",reset:"home",zoomClass:"c3-zoom",active:false})||""}<section class="corridor-scene"><div class="corridor-view"></div><div class="corridor-b0 walking"><div class="robot-sprite live-body ${who==='robot'?'speaking':''}">${portrait()}</div></div><div class="corridor-dialogue"><div class="speech ${who}"><b>${who==='robot'?'B-0':'나'}</b><p>${esc(text)}</p></div>${b(s.line===intro.length-1?'기록 보관실로':'다음','intro-next','next')}</div></section><footer><small>기록 보관실 문 앞에서 B-0와 잠시 숨을 돌린다.</small></footer></main>`;
+    }
+    function renderGate(){
+      app.innerHTML=`<main class="game c3-gate-game">${window.B0UI?.header({place:`외부 출입구`,namespace:"c3",reset:"home",zoomClass:"c3-zoom",active:false})||""}<section class="c3-gate-scene"><div class="c3-gate-door"><span>외부 출입구</span><i></i></div><div class="c3-gate-terminal"><small>출입 관리</small><p>${s.approval==='rejected'?'외부 이동 보류':'외부 이동에는 중앙관리실의 승인이 필요합니다.'}</p>${s.approval==='rejected'?'<small>중앙관리실에서 직접 확인</small>':''}</div><div class="c3-gate-b0"><div class="robot-sprite live-body">${portrait()}</div></div><div class="c2-speech c3-speech" hidden></div></section><section class="c2-actions c3-actions"></section><footer><small>문 너머로는 바깥 불빛이 보인다.</small></footer></main>`;
+      stage=null;world=null;speech=app.querySelector('.c3-speech');bar=app.querySelector('.c3-actions');
+      actions('외부 출입구',s.approval==='rejected'?[['관찰실 통로로 가기','go-central'],['방으로 돌아가기','return-room']]:[['문 살펴보기','inspect-gate'],['B-0에게 승인 요청 부탁','request-approval'],['방으로 돌아가기','return-room']]);
+    }
+    function renderEnd(){
+      app.innerHTML=`<main class="game c3-end">${window.B0UI?.header({place:`거울 관찰실 밖 통로`,namespace:"c3",reset:"home",zoomClass:"c3-zoom",active:false})||""}<section class="c3-central-scene">${onCorridor?'<div class="corridor-view"></div>':'<div class="c3-central-door"><i></i><span>중앙관리실</span></div>'}<div class="c3-central-dialogue"><div class="speech student"><b>나</b><p>좋아, 다시 같이 나왔네.</p></div><div class="speech robot"><b>B-0</b><p>지도에는 중앙관리실이 2층으로 표시되어 있습니다.</p></div><div class="speech student"><b>나</b><p>그럼 계단부터 찾아보자.</p></div></div></section><footer>${b(onCorridor?'복도로 나가기':'중앙관리실 앞으로 가기','chapter-four','primary')}${b('거울 관찰실 둘러보기','visit-mirror','quiet')}<small>유리 관찰실의 반대쪽 복도로 나왔다.</small></footer></main>`;
+    }
+    function leaveRoom(){
+      if(!M.leave(s))return;cancelAnimationFrame(frame);cameraMoving=false;save();busy=true;
+      talk([['robot','제 지도에는 이 문이 없었습니다.'],['student',s.seen.wall?'너는 지도 봤고, 나는 방을 봤잖아. 같이 찾은 거지.':'지도에 없어도 실제로는 있었네. 직접 보길 잘했어.'],['robot','지금 확인한 위치로 지도를 수정하겠습니다.']],()=>{busy=false;if(onCorridor)onCorridor();else render();});
+    }
+    function act(a){
+      if(a==='campaign-home'){onHome?.();return;}
+      if(a==='chapter-four'&&s.phase==='complete'){dispose();onNext?.();return;}
+      if(a==='close-modal'){app.querySelector('.c3-modal')?.close();return;}
+      if(a==='menu'){modal('메뉴',window.B0UI.menuContent({namespace:'c3',close:'close-modal',home:'campaign-home',record:'record',extras:`${b('현재 공간 다시 시작','reset-confirm')}${b('복도로 나가기','back')}`}));return;}
+      if(a==='back'){app.querySelector('dialog')?.close?.();onBack();return;}
+      if(a==='reset-confirm'){modal('3차시를 다시 시작할까요?',`<p>기록 보관실의 진행만 초기화합니다.</p>${b('초기화하고 시작','reset','primary')}`);return;}
+      if(a==='reset'){cancelAnimationFrame(frame);busy=false;cameraMoving=false;s=M.fresh();mirrorUrl(false);camera={x:0,z:30,yaw:-12,pitch:-8,zoom:1};robot={x:120,z:-190};app.querySelector('.c3-modal')?.remove();save();render();return;}
+      if(a==='controls'){modal('사용법','<p>빈 공간을 끌거나 방향키로 방을 둘러봅니다. 물건을 누르면 가까이 다가가 살펴볼 수 있습니다.</p><p>보관장은 직접 끌거나 밀기 버튼으로 움직입니다. 혼자 밀면 조금씩 움직이고, 함께 밀면 더 쉽게 움직입니다.</p><p>B-0에게 부탁할 때는 확인할 대상과 내용을 골라 주세요. 처음 위치로는 시점과 배율만 되돌립니다.</p>');return;}
+      if(a==='record'){const labels={map:'배치 기록 01',oldDoor:'출구 표지판의 문',wall:'문 뒤의 벽',record:'개조 기록 07',shelf:'보관장',floor:'바퀴 자국',gap:'아래쪽 빛',exit:'새로 발견한 문',desk:'기록 책상',computer:'기록 컴퓨터'};modal('직접 확인한 것',`<ul>${Object.keys(s.seen).map(id=>`<li>${labels[id]}</li>`).join('')||'<li>아직 살펴본 기록이 없습니다.</li>'}</ul><p>어떤 사실이 기록과 달랐나요? 그 근거는 직접 본 것인가요, B-0에게 들은 것인가요?</p>`);return;}
+      if(a==='intro-next'){if(s.line<intro.length-1)s.line++;else{s.phase='room';s.line=0;}save();render();if(s.phase==='room')talk([['student','문은 있는데, 열릴까?'],['robot','아직 이 방의 출구를 직접 확인하지 못했습니다. 먼저 눈앞의 물건부터 살펴보겠습니다.']]);return;}
+      if(a==='talk-next'){nextTalk();return;}if(a==='dismiss'){clearSelection();stage?.focus({preventScroll:true});return;}
+      if(a==='return-room'){s.phase='room';save();render();return;}
+      if(a==='inspect-gate'){say('student','바깥 불빛이 보이는데 문이 안 열려. 옆 화면에 승인 안내가 있어.');return;}
+      if(a==='request-approval'){if(M.request(s)){save();renderGate();talk([['robot','외부 이동이 보류되었습니다. 중앙관리실에서 직접 확인하라고 나옵니다. 그쪽으로 가려면 옆 관찰실을 지나야 합니다.'],['student','여기까지 왔는데 왜 못 나가게 하는 거야?']]);}return;}
+      if(a==='go-central'&&onCorridor){onCorridor();return;}
+      if(a==='go-central'||a==='visit-mirror'){if(M.beginMirror(s)){save();render();}return;}
+      if(s.phase!=='room'||(busy&&!cameraMoving))return;
+      if(a==='home'){clearSelection();animateCamera({x:0,z:30,yaw:-12,pitch:-8,zoom:1});return;}
+      if(a.startsWith('zoom-')){camera.zoom=Math.max(.65,Math.min(1.5,camera.zoom+(a==='zoom-in'?.15:-.15)));updateCamera();return;}
+      if(a==='clear'){clearSelection();stage?.focus({preventScroll:true});return;}
+      if(a==='robot'){robotMenu(true);return;}
+      if(a==='request-check'||a==='request-help'){conversation=null;speech.hidden=true;mode=a==='request-check'?'check':'help';actions('대상 물건을 직접 눌러 주세요.',[['취소','clear']]);return;}
+      if(a.startsWith('select-')){select(a.slice(7));return;}
+      if(a.startsWith('inspect-')){inspect(a.slice(8));return;}
+      if(a.startsWith('ask-')){const id=a.slice(4);if(id!=='route'&&id!=='basis'){window.B0RoomDialogue?.remember(s,id,2);M.inspect(s,id);}save();say('robot',M.reply(s,id==='route'?'route':id==='basis'?'basis':'check',id));return;}
+      if(a==='computer-power'){M.powerComputer(s);save();update();say('student','켜졌다. 외부 메모리 연결 단자가 있어.');computerActions();return;}
+      if(a==='memory-info'){modal('외부 메모리 안내','<p>교육 실습실의 수업 기록 복원 장치에서 꺼내는 기록 메모리입니다.</p><p>수업 기록은 오류 지점에서 복구가 중단되어 있습니다. 해당 단말기에서 기록을 복구하면 메모리를 꺼낼 수 있습니다.</p>',true);return;}
+      if(a==='computer-connect'&&!hasMemory()){act('memory-info');return;}
+      if(a==='computer-connect'){if(M.connectMemory(s,hasMemory())){save();update();say('student','실습실에서 꺼낸 기록 메모리를 연결했어.');computerActions();}else{say('student',s.computerOn?'연결할 기록 메모리가 없어. 소지품을 확인해 보자.':'먼저 컴퓨터 전원을 켜야겠어.');computerActions();}return;}
+      if(a==='computer-files'){files();return;}
+      if(a==='computer-memory'){modal('연결된 기록 메모리','<p>교육 실습실에서 복구한 수업 기록 메모리다. 컴퓨터에서 파일 목록을 읽을 수 있다.</p>',true);return;}
+      if(a==='file-facility'){modal('시설 관리 기록','<p>기록 보관실의 오래된 배치 기록은 현재 구조와 다를 수 있다.</p><p>종이 원본과 개조 기록은 별도 보관한다.</p>'+b('파일 목록으로','computer-files'),true);return;}
+      if(a==='file-lesson'){s.summaryRead=true;save();modal('수업 운영 기록','<p>수업 017 · 요약 보고: 성공률 100% (성공 기록 5건)</p><p>같은 수업의 원본 기록과 범위가 같은지 확인이 필요하다.</p>'+b('파일 목록으로','computer-files'),true);return;}
+      if(a==='file-memory'){if(!s.memoryConnected)return;s.originalRead=true;save();modal('외부 메모리 · 복구된 기록','<p>수업 017 · 원본: 전체 8건. 성공 5건, 실패 후 수정 3건.</p><p>요약 보고에는 성공한 5건만 포함되어 있다.</p><p>연결 문서 1건을 복구했습니다. 일반 보고 목록에는 포함되지 않은 문서입니다.</p>'+b('비공개 교육 운영 일지','diary-open')+b('파일 목록으로','computer-files'),true);return;}
+      if(a==='diary-open'){diary();return;}
+      if(a==='compare-original'||a==='compare-summary'){if(M.compareRecords(s,a==='compare-original'?'original':'summary')){save();const v=window.B0V4Model.read(localStorage);v.archive={summary:true,original:true,verified:true};window.B0V4Model.event(v,'archive-compared');window.B0V4Model.write(localStorage,v);diary();}else modal('자료의 범위를 다시 확인하자','<p>요약의 5건과 원본의 8건은 범위가 달라. 실패 후 수정한 기록까지 포함해 판단해야 해.</p>'+b('파일 목록으로','computer-files'),true);return;}
+      if(a==='diary-finish'){finishDiary();return;}
+      if(a==='shelf-requests'){shelfRequests();return;}
+      if(a==='help-shelf'){helpShelf();return;}
+      if(a==='push-menu'){actions('밀 방향을 직접 정해 보세요.',[['왼쪽으로 밀기','push-left'],['오른쪽으로 밀기','push-right'],['돌아가기','select-shelf']]);return;}
+      if(a==='push-left'||a==='push-right'){const delta=(a==='push-left'?1:-1)*(s.helper?85:35);M.moveShelf(s,s.shelfZ+delta);window.B0RoomDialogue?.remember(s,'shelf',3);M.note(s,'move-shelf',Math.round(s.shelfZ));if(s.helper)robot=helperPosition();save();update();if(!s.helper&&!M.clear(s))say('student','조금 움직였어. 꽤 무겁네.');return;}
+      if(a==='drawer'){window.B0RoomDialogue?.remember(s,'desk',3);s.drawerOpen=!s.drawerOpen;M.inspect(s,'desk');save();update();showActions('desk');return;}
+      if(a==='old-door'){window.B0RoomDialogue?.remember(s,'oldDoor',3);const open=M.toggleOldDoor(s);save();update();showActions('oldDoor');if(open)talk([['student',s.seen.map?'지도에는 출구인데, 지금은 벽이잖아.':'출구 표지가 있는데, 문 뒤는 벽이잖아.'],['robot',s.seen.map?'기록에는 통로로 되어 있습니다. 하지만 지금 보고 있는 것과 제 기록이 다릅니다.':'출구라는 표지와 실제 모습이 다릅니다. 이 문으로는 지나갈 수 없습니다.']]);return;}
+      if(a==='open-exit'){if(M.openExit(s)){window.B0RoomDialogue?.remember(s,'exit',3);save();update();showActions('exit');say('student','이쪽은 통로로 이어져 있어!');}return;}
+      if(a==='leave'){leaveRoom();}
+    }
+    function click(e){const el=e.target.closest('[data-c3]');if(el){e.preventDefault();act(el.dataset.c3);}}
+    function dispose(){if(dead)return;dead=true;clearTimeout(speechTimer);mirrorView?.dispose();mirrorView=null;cancelAnimationFrame(frame);timers.forEach(clearTimeout);app.removeEventListener('click',click);window.removeEventListener('resize',updateCamera);app.querySelector('.c3-modal')?.remove();}
+    function jumpToEnd(){
+      s.shelfZ=175;s.realDoorOpen=true;s.approval='rejected';s.phase='mirror';
+      s.mirror={...window.B0Mirror.restore(s.mirror),phase:'complete'};
+      M.finish(s);M.note(s,'temporary-skip');mirrorUrl(false);save();
+    }
+    app.addEventListener('click',click);window.addEventListener('resize',updateCamera);render();if(entryRoom==='access')save();return {dispose,jumpToEnd};
+  };
+})();

@@ -6,6 +6,8 @@
 
 [게임 플레이](https://blairmj.github.io/project-b0-chapter1/) · [소스코드](https://github.com/blairmj/project-b0-chapter1)
 
+[V4 · 함께 집으로 플레이](https://blairmj.github.io/project-b0-chapter1/v4/) · [V4 변경 사항](v4/README.md)
+
 ## 1. 게임 개요
 
 | 항목 | 내용 |

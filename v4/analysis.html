@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0c1723"><title>B-0 · 플레이 후 설문 분석</title>
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./survey.css?v=20261103v4a">
+  <script defer src="./survey-model.js?v=20261103v4a"></script>
+  <script defer src="./analysis.js?v=20261103v4a"></script>
+</head>
+<body>
+  <header class="site-header"><a class="brand" href="./">PROJECT <b>B-0</b></a><span>TEACHER WORKSPACE</span><a href="./survey.html">학생 설문</a></header>
+  <main class="wide-shell">
+    <div class="page-title"><div><p class="eyebrow">POST-PLAY / ANALYSIS</p><h1>모험 다음의 배움</h1><p class="lead">아이들의 생각, 상황 판단, 플레이 경험을 나란히 살펴봅니다.</p></div><a class="button" href="./analysis-methods.html">분석 방법과 문항표</a></div>
+    <div class="notice mint">응답 파일은 이 브라우저 탭 안에서 처리됩니다. 서버로 업로드되지 않으며, 탭을 닫으면 불러온 자료는 사라집니다. 작업을 이어가려면 ‘분석 묶음 저장’으로 응답과 코딩을 보관하세요.</div>
+    <label class="upload-box"><strong>응답 파일을 모아 불러오세요</strong>학생의 JSON 파일 여러 개 또는 저장한 분석 묶음 JSON을 선택할 수 있습니다.<input id="files" type="file" accept=".json,application/json" multiple></label>
+    <div class="actions no-print"><button type="button" id="demo">가상 응답으로 미리보기</button><button type="button" id="clear">불러온 자료 비우기</button></div>
+    <p id="import-status" class="status" role="status"></p>
+    <div id="filters" class="toolbar"></div>
+    <div class="actions no-print"><button type="button" id="raw-export" disabled>원자료 CSV</button><button type="button" id="summary-export" disabled>요약 CSV</button><button type="button" id="coding-export" disabled>서술형 코딩 CSV</button><button type="button" id="bundle-export" disabled>분석 묶음 저장</button><button type="button" id="print" disabled>결과 인쇄 / PDF</button></div>
+    <p class="muted no-print">CSV와 인쇄는 현재 필터의 결과를 내보냅니다. 분석 묶음은 필터와 관계없이 불러온 모든 응답·코딩을 저장합니다.</p>
+    <div id="report"><p class="empty">아직 응답을 불러오지 않았습니다.<br>실제 학생 자료 없이도 가상 응답으로 화면을 살펴볼 수 있습니다.</p></div>
+  </main>
+  <footer class="site-footer"><span>자기평가와 상황 판단을 구분해서 읽습니다.</span><a href="./analysis-methods.html">분석 안내</a><a href="./survey.html?mode=preview">학생 설문 미리보기</a></footer>
+  <noscript>분석을 사용하려면 JavaScript를 켜 주세요.</noscript>
+</body>
+</html>
