@@ -98,3 +98,23 @@ const optical=ctx.window.startChapterFour({app,portrait:()=>'',onBack(){},reflec
 optical.act('optics-test');assert.equal(optical.state().s.optics.trials,1);optical.act('optics-hold');assert.equal(optical.state().s.optics.holding,false,'wrong angle cannot free B-0');
 for(let i=0;i<4;i++)optical.act('optics-right');optical.act('optics-test');optical.act('optics-hold');assert.equal(optical.state().s.optics.holding,true);optical.act('optics-cut');assert.equal(optical.state().s.links.robot,true,'body inspection is still required');optical.act('optics-body');optical.act('optics-cut');step(1900);assert.equal(optical.state().s.links.robot,false);assert.equal(saved.optics.cut,true);optical.dispose();assert.equal(frames.size,0);
 console.log('PASS: actual optical controller blocks bypass, handles failed and corrected aim, requires inspection, moves B-0 to sever the physical link and cleans up');
+
+// Resetting an older completed save starts the new battle and must keep AXIOM silent afterward.
+ctx.window.B0CardBoss=require('../card-boss-model.js');
+let encounter;
+ctx.window.startB0CardBattle=options=>{encounter=options;return {dispose(){}};};
+Object.assign(initial,{...M.fresh(),phase:'room',met:true,boss:true,bodyChecked:true,opened:true,upper:true,links:{robot:false}});
+const cardGame=ctx.window.startChapterFour({app,portrait:()=>'',onBack(){}});
+cardGame.act('reset');assert.ok(encounter);assert.equal(encounter.state.hits,0);
+const B=ctx.window.B0CardBoss,battle=encounter.state;
+for(let i=0;i<4;i++)B.advance(battle);B.deploy(battle);
+B.adjust(battle,-15);B.adjust(battle,-15);B.strike(battle);
+for(let i=0;i<4;i++)B.adjust(battle,15);B.strike(battle);B.takeCard(battle);B.release(battle);
+encounter.onReleased();assert.equal(cardGame.state().s.links.robot,false);assert.equal(saved.battle.released,true);
+assert.match(node('.c4-speech').innerHTML,/다시 움직일 수/);
+assert.equal(node('.c4-response').hidden,true);
+cardGame.state().s.phase='farewell';cardGame.state().s.line=1;cardGame.act('story-next');
+assert.match(node('.c4-speech').innerHTML,/제 마음대로 움직일 수/);
+assert.doesNotMatch(node('.c4-speech').innerHTML,/기체 회수 절차가 완료/);
+cardGame.dispose();assert.equal(frames.size,0);
+console.log('PASS: legacy-save reset enters the card battle, release reconnects the exit and disabled AXIOM stays silent');

@@ -85,7 +85,7 @@
     function updateRobot(){if(!inRoom())return;const actor=app.querySelector('.c4-robot'),controlled=s.met&&s.links.robot&&!M.opticalWindow(s),now=performance.now();
       if(controlled){wakeUntil=0;recoveryPending=false;}else if(lastControlled){recoveryPending=!!modalEl;wakeUntil=now+(modalEl?500:1700);}lastControlled=controlled;
       const pose=journey||opticalMotion?'walking':s.holding?'holding':r.lifted?'lifting':controlled?'controlled':now<wakeUntil?'recovering':s.opened?'ready':s.boss?'alert':'idle';actor.dataset.pose=pose;actor.dataset.mood=controlled?'blank':s.opened?'friendly':s.boss?'concerned':'attentive';actor.classList.toggle('controlled',controlled);}
-    function farewellLine(){window.B0UI?.cameraActive(false,app);s.line=Math.min(s.line,farewell.length-1);say(...farewell[s.line]);speech.insertAdjacentHTML('beforeend',b(s.line===farewell.length-1?'함께 바깥으로':'다음','story-next','next'));actions('');}
+    function farewellLine(){window.B0UI?.cameraActive(false,app);s.line=Math.min(s.line,farewell.length-1);say(...(s.battle?.released&&farewell[s.line][0]==='axiom'?['robot','이제 제 마음대로 움직일 수 있어요.']:farewell[s.line]));speech.insertAdjacentHTML('beforeend',b(s.line===farewell.length-1?'함께 바깥으로':'다음','story-next','next'));actions('');}
     function startJourney(kind){if(journey||!s.opened||s.links.robot)return;if(s.holding){say('robot','아직 잡고 있습니다. 놓아도 될까요?');robotMenu();return;}cancelAnimationFrame(camFrame);cancelAnimationFrame(journeyFrame);closeModal(false);conversation=null;pointer=null;speech.hidden=true;
       const from={...robot},view={...camera},start=performance.now(),duration=kind==='approach'?2200:3000,turn=((-180-view.yaw+540)%360)-180;
       window.B0UI?.cameraActive(false,app);
