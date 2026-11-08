@@ -1,0 +1,56 @@
+/* The combat uses a shared scene for the live aiming beam and the attack beam. */
+.bb-game{display:flex;flex-direction:column;max-width:960px;background:#0c1822;overflow:auto}
+.bb-stage{position:relative;flex:1 1 auto;min-height:240px;background:radial-gradient(ellipse at 50% 30%,#263a48,#09131d 75%);overflow:hidden;isolation:isolate}
+.bb-arena{display:block;width:100%;height:100%;min-height:240px;max-height:61dvh}
+.bb-room{fill:#132734;stroke:#48616f;stroke-width:2;opacity:.8}
+.bb-room path{fill:none}.bb-room .bb-light-strip{stroke:#b8eaff;stroke-width:7;filter:drop-shadow(0 0 11px #5ad7ff)}
+.bb-room .bb-screen-lines{stroke:#69b4cb;stroke-width:4}
+.bb-status{position:absolute;top:13px;left:18px;z-index:2;display:flex;align-items:center;gap:12px;font-size:12px;pointer-events:none}
+.bb-status strong{font-size:14px;letter-spacing:.14em;color:#f8d6a6}.bb-status span{color:#c3d3de}
+.bb-eyes{fill:#ff835c;filter:drop-shadow(0 0 8px #f64c20)}
+.bb-core{filter:drop-shadow(0 0 15px #ffbd79)}
+.bb-emitter>circle+circle{fill:#28394a}
+.bb-active>circle+circle{fill:#fffce6;stroke:#ffd28d;stroke-width:5;filter:drop-shadow(0 0 17px #ffcb7a)}
+.bb-axiom{transform-origin:500px 365px;transition:transform .65s,filter .65s}
+.bb-axiom[data-defeated=true]{transform:translateY(20px) rotate(5deg);filter:saturate(.28) brightness(.65)}
+.bb-axiom[data-defeated=true] .bb-core,.bb-axiom[data-defeated=true] .bb-eyes{fill:#22333e;filter:none}
+.bb-case,.bb-terminal{cursor:pointer;outline:none}.bb-case:focus-visible>rect:first-child,.bb-terminal:focus-visible>path:first-child{stroke:#fff6c4;stroke-width:9}
+.bb-weakpoint{animation:bb-target 2.8s linear infinite;transform-origin:500px 215px;pointer-events:none}
+.bb-rays{pointer-events:none;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.bb-ray-in,.bb-ray-out{stroke:#b6edff;stroke-width:2;filter:drop-shadow(0 0 4px #65dcff)}
+.bb-ray-out{stroke:#f2daa7}.bb-bounce{fill:#e6fdff;stroke:#b8efff;opacity:.6}
+.bb-rays[data-fire=true] .bb-ray-in{stroke:#fff6d5;stroke-width:12;filter:drop-shadow(0 0 13px #ffb43f);animation:bb-in .35s both}
+.bb-rays[data-fire=true] .bb-ray-out{stroke:#fff8da;stroke-width:13;filter:drop-shadow(0 0 15px #ffac39);animation:bb-out 1.25s .2s both}
+.bb-rays[data-fire=true] .bb-bounce{animation:bb-bounce 1.3s both}
+.bb-impact{fill:#fff9d2;stroke:#ffb353;stroke-width:10;filter:drop-shadow(0 0 14px #ffc74b);animation:bb-impact 1.05s .5s both;transform-box:fill-box;transform-origin:center}
+.bb-axiom[data-hit=true]{animation:bb-recoil 1.4s .5s both}
+.bb-reflector{filter:drop-shadow(0 4px 5px #000b)}
+.bb-b0{position:absolute;right:5%;bottom:8%;width:13%;min-width:64px;max-width:120px;height:42%;padding:0;border:0;background:transparent!important;box-shadow:none}
+.bb-b0 img{display:block;height:100%;width:100%;object-fit:contain;filter:saturate(.4) brightness(.75)}
+.bb-b0 span{position:absolute;left:42%;top:48%;color:#ff8b64;text-shadow:0 0 9px #ff481f;font-size:20px}
+.bb-dialogue{flex:none;min-height:100px;padding:8px 18px;display:flex;align-items:center;gap:12px;background:#101f2b;border-top:1px solid #415c6e}
+.bb-dialogue .speech{flex:1;max-width:100%}.bb-dialogue .speech b{margin-bottom:4px}.bb-dialogue .speech p{padding:9px 13px;font-size:14px}
+.bb-dialogue .speech.axiom{margin:0;padding:0;border:0;background:none;font-size:14px!important}
+.bb-dialogue .speech.axiom b{color:#f4bfa0}.bb-dialogue .speech.axiom p{background:#362a28;border:1px solid #9a6950;color:#ffe5c9;border-radius:9px}
+.bb-controls{flex:none;display:flex;gap:8px;flex-wrap:wrap;padding:12px 18px;background:#0d1b26;min-height:70px}
+.bb-controls button{font-size:13px;min-height:44px;padding:9px 13px}.bb-controls button:disabled{opacity:.4;cursor:default}
+.bb-controls[inert]{opacity:.55}
+.bb-detail{width:100%;display:flex;align-items:center;flex-wrap:wrap;gap:10px 14px}
+.bb-detail>strong{width:100%;font-size:14px;color:#c0ecf9}.bb-detail p{font-size:13px;flex:1 1 200px;line-height:1.7}
+.bb-card-detail,.bb-pocket-card{padding:10px 16px;border:2px solid #f1e8bd;border-radius:5px;background:linear-gradient(135deg,#fff4ce,#aebbb3);color:#253e4b;font-weight:bold;text-align:center;font-size:12px;line-height:1.5;box-shadow:0 3px 10px #0006}
+.bb-pocket-card{position:absolute;right:22px;bottom:12px;z-index:3}
+.bb-card-flight{animation:bb-card-take .8s ease-out both}
+.bb-game>footer{flex:none;display:flex;align-items:center;gap:8px;padding:10px 18px;flex-wrap:wrap}
+.bb-game>footer button{font-size:12px;min-height:40px;padding:8px 10px}
+.bb-tools{font-size:11px;color:#b5c8d5;margin-right:auto}
+.c4-game[data-card-released=true] .c4-main-screen{filter:grayscale(1) brightness(.5)}
+@keyframes bb-target{to{transform:rotate(360deg)}}
+@keyframes bb-in{from{stroke-dasharray:0 500}to{stroke-dasharray:500 500}}
+@keyframes bb-out{0%{stroke-dasharray:0 1300;opacity:0}15%{opacity:1}45%,100%{stroke-dasharray:1300 1300;opacity:1}}
+@keyframes bb-bounce{0%,10%{r:6;opacity:.4}35%{r:25;opacity:1}100%{r:10;opacity:.7}}
+@keyframes bb-impact{0%{opacity:0;transform:scale(.2)}40%{opacity:1;transform:scale(1.4)}100%{opacity:0;transform:scale(.6)}}
+@keyframes bb-recoil{0%,20%{transform:none}40%{transform:translateY(-9px) rotate(-6deg)}65%{transform:rotate(3deg)}100%{transform:none}}
+@keyframes bb-card-take{from{translate:-160px -100px;scale:1.5;opacity:0}to{translate:0 0;scale:1;opacity:1}}
+@media(max-width:520px){.bb-status{top:8px;left:12px;font-size:10px}.bb-status strong{font-size:12px}.bb-stage,.bb-arena{min-height:215px}.bb-dialogue{padding:8px 12px;min-height:105px}.bb-dialogue .speech p{font-size:13px}.bb-controls{padding:10px 12px;gap:6px}.bb-controls button{flex:1 1 auto;padding:9px;font-size:12px}.bb-game>footer{padding:8px 12px}.bb-tools{width:100%;order:2}.bb-b0{right:3%;min-width:55px}}
+@media(max-height:650px){.bb-game{height:auto;min-height:100dvh}.bb-stage{flex:none;height:330px}.bb-arena{max-height:none}.bb-controls{min-height:64px}}
+@media(prefers-reduced-motion:reduce){.bb-game *{animation:none!important;transition:none!important}.bb-rays[data-fire=true] .bb-impact{opacity:.65}}

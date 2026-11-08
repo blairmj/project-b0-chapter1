@@ -7,6 +7,7 @@
     s.line=Math.max(0,Math.floor(Number(raw.line)||0));s.links.robot=raw.links?.robot!==false;
     s.opened=s.opened&&s.upper&&!s.links.robot;
     if(['farewell','ending','complete'].includes(s.phase)&&!s.opened){s.phase='room';s.line=0;}
+    if(raw.battle){const B=root.B0CardBoss||(typeof require==='function'?require('./card-boss-model.js'):null);if(B){s.battle=B.restore(raw.battle);s.links.robot=!s.battle.released;if(!s.battle.released){s.opened=false;s.upper=false;s.phase='room';}}}
     // A saved request is not a maintained physical grip after a reload.
     s.holding=false;s.seen=raw.seen&&typeof raw.seen==='object'?{...raw.seen}:{};
     s.logs=Array.isArray(raw.logs)?raw.logs.slice(-80):[];if(raw.observations&&typeof raw.observations==='object')s.observations={seen:{...raw.observations.seen},last:raw.observations.last};
@@ -14,7 +15,7 @@
   }
   function arrive(raw){const s=restore(raw);if(['farewell','ending','complete'].includes(s.phase)){s.phase='room';s.line=0;}return s;}
   function log(s,action,value){s.logs.push({action,value});s.logs=s.logs.slice(-80);}
-  function connect(s,id,on){if(id!=='robot'||!s.boss||!s.bodyChecked||s.opened||s.optics?.enabled&&!s.optics.cut)return false;s.links.robot=!!on;if(on)s.holding=false;log(s,'remote-control',!!on);return true;}
+  function connect(s,id,on){if(s.battle)return false;if(id!=='robot'||!s.boss||!s.bodyChecked||s.opened||s.optics?.enabled&&!s.optics.cut)return false;s.links.robot=!!on;if(on)s.holding=false;log(s,'remote-control',!!on);return true;}
   function enableOptics(s){if(s.opened||!s.links.robot||s.optics?.enabled)return false;s.optics={enabled:true,angle:-30,deployed:false,holding:false,cut:false,trials:0,testedAngle:null};return true;}
   function opticalResult(s){const O=root.B0Reflection||(typeof require==='function'?require('./reflection-model.js'):null);return O?.bossTrace(s.optics?.angle||0);}
   function opticalAdjust(s,delta){const o=s.optics;if(!o?.enabled||!s.boss||!s.links.robot||o.holding)return false;o.angle=Math.max(-75,Math.min(75,o.angle+delta));o.deployed=false;o.testedAngle=null;log(s,'reflector-angle',o.angle);return true;}

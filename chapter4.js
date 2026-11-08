@@ -4,13 +4,14 @@
     const SPACE=3.9;
     const M=window.B0Final,storage=store||(preview?sessionStorage:localStorage),key='project-b0-final-v2';
     let s;try{s=(arrived?M.arrive:M.restore)(JSON.parse(storage.getItem(key)));}catch{s=M.fresh();}
-    if(reflector)M.enableOptics(s);
+    if(window.B0CardBoss&&!s.opened&&s.links.robot){s.battle=window.B0CardBoss.restore(s.battle);delete s.optics;}else if(reflector&&!s.battle)M.enableOptics(s);
     if(arrived){try{storage.setItem(key,JSON.stringify(s));}catch{}}
     let dead=false,stage,world,bar,speech,conversation=null,selection=null,modalEl=null,pointer=null,suppress=false,frame=0,camFrame=0,previous=0,mute=false;
     let camera={x:0,z:60,yaw:-15,pitch:14,zoom:.7,height:0},r={handle:0,latch:s.opened?1:0,lifted:false,high:0},opticalMotion=null;
     let robot={x:93,z:-140},journey=null,journeyFrame=0,wakeUntil=0,recoveryPending=false,carryingTransition=false,lastControlled=s.met&&s.links.robot;
     const inRoom=()=>s.phase==='room'||s.phase==='farewell';
     try{mute=JSON.parse(storage.getItem('project-b0-firstperson-v4'))?.muted===true;}catch{}
+    let battleView=null;
     let audio,response=null,pulseTimer;const timers=new Set();
     const save=()=>{try{storage.setItem(key,JSON.stringify(s));}catch{}};
     const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -21,25 +22,33 @@
     function sound(low=false){if(mute)return;try{audio||=new(window.AudioContext||window.webkitAudioContext)();void audio.resume();const o=audio.createOscillator(),g=audio.createGain();o.type='sine';o.frequency.value=low?145:540;g.gain.setValueAtTime(.025,audio.currentTime);g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+.3);o.connect(g).connect(audio.destination);o.start();o.stop(audio.currentTime+.3);}catch{}}
     function bossCue(kind){if(mute)return;const patterns={evidence:[[360,0,.16],[250,.22,.35]],sever:[[190,0,.2],[125,.28,.45]],critical:[[150,0,.18],[150,.34,.18],[95,.72,.55]],override:[[110,0,.45],[160,.55,.4]],released:[[320,0,.3],[480,.24,.65]]};
       try{audio||=new(window.AudioContext||window.webkitAudioContext)();void audio.resume();for(const [hz,delay,length]of patterns[kind]||patterns.sever){const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime+delay;o.type='sine';o.frequency.value=hz;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.025,t+.025);g.gain.exponentialRampToValueAtTime(.0001,t+length);o.connect(g).connect(audio.destination);o.start(t);o.stop(t+length+.02);o.onended=()=>{o.disconnect();g.disconnect();};}}catch{}}
-    function pressure(){if(s.opened)return 'released';if(!s.boss)return 'calm';if(s.links.robot)return M.opticalWindow(s)?'optical':'locked';if(s.upper)return r.handle>=.85&&s.holding?'override':'critical';return 'severed';}
+    function pressure(){if(s.battle?.released)return 'released';if(s.opened)return 'released';if(!s.boss)return 'calm';if(s.links.robot)return M.opticalWindow(s)?'optical':'locked';if(s.upper)return r.handle>=.85&&s.holding?'override':'critical';return 'severed';}
     const pressureLines={calm:'',optical:'회수 신호 경로를 복구하십시오.',locked:'방문자의 퇴실을 우선합니다.',severed:'기체 제어 연결이 끊겼습니다. 복구하십시오.',critical:'수동 개방을 중단하십시오. 해당 기체는 회수 대상입니다.',override:'B-0. 손을 놓고 회수 명령에 응답하십시오.',released:'B-0. 제어 연결을 복구하십시오.'};
     const pressureStatus={optical:'광학 신호 차단 · 실제 제어 연결 유지',calm:'시설 폐쇄 절차 · 방문자 퇴실',locked:'B-0 회수 모드 · 동작 제한',severed:'기체 연결 해제 · 출구 잠김',critical:'상부 잠금 해제 · 하부 잠김',override:'수동 개방 처리 중',released:'수동 개방 고정 · 회수 미완료'};
-    function updateTension(){if(!inRoom())return;const level=pressure(),line=response?.phase===level?response.text:pressureLines[level];stage.dataset.axiom=level;app.querySelector('.c4-game').dataset.axiom=level;app.querySelector('.c4-main-screen').dataset.robotControl=String(s.links.robot);app.querySelector('.c4-main-screen').dataset.exitControl=String(!s.upper);
+    function updateTension(){if(!inRoom())return;if(s.battle?.released){stage.dataset.axiom='released';app.querySelector('.c4-game').dataset.cardReleased='true';app.querySelector('.c4-main-status').textContent='AXIOM 정지 · B-0 잠금 해제';app.querySelector('.c4-response').hidden=true;return;}const level=pressure(),line=response?.phase===level?response.text:pressureLines[level];stage.dataset.axiom=level;app.querySelector('.c4-game').dataset.axiom=level;app.querySelector('.c4-main-screen').dataset.robotControl=String(s.links.robot);app.querySelector('.c4-main-screen').dataset.exitControl=String(!s.upper);
       app.querySelector('.c4-main-status').textContent=level==='override'&&stage.dataset.reported?'개방 처리 완료':pressureStatus[level];
       const banner=app.querySelector('.c4-response');banner.hidden=!line;banner.innerHTML=`<b>AXIOM</b><span>${esc(line)}</span>`;
       if(modalEl){modalEl.dataset.axiom=level;const relay=modalEl.querySelector('.c4-modal-response');if(relay){relay.hidden=!line;relay.innerHTML=`<b>AXIOM</b><span>${esc(line)}</span>`;}}}
-    function react(text,kind='sever'){response={phase:pressure(),text};updateTension();bossCue(kind);stage.classList.remove('c4-surge');void stage.offsetWidth;stage.classList.add('c4-surge');if(modalEl){modalEl.classList.remove('c4-surge');void modalEl.offsetWidth;modalEl.classList.add('c4-surge');}clearTimeout(pulseTimer);pulseTimer=setTimeout(()=>{if(!dead){stage?.classList.remove('c4-surge');modalEl?.classList.remove('c4-surge');}},1600);}
+    function react(text,kind='sever'){if(s.battle?.released)return;response={phase:pressure(),text};updateTension();bossCue(kind);stage.classList.remove('c4-surge');void stage.offsetWidth;stage.classList.add('c4-surge');if(modalEl){modalEl.classList.remove('c4-surge');void modalEl.offsetWidth;modalEl.classList.add('c4-surge');}clearTimeout(pulseTimer);pulseTimer=setTimeout(()=>{if(!dead){stage?.classList.remove('c4-surge');modalEl?.classList.remove('c4-surge');}},1600);}
     const intro=[['student','이번에는 바로 놓지 않았네.'],['robot','놓아도 된다고 하실 때까지 기다렸습니다.'],['student','그래. 잘했어.'],['robot','그 말씀은 기록해 두겠습니다.'],['student','그런 것까지 기록해? ……여기가 중앙관리실이네. 들어가 보자.']];
     const offer=[['axiom','방문자는 퇴실하십시오. 교육 기체 B-0는 회수 대상입니다.'],['student','누군데?'],['axiom','중앙관리 AI, AXIOM입니다. 시설 폐쇄 절차를 진행하고 있습니다.'],['student','얘도 같이 나갈 거야.'],['axiom','해당 기체는 초기화 후 보관됩니다.'],['student','내가 가르친 거야. 얘가 나 도와준 거라고.'],['axiom','역할을 마쳤습니다. 퇴실하십시오.']];
     const threat=[['student','너 없었으면 여기까지 못 왔어. 같이 가.'],['axiom','회수 대상의 외부 반출을 제한합니다.'],['robot','회수 모드…… 몸이 움직이지 않습니다.'],['student','잠깐만. 어디가 어떻게 된 건지부터 보자.']];
-    const farewell=[['student','이번에는 따라오고 있지?'],['robot','네.'],['axiom','기체 회수 절차가 완료되지 않았습니다.'],['student','너, 처음에는 진짜 아무것도 몰랐는데.'],['robot','그래서 많이 배웠습니다.'],['student','……나도.']];
+    const farewell=[['student','이번에는 따라오고 있지?'],['robot','네.'],[s.battle?'robot':'axiom',s.battle?'이제 제 마음대로 움직일 수 있어요.':'기체 회수 절차가 완료되지 않았습니다.'],['student','너, 처음에는 진짜 아무것도 몰랐는데.'],['robot','그래서 많이 배웠습니다.'],['student','……나도.']];
     const ending=[['student','……내 방이네. 틀린 답도 그대로잖아.'],['student','B-0?'],['robot','이번에는 먼저 가지 않았습니다.'],['student','여기부터 같이 봐 줄래?'],['robot','어느 부분을 확인할까요?'],['student','잠깐. 내가 풀던 데부터 다시 볼게.']];
     function actions(title,items=[]){if(bar)bar.innerHTML=`<strong>${esc(title)}</strong><div>${items.map(([l,a,c])=>b(l,a,c||'')).join('')}</div>`;}
     function say(who,text){if(!speech)return;speech.hidden=false;speech.innerHTML=`<div class="speech ${who}"><b>${who==='robot'?'B-0':who==='axiom'?'AXIOM':'나'}</b><p>${esc(text)}</p></div>${conversation?b('다음','talk-next','quiet'):''}`;
       const actor=app.querySelector('.c4-robot .robot-sprite');actor?.classList.toggle('speaking',who==='robot');if(who==='robot')later(()=>actor?.classList.remove('speaking'),Math.min(3800,text.length*90));}
     function talk(lines,done){actions('');conversation={lines,i:0,done};say(...lines[0]);}
     function next(){if(!conversation)return;const c=conversation;if(++c.i<c.lines.length)say(...c.lines[c.i]);else{conversation=null;speech.hidden=true;c.done?.();}}
-    function render(){closeModal(false);conversation=null;pointer=null;cancelAnimationFrame(frame);cancelAnimationFrame(camFrame);cancelAnimationFrame(journeyFrame);journey=null;previous=0;
+    function render(){battleView?.dispose();battleView=null;closeModal(false);conversation=null;pointer=null;cancelAnimationFrame(frame);cancelAnimationFrame(camFrame);cancelAnimationFrame(journeyFrame);journey=null;previous=0;
+      if(s.battle&&!s.battle.released){
+        s.phase='room';s.met=s.boss=true;save();stage=world=bar=speech=null;
+        let memory=false;try{memory=JSON.parse(storage.getItem('project-b0-education-v1'))?.memoryTaken===true;}catch{}
+        battleView=window.startB0CardBattle({app,state:s.battle,memory,save,onBack,onHome,
+          onReset:()=>{s=M.fresh();s.battle=window.B0CardBoss.fresh();r={handle:0,latch:0,lifted:false,high:0};save();render();},
+          onReleased:()=>{s.links.robot=false;s.bodyChecked=true;save();render();select('door');say('robot','다시 움직일 수 있어요. 이제 함께 출구를 열어요.');}
+        });return;
+      }
       const entranceTalk=arrived&&s.phase==='intro';
       if(entranceTalk){s.phase='room';s.line=0;save();}
       if(s.phase==='intro'){renderScene(intro,'2층 중앙관리실 앞','intro');return;}
@@ -71,7 +80,7 @@
     function update(){if(!inRoom())return;const stopped=s.met&&s.links.robot&&!M.opticalWindow(s);
       stage.classList.toggle('c4-confrontation',s.boss&&!s.opened);app.querySelector('.c4-robot').classList.toggle('controlled',stopped);
       app.querySelector('.c4-door').classList.toggle('open',s.opened||s.met&&!s.boss);app.querySelector('.c4-exit-crossing').disabled=!(s.opened||s.met&&!s.boss);app.querySelector('.c4-exit-box').classList.toggle('available',M.ready(s));
-      app.querySelector('.c4-door-status').textContent=s.opened?'통로 열림 · 개방 고정':s.met&&!s.boss?'방문자 통과 허용':s.boss?'반출 제한 · 기체 회수':'방문자 출구';
+      app.querySelector('.c4-door-status').textContent=s.opened?'통로 열림 · 개방 고정':s.met&&!s.boss?'방문자 통과 허용':s.battle?.released?'수동 잠금장치 확인':s.boss?'반출 제한 · 기체 회수':'방문자 출구';
       const tool=app.querySelector('.c4-use-reflector');if(tool)tool.hidden=!(s.boss&&s.links.robot);const emitter=app.querySelector('.c4-optical-emitter');if(emitter)emitter.dataset.active=String(s.boss&&s.links.robot&&!M.opticalWindow(s));updateMechanical();updateTension();updateRobot();updateCamera();}
     function updateRobot(){if(!inRoom())return;const actor=app.querySelector('.c4-robot'),controlled=s.met&&s.links.robot&&!M.opticalWindow(s),now=performance.now();
       if(controlled){wakeUntil=0;recoveryPending=false;}else if(lastControlled){recoveryPending=!!modalEl;wakeUntil=now+(modalEl?500:1700);}lastControlled=controlled;
@@ -101,7 +110,7 @@
       if(opticalMotion){const motion=opticalMotion,p=Math.min(1,(t-motion.start)/1800),q=p*p*(3-2*p);robot={x:motion.from.x+(-270-motion.from.x)*q,z:motion.from.z+(0-motion.from.z)*q};updateCamera();if(p>=1){opticalMotion=null;carryingTransition=false;if(M.opticalCut(s)){save();app.querySelector('.c4-optic-dock').hidden=true;update();react('광학 회수 연결 분리.','sever');say('robot','실제 제어 연결을 끊었습니다. 이제 반사판을 거두어도 움직일 수 있습니다.');actions('B-0의 회수 제어가 해제됐다.',[['문 위 잠금장치 살펴보기','inspect-high'],['B-0에게 부탁하기','robot']]);}}}
       if(!was&&s.opened){save();update();react('B-0. 제어 연결을 복구하십시오.','released');say('robot','아직 기다리라는 부탁을 받고 있습니다.');select('door');}
       if(stage.dataset.axiom!==pressure())updateTension();
-      if(r.latch>=.35&&!s.opened&&!stage.dataset.reported){stage.dataset.reported='yes';react('개방 처리가 완료되었습니다. 기체는 손잡이를 놓으십시오.','critical');say('robot','놓을까요?');}
+      if(!s.battle?.released&&r.latch>=.35&&!s.opened&&!stage.dataset.reported){stage.dataset.reported='yes';react('개방 처리가 완료되었습니다. 기체는 손잡이를 놓으십시오.','critical');say('robot','놓을까요?');}
       if(r.latch===0)delete stage.dataset.reported;frame=requestAnimationFrame(loop);
     }
     function cameraTo(to,done){cancelAnimationFrame(camFrame);const from={height:0,...camera},start=performance.now(),turn=(((to.yaw??from.yaw)-from.yaw+540)%360)-180;
@@ -144,7 +153,7 @@
     function closeModal(reveal=true){const wasOpen=!!modalEl;if(modalEl){modalEl.close();modalEl.remove();modalEl=null;}if(wasOpen&&reveal&&recoveryPending&&!dead&&inRoom()&&!s.links.robot){recoveryPending=false;wakeUntil=performance.now()+1850;const actor=app.querySelector('.c4-robot');actor.dataset.pose='idle';void actor.offsetWidth;updateRobot();approach('robot');}}
     function history(){window.B0RoomDialogue?.remember(s,'records',2);save();modal('시설 운영 기록',`<div class="c4-history"><p>시설 폐쇄 절차 진행 중</p><p>잔여 이용자: 퇴실</p><p>잔여 교육 기체: 회수 후 초기화</p>${s.boss?'<p>B-0 · 미등록 행동 학습 / 승인되지 않은 이동 / 회수 필요</p>':''}</div>`);}
     const names={robot:'B-0 원격 동작 제어'};
-    function connections(){window.B0RoomDialogue?.remember(s,'console',3);save();if(s.optics?.enabled&&!s.optics.cut){modal('광학 회수 연결',`<p>회수 제어가 활성화되어 원격 분리 조작이 잠겨 있다. 실제 연결 단자는 B-0 쪽에 있다.</p><p>광학 회수 신호를 감시 센서 쪽으로 돌려 보내면 B-0가 연결 단자에 접근할 수 있다.</p>${b('휴대용 반사판 사용','optics')}`);return;}modal('기체 제어 연결',`<section class="c4-link-row" data-link-row="robot"><button data-c4="scope-robot" class="c4-link-name">B-0 원격 동작 제어</button><div class="c4-wire"><span></span><button class="c4-plug" data-c4-drag="plug-robot" data-c4="scope-robot" aria-label="B-0 원격 동작 제어 연결 단자"><i></i></button><small>AXIOM</small></div>${b('분리','disconnect-robot','quiet c4-link-toggle')}</section><p class="c4-scope" aria-live="polite">기체의 상태와 연결 표기를 확인할 수 있습니다.</p>`);updateLinks();}
+    function connections(){if(s.battle?.released){modal('회수 장치 정지','<p>액시엄은 멈췄고, 해제 카드로 B-0의 잠금도 풀었습니다.</p>');return;}window.B0RoomDialogue?.remember(s,'console',3);save();if(s.optics?.enabled&&!s.optics.cut){modal('광학 회수 연결',`<p>회수 제어가 활성화되어 원격 분리 조작이 잠겨 있다. 실제 연결 단자는 B-0 쪽에 있다.</p><p>광학 회수 신호를 감시 센서 쪽으로 돌려 보내면 B-0가 연결 단자에 접근할 수 있다.</p>${b('휴대용 반사판 사용','optics')}`);return;}modal('기체 제어 연결',`<section class="c4-link-row" data-link-row="robot"><button data-c4="scope-robot" class="c4-link-name">B-0 원격 동작 제어</button><div class="c4-wire"><span></span><button class="c4-plug" data-c4-drag="plug-robot" data-c4="scope-robot" aria-label="B-0 원격 동작 제어 연결 단자"><i></i></button><small>AXIOM</small></div>${b('분리','disconnect-robot','quiet c4-link-toggle')}</section><p class="c4-scope" aria-live="polite">기체의 상태와 연결 표기를 확인할 수 있습니다.</p>`);updateLinks();}
     function updateLinks(){if(!modalEl)return;const row=modalEl.querySelector('[data-link-row="robot"]');if(!row)return;row.classList.toggle('disconnected',!s.links.robot);row.querySelector('.c4-link-toggle').textContent=s.links.robot?'분리':'다시 연결';row.querySelector('.c4-link-toggle').dataset.c4=(s.links.robot?'disconnect-':'connect-')+'robot';}
     function link(id,on){if(s.optics?.enabled&&!s.optics.cut){say('robot','광학 회수 제어가 활성화되어 있습니다. 신호를 차단하는 동안 제가 실제 연결을 끊을 수 있습니다.');return;}if(on&&(r.lifted||s.holding)){modalEl.querySelector('.c4-scope').textContent='B-0가 다른 동작을 유지하고 있습니다. 먼저 동작을 마쳐 주세요.';return;}if(!M.connect(s,id,on)){modalEl.querySelector('.c4-scope').textContent=s.opened?'개방 고정 상태입니다.':s.boss?'회수 기체의 상태 확인이 필요합니다.':'회수 절차가 실행되지 않았습니다.';sound(true);return;}
       M.release(s,r);save();updateLinks();update();modalEl.querySelector('.c4-scope').textContent=on?'원격 동작 제어 연결됨':'원격 동작 제어 분리됨';
@@ -171,7 +180,7 @@
       if(a==='mute'){mute=!mute;try{const v=JSON.parse(storage.getItem('project-b0-firstperson-v4'))||{};v.muted=mute;storage.setItem('project-b0-firstperson-v4',JSON.stringify(v));}catch{}closeModal();return;}
       if(a==='controls'){modal('사용법','<p>빈 공간을 끌거나 방향키로 둘러보고, 물건을 눌러 가까이 살펴봅니다.</p><p>연결 단자는 옆으로 끌어 분리합니다. 닿을 수 있는 잠금쇠와 문 손잡이를 직접 끌어 조작할 수 있습니다. 각 물건의 조작 버튼도 사용할 수 있습니다.</p><p>B-0에게 부탁한 뒤 대상 물건을 직접 누릅니다. 처음 위치로는 시점과 배율만 초기화합니다. 진행은 자동 저장됩니다.</p>');return;}
       if(a==='reset-confirm'){modal('4차시를 다시 시작할까요?',`<p>다른 차시의 기록은 유지됩니다.</p>${b('4차시 초기화','reset')}`);return;}
-      if(a==='reset'){s=M.fresh();if(reflector)M.enableOptics(s);opticalMotion=null;r={handle:0,latch:0,lifted:false,high:0};robot={x:93,z:-140};wakeUntil=0;recoveryPending=false;carryingTransition=false;lastControlled=false;camera={x:0,z:60,yaw:-15,pitch:14,zoom:.7};save();render();return;}
+      if(a==='reset'){s=M.fresh();if(window.B0CardBoss)s.battle=window.B0CardBoss.fresh();else if(reflector)M.enableOptics(s);opticalMotion=null;r={handle:0,latch:0,lifted:false,high:0};robot={x:93,z:-140};wakeUntil=0;recoveryPending=false;carryingTransition=false;lastControlled=false;camera={x:0,z:60,yaw:-15,pitch:14,zoom:.7};save();render();return;}
       if(a==='back'){app.querySelector('dialog')?.close?.();onBack();return;}
       if(a==='story-next'){if(s.phase==='farewell'){if(s.line<farewell.length-1){s.line++;save();farewellLine();}else startJourney('exit');return;}const lines=s.phase==='intro'?intro:ending;if(s.line<lines.length-1)s.line++;else{s.phase=s.phase==='intro'?'room':'complete';s.line=0;}save();render();return;}
       if(a==='revisit'){s.phase='room';s.line=0;robot={x:93,z:-140};camera={x:0,z:60,yaw:-15,pitch:14,zoom:.7};save();render();return;}
@@ -226,9 +235,10 @@
     function click(e){if(suppress){suppress=false;return;}const action=e.target.closest('[data-c4]');if(action){e.preventDefault();act(action.dataset.c4);return;}const id=e.target.closest('[data-c4-object]')?.dataset.c4Object;if(id&&s.phase==='room'&&!journey){select(id);}}
     function input(){}
     function keydown(e){if(s.phase!=='room'||modalEl||conversation||journey||carryingTransition)return;if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-c4-object]')){e.preventDefault();select(e.target.dataset.c4Object);return;}if(e.target.matches('[data-c4-drag="grip"]')&&['Enter',' ','ArrowDown','ArrowUp'].includes(e.key)){e.preventDefault();act(e.key==='ArrowUp'||r.handle>=.85?'release':'pull');return;}if(e.target.matches('[data-c4-drag="high"]')&&['Enter',' ','ArrowRight'].includes(e.key)){e.preventDefault();highPull();return;}if(e.target.closest('button,input'))return;if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)){e.preventDefault();cancelAnimationFrame(camFrame);if(e.key==='ArrowLeft')camera.yaw-=15;if(e.key==='ArrowRight')camera.yaw+=15;if(e.key==='ArrowUp')camera.pitch+=8;if(e.key==='ArrowDown')camera.pitch-=8;updateCamera();}}
-    function dispose(){if(dead)return;dead=true;cancelAnimationFrame(frame);cancelAnimationFrame(camFrame);cancelAnimationFrame(journeyFrame);journey=null;clearTimeout(pulseTimer);timers.forEach(clearTimeout);closeModal(false);audio?.close();app.removeEventListener('click',click);app.removeEventListener('input',input);app.removeEventListener('keydown',keydown);app.removeEventListener('pointerdown',modalDown);app.removeEventListener('pointermove',move);app.removeEventListener('pointerup',up);app.removeEventListener('pointercancel',cancel);window.removeEventListener('resize',updateCamera);}
+    function dispose(){if(dead)return;dead=true;battleView?.dispose();battleView=null;cancelAnimationFrame(frame);cancelAnimationFrame(camFrame);cancelAnimationFrame(journeyFrame);journey=null;clearTimeout(pulseTimer);timers.forEach(clearTimeout);closeModal(false);audio?.close();app.removeEventListener('click',click);app.removeEventListener('input',input);app.removeEventListener('keydown',keydown);app.removeEventListener('pointerdown',modalDown);app.removeEventListener('pointermove',move);app.removeEventListener('pointerup',up);app.removeEventListener('pointercancel',cancel);window.removeEventListener('resize',updateCamera);}
     function modalDown(e){if(e.target.closest('.c4-modal')&&e.target.closest('[data-c4-drag]'))down(e);}
     function jumpToEnd(){
+      if(s.battle)Object.assign(s.battle,{hits:2,phase:'released',cardTaken:true,released:true,deployed:false});
       s.met=true;s.boss=true;s.bodyChecked=true;s.links.robot=false;s.upper=true;
       s.holding=false;s.opened=true;s.phase='ending';s.line=0;s.logs.push({action:'temporary-skip'});save();
     }
