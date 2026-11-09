@@ -7,7 +7,7 @@
 .c4-ray-guide{height:2px;opacity:.55}.c4-ray-guide>i{box-shadow:0 0 5px #73b7ca99}.c4-ray-guide-out>i{background:#e9d39d}
 .c4-ray-return{height:10px}.c4-ray-return>i{background:#fffae2;box-shadow:0 0 17px 8px #ffbb4d99;animation:c4-ray-pulse .25s both}
 .c4-ray-enemy{height:9px}.c4-ray-enemy>i{background:#ffd2a0;box-shadow:0 0 14px 7px #ff6f3688;animation:c4-ray-pulse .32s both}
-.c4-battle-reflector{position:absolute;left:-90px;top:-52px;width:180px;height:104px;padding:0;min-height:0;border:8px solid #9fb7c1!important;border-radius:10px;background:linear-gradient(145deg,#d2eff3,#6d9baa 35%,#f2ffff 40%,#a4c2c7 45%,#43677f)!important;box-shadow:inset 0 0 0 3px #354b5c,0 0 12px #8cdbeb44;transform-style:preserve-3d;cursor:pointer}
+.c4-battle-reflector{position:absolute;left:-90px;top:-52px;width:180px;height:104px;padding:0;min-height:0;border:8px solid #9fb7c1!important;border-radius:10px;background:linear-gradient(145deg,#d2eff3,#6d9baa 35%,#f2ffff 40%,#a4c2c7 45%,#43677f)!important;box-shadow:inset 0 0 0 3px #354b5c,0 0 12px #8cdbeb44;transform-style:preserve-3d;cursor:grab;touch-action:none;user-select:none}
 .c4-battle-reflector>span{position:absolute;inset:8px;border-top:3px solid #efffff88;pointer-events:none}
 .c4-battle-reflector>i{position:absolute;left:60px;top:88px;width:44px;height:52px;border:9px solid #758c99;border-top:0;border-radius:0 0 8px 8px;transform:translateZ(-12px);pointer-events:none}
 .c4-battle-emitter{position:absolute;left:-44px;top:-44px;width:88px;height:88px;background:linear-gradient(#64717b77,#172836aa),url('./assets/chapter2-metal-v1.webp') center/120px;border:7px solid #77745f;border-radius:15px;box-shadow:inset 0 0 12px #020b11,0 0 0 3px #263743;transform-style:preserve-3d}
@@ -85,3 +85,18 @@
 .c4-stage[data-combat-paused=true] .c4-battle-effects *{animation-play-state:paused}
 @media(max-width:520px){.c4-combat-feedback{left:14px;top:65px;font-size:16px}.c4-combat-feedback[data-kind=victory]{font-size:21px}}
 @media(prefers-reduced-motion:reduce){.c4-feedback-pop{animation:none}.c4-combat-feedback{transform:none}}
+
+/* Each charge opens at a new point; the orange ring marks the fixed incoming path. */
+.c4-battle-emitter{left:-36px;top:-36px;width:72px;height:72px;border:3px solid #ffca7c;border-radius:50%;background:radial-gradient(circle,#fffad4,#ffac54 23%,#f36b2766 45%,#9b3d1d33 62%,transparent 72%);box-shadow:0 0 30px 10px #ffb34c66,inset 0 0 18px #fff3ba;pointer-events:none}
+.c4-battle-emitter>i{inset:7px;border:4px solid #ffe7ad;background:#ffd88088;box-shadow:0 0 18px #fff2b7;transform:translateZ(5px)}
+.c4-battle-emitter>span{left:-14px;top:-14px;width:94px;height:94px;border:3px dashed #ffb763;border-radius:50%;background:none;transform:translateZ(-5px)}
+.c4-attack-target{position:absolute;left:-55px;top:-55px;width:110px;height:110px;border:5px dashed #ffc581;border-radius:50%;background:radial-gradient(circle,#ffb85944,transparent 65%);box-shadow:0 0 24px #ffae5077,inset 0 0 20px #ffb06444;pointer-events:none;transform-style:preserve-3d;animation:c4-target-pulse .65s ease-in-out infinite alternate}
+.c4-attack-target:before,.c4-attack-target:after{content:'';position:absolute;background:#ffe1ab;box-shadow:0 0 9px #ffbf78}
+.c4-attack-target:before{left:45px;top:15px;width:10px;height:70px}.c4-attack-target:after{left:15px;top:45px;width:70px;height:10px}
+.c4-attack-target[data-caught=true]{border-color:#b9fbff;box-shadow:0 0 24px #5cdfff88}
+.c4-battle-reflector[data-dragging=true]{cursor:grabbing;border-color:#c7ffff!important;box-shadow:inset 0 0 0 3px #354b5c,0 0 28px 8px #78e9ff88}
+.c4-battle-reflector[data-caught=true]{outline:3px solid #b5ffff;outline-offset:4px}
+.c4-battle-reflector:focus-visible{outline:4px solid #fff4bd;outline-offset:6px}
+.c4-ray-guide-in>i{background:#ffc785;box-shadow:0 0 7px #ffac6b99}
+@keyframes c4-target-pulse{from{opacity:.6}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){.c4-attack-target{animation:none}}

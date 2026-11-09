@@ -108,7 +108,7 @@ const cardGame=ctx.window.startChapterFour({app,portrait:()=>'',onBack(){}});
 cardGame.act('reset');assert.ok(encounter);assert.equal(encounter.state.hits,0);
 const B=ctx.window.B0CardBoss,battle=encounter.state;
 for(let i=0;i<4;i++)B.advance(battle);B.deploy(battle);
-for(let i=0;i<600&&battle.phase==='fight';i++){const target=battle.side==='left'?-30:30;while(battle.angle!==target)B.adjust(battle,battle.angle<target?15:-15);B.tick(battle,50,{firing:true});}
+for(let i=0;i<600&&battle.phase==='fight';i++){B.moveReflector(battle,battle.aim.x,battle.aim.y);B.tick(battle,50,{firing:true});}
 B.takeCard(battle);B.release(battle);encounter.onReleased();
 assert.equal(cardGame.state().s.links.robot,false);assert.equal(saved.battle.released,true);
 assert.equal(saved.opened,true,'no manual lock remains after the new boss');
