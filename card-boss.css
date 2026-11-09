@@ -100,3 +100,24 @@
 .c4-ray-guide-in>i{background:#ffc785;box-shadow:0 0 7px #ffac6b99}
 @keyframes c4-target-pulse{from{opacity:.6}to{opacity:1}}
 @media(prefers-reduced-motion:reduce){.c4-attack-target{animation:none}}
+
+.c4-tilt-controls{display:flex;align-items:center;gap:4px;border:1px solid #617d8c;border-radius:8px;padding:3px;background:#102533}
+.c4-tilt-controls>button{font-size:11px;min-height:36px;padding:6px 7px}
+.c4-tilt-controls>output{min-width:66px;text-align:center;font-size:11px;color:#b8f4ff}
+.c4-battle-rules{width:min(500px,calc(100vw - 28px));max-height:90dvh;margin:auto;padding:0;border:1px solid #b69a64;border-radius:16px;background:#112635;color:#e8f4f7;box-shadow:0 20px 100px #000b;box-sizing:border-box;overflow:auto;font:inherit;word-break:keep-all}
+.c4-battle-rules::backdrop{background:#020a14c7;backdrop-filter:blur(4px)}
+.c4-battle-rules>header{padding:21px 24px 17px;background:linear-gradient(120deg,#1e3a4b,#142c3a);border-bottom:1px solid #567180}
+.c4-battle-rules small{color:#d6bd84;font-size:11px;letter-spacing:.08em}
+.c4-battle-rules h2{font-size:20px;font-weight:600;margin:9px 0 0;line-height:1.5}
+.c4-battle-rules ol{list-style:none;counter-reset:rules;margin:0;padding:16px 24px 6px;display:grid;gap:14px}
+.c4-battle-rules li{counter-increment:rules;position:relative;padding-left:43px;line-height:1.5;font-size:14px}
+.c4-battle-rules li:before{content:counter(rules);position:absolute;left:0;top:0;width:29px;height:29px;display:grid;place-items:center;border:1px solid #8bb1bf;border-radius:50%;color:#b7eff8;background:#244556;font-weight:700}
+.c4-battle-rules li b{color:#fff1c8;font-weight:600}
+.c4-battle-rules li p{font-size:13px;line-height:1.6;margin:3px 0 0;color:#cfdee4}
+.c4-rules-tilt{display:block;margin:15px 24px 12px;padding:12px 14px;border:1px solid #456777;border-radius:9px;background:#193647}
+.c4-rules-tilt>p{font-size:12px;line-height:1.7;margin:5px 0 0}.c4-rules-tilt>b{font-size:13px;font-weight:500;color:#c6f5fc}
+.c4-rules-goal{font-size:12px;text-align:center;color:#d8bd86;margin:0 18px 16px}
+.c4-battle-rules>footer{display:flex;gap:8px;flex-wrap:wrap;margin:0;padding:15px 24px;background:#0d1f2b;border-top:1px solid #3f5b6b}
+.c4-battle-rules button{font:inherit;font-size:12px;min-height:43px;border:1px solid #658799;border-radius:8px;padding:10px 13px;background:#203e50;color:#e2f5fc;cursor:pointer}
+.c4-battle-rules button.primary{background:#c5f0f3;border-color:#d8fbff;color:#143748;font-weight:700;flex:1}
+@media(max-width:520px){.c4-battle-rules>header{padding:17px 18px 13px}.c4-battle-rules h2{font-size:18px}.c4-battle-rules ol{padding:14px 18px 5px;gap:12px}.c4-rules-tilt{margin:13px 18px;padding:10px}.c4-battle-rules>footer{padding:12px 18px}.c4-tilt-controls{flex-wrap:nowrap}.c4-tilt-controls>button{font-size:10px}}

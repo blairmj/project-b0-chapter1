@@ -10,15 +10,15 @@ const damaged=s.hp;assert.equal(M.useBattery(s),true);assert.equal(s.hp,Math.min
 const checkpoint=M.restore(JSON.parse(JSON.stringify(s)),3);assert.equal(checkpoint.hp,s.hp);assert.equal(checkpoint.deployed,false);assert.equal(checkpoint.batteries,2);assert.equal(checkpoint.phase,'ready');
 function aim(state){M.moveReflector(state,state.aim.x,state.aim.y);}
 const battle=M.fresh(3);battle.phase='ready';M.deploy(battle,random);aim(battle);
-M.strike(battle);assert.equal(battle.bossHP,228);assert.equal(M.strike(battle),null,'shot cooldown prevents double clicks');
+M.strike(battle);assert.equal(battle.bossHP,150);assert.equal(M.strike(battle),null,'shot cooldown prevents double clicks');
 for(let i=0;i<600&&battle.phase==='fight';i++){aim(battle);M.tick(battle,50,{firing:true,random});}
-assert.equal(battle.phase,'defeated');assert.equal(battle.bossHP,0);assert.equal(battle.hits,20,'victory depends on HP, not two hits');
+assert.equal(battle.phase,'defeated');assert.equal(battle.bossHP,0);assert.equal(battle.hits,6,'six hits win the real-time HP battle');
 assert.equal(battle.hp,100,'aimed continuous reflection blocks incoming shots');
-assert.ok(battle.logs.some(e=>e.action==='enemy-attack'&&e.value.side==='right'),'random sources include the other side of AXIOM');
+assert.ok(battle.logs.some(e=>e.action==='enemy-attack'),'enemy attacks remain active during the shorter fight');
 assert.equal(M.release(battle),false);assert.equal(M.takeCard(battle),true);assert.equal(M.takeCard(battle),false);assert.equal(M.release(battle),true);
 const lost=M.fresh(2);lost.phase='ready';M.deploy(lost);for(let i=0;i<400&&lost.phase==='fight';i++)M.tick(lost,100);
 assert.equal(lost.phase,'lost');assert.equal(lost.hp,0);assert.deepEqual(M.tick(lost,100,{firing:true}),[]);
-assert.equal(M.retry(lost),true);assert.equal(lost.hp,100);assert.equal(lost.bossHP,240);assert.equal(lost.batteries,2);
+assert.equal(M.retry(lost),true);assert.equal(lost.hp,100);assert.equal(lost.bossHP,180);assert.equal(lost.batteries,2);
 // Random shots announce a fixed ray, rather than following a moving reflector.
 
 const moving=M.fresh();moving.phase='ready';M.deploy(moving,random);
@@ -34,8 +34,16 @@ for(let i=0;i<80;i++){
 assert.equal(sources.size,80);assert.equal(targets.size,80);assert.equal(quadrants.size,4);
 M.nextAttack(moving,()=>.5);const before={...moving.source};M.nextAttack(moving,()=>.5);assert.notDeepEqual(moving.source,before,'a constant RNG still cannot lock the game to one muzzle');
 aim(moving);const restored=M.restore(JSON.parse(JSON.stringify(moving)));
-assert.deepEqual(restored.mirror,moving.mirror);assert.deepEqual(restored.source,moving.source);assert.deepEqual(restored.aim,moving.aim);assert.equal(restored.version,3);
-const legacy=M.restore({version:2,hp:74,bossHP:120,batteries:1,supply:2,angle:-30});assert.equal(legacy.hp,74);assert.equal(legacy.batteries,1);assert.deepEqual(legacy.mirror,{x:500,y:455});
+assert.deepEqual(restored.mirror,moving.mirror);assert.deepEqual(restored.source,moving.source);assert.deepEqual(restored.aim,moving.aim);assert.equal(restored.version,4);
+const legacy=M.restore({version:2,hp:74,bossHP:120,batteries:1,supply:2,angle:-30});assert.equal(legacy.hp,74);assert.equal(legacy.bossHP,90,'old 120/240 HP becomes 90/180 without losing progress');assert.equal(legacy.batteries,1);assert.deepEqual(legacy.mirror,{x:500,y:455});
+// Optional tilt is separate from dragging and can always return to automatic aim.
+const tilted=M.fresh();tilted.phase='ready';M.deploy(tilted,random);aim(tilted);const automatic=tilted.angle;
+assert.equal(M.adjust(tilted,5),true);assert.equal(tilted.tilt,5);assert.equal(tilted.angle,automatic+5);
+M.moveReflector(tilted,tilted.aim.x,tilted.aim.y);assert.equal(tilted.tilt,5);assert.equal(tilted.angle,automatic+5,'moving preserves the manual tilt offset');
+for(let i=0;i<10;i++)M.adjust(tilted,5);assert.equal(tilted.tilt,30);assert.equal(M.adjust(tilted,5),false);
+const tiltSave=M.restore(JSON.parse(JSON.stringify(tilted)));assert.equal(tiltSave.tilt,30);
+M.resetTilt(tilted);assert.equal(tilted.tilt,0);assert.equal(M.trace(tilted).hit,true);
+assert.equal(M.restore({version:3,hp:100,bossHP:228}).bossHP,171);assert.equal(M.restore({version:3,hp:100,bossHP:0,cardTaken:true,released:true}).released,true);
 // Drag projection follows the same perspective, translation and rotation as the room camera.
 for(const view of [{width:1000,height:700,x:0,z:-78,yaw:0,pitch:3,zoom:1.1},{width:700,height:750,x:40,z:100,eyeHeight:30,yaw:22,pitch:15,zoom:.9},{width:390,height:600,x:-60,z:0,yaw:-16,pitch:-8,zoom:.8}]){
  for(const p of [{x:500,y:455},{x:350,y:390},{x:650,y:500}]){const px=M.project(view,p),back=M.screenToArena(view,px.x,px.y);assert.ok(Math.hypot(p.x-back.x,p.y-back.y)<1e-6);}

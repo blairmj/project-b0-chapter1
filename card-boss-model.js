@@ -1,7 +1,7 @@
 (function(root){
   'use strict';
   const phases=['intro','ready','fight','lost','defeated','card','released'];
-  const MAX_HP=100,BOSS_HP=240,SHOT_DAMAGE=12,ENEMY_DAMAGE=6,SHOT_MS=460,ENEMY_MS=1150;
+  const MAX_HP=100,BOSS_HP=180,SHOT_DAMAGE=30,ENEMY_DAMAGE=6,SHOT_MS=460,ENEMY_MS=1150;
   const clamp=v=>Math.max(-90,Math.min(90,Number(v)||0));
   const V={y:430/600,z:Math.sqrt(1-(430/600)**2)},bounds={left:300,right:700,top:365,bottom:505},core={x:500,y:215};
   const point=p=>({x:(p.x-500)*2.5,y:-380+(p.y-215)*2.5*V.y,z:-819+(p.y-215)*2.5*V.z});
@@ -9,22 +9,24 @@
   const finite=(n,fallback)=>Number.isFinite(Number(n))?Number(n):fallback;
   const count=(v,max=1000000)=>Number.isFinite(Number(v))?Math.max(0,Math.min(max,Math.trunc(Number(v)))):0;
   const defeated=s=>s.bossHP<=0;
-  function fresh(batteries=0){return {version:3,phase:'intro',line:0,hp:MAX_HP,bossHP:BOSS_HP,hits:0,angle:0,side:'left',mirror:{x:500,y:455},source:{x:500,y:100},aim:{x:500,y:455},deployed:false,trials:0,misses:0,memoryRead:false,cardTaken:false,released:false,batteries:count(batteries,3),supply:count(batteries,3),enemyClock:0,shotClock:0,volley:0,logs:[]};}
+  function fresh(batteries=0){return {version:4,phase:'intro',line:0,hp:MAX_HP,bossHP:BOSS_HP,hits:0,angle:0,tilt:0,side:'left',mirror:{x:500,y:455},source:{x:500,y:100},aim:{x:500,y:455},deployed:false,trials:0,misses:0,memoryRead:false,cardTaken:false,released:false,batteries:count(batteries,3),supply:count(batteries,3),enemyClock:0,shotClock:0,volley:0,logs:[]};}
   function log(s,action,value){s.logs.push({at:new Date().toISOString(),action,value});s.logs=s.logs.slice(-150);}
   function restore(raw,batteries=0){
-    const s=fresh(batteries);if(!raw||![1,2,3].includes(raw.version))return s;
+    const s=fresh(batteries);if(!raw||![1,2,3,4].includes(raw.version))return s;
     s.line=count(raw.line,3);s.angle=clamp(raw.angle);s.memoryRead=raw.memoryRead===true;s.logs=Array.isArray(raw.logs)?raw.logs.slice(-150):[];
     if(raw.version===1){
       s.hits=count(raw.hits,2);s.bossHP=s.hits===2?0:Math.max(SHOT_DAMAGE,BOSS_HP-s.hits*SHOT_DAMAGE);s.side=s.hits?'right':'left';
     }else{
-      s.hp=raw.hp===undefined?MAX_HP:count(raw.hp,MAX_HP);s.bossHP=raw.bossHP===undefined?BOSS_HP:count(raw.bossHP,BOSS_HP);s.hits=count(raw.hits);s.side=raw.side==='right'?'right':'left';
+      const oldMax=raw.version<4?240:BOSS_HP;
+      s.hp=raw.hp===undefined?MAX_HP:count(raw.hp,MAX_HP);s.bossHP=raw.bossHP===undefined?BOSS_HP:Math.ceil(count(raw.bossHP,oldMax)*BOSS_HP/oldMax);s.hits=count(raw.hits);s.side=raw.side==='right'?'right':'left';
       s.supply=Math.max(count(raw.supply,3),count(batteries,3));s.batteries=Math.min(s.supply,count(raw.batteries,3)+Math.max(0,s.supply-count(raw.supply,3)));s.volley=count(raw.volley);
     }
-    if(raw.version===3){
+    if(raw.version>=3){
       s.mirror={x:Math.max(bounds.left,Math.min(bounds.right,finite(raw.mirror?.x,500))),y:Math.max(bounds.top,Math.min(bounds.bottom,finite(raw.mirror?.y,455)))};
       s.source={x:Math.max(180,Math.min(820,finite(raw.source?.x,500))),y:Math.max(70,Math.min(345,finite(raw.source?.y,100)))};
       s.aim={x:Math.max(390,Math.min(610,finite(raw.aim?.x,500))),y:Math.max(390,Math.min(490,finite(raw.aim?.y,455)))};
     }
+    s.tilt=raw.version>=4?Math.max(-30,Math.min(30,finite(raw.tilt,0))):0;
     s.trials=Math.max(s.hits,count(raw.trials));s.misses=Math.max(0,s.trials-s.hits);s.cardTaken=defeated(s)&&raw.cardTaken===true;s.released=s.cardTaken&&raw.released===true;
     s.phase=s.released?'released':s.cardTaken?'card':defeated(s)?'defeated':s.hp===0?'lost':raw.phase==='intro'?'intro':'ready';
     return s; // Reload keeps health and items, but requires deliberately resuming combat.
@@ -44,7 +46,12 @@
     return {kind:'attack',source:{...source},aim:{...aim},side:s.side};
   }
   function deploy(s,random=Math.random){if(s.phase!=='ready')return false;s.deployed=true;s.phase='fight';s.enemyClock=-800;s.shotClock=0;nextAttack(s,random);log(s,'combat-start');return true;}
-  function adjust(s,delta){if(!['fight','ready'].includes(s.phase)||![-15,-5,5,15].includes(delta))return false;const angle=clamp(s.angle+delta);if(angle===s.angle)return false;s.angle=angle;log(s,'reflector-angle',angle);return true;}
+  function adjust(s,delta){
+    if(!['fight','ready'].includes(s.phase)||![-15,-5,5,15].includes(delta))return false;
+    const tilt=Math.max(-30,Math.min(30,(s.tilt||0)+delta));if(tilt===s.tilt)return false;
+    s.angle=clamp(s.angle+tilt-(s.tilt||0));s.tilt=tilt;log(s,'reflector-angle',{angle:s.angle,tilt});return true;
+  }
+  function resetTilt(s){if(!['fight','ready'].includes(s.phase))return false;s.tilt=0;moveReflector(s,s.mirror.x,s.mirror.y,{snap:false});log(s,'reflector-auto');return true;}
   function moveReflector(s,x,y,{snap=true}={}){
     if(!['fight','ready'].includes(s.phase)||!Number.isFinite(x)||!Number.isFinite(y))return false;
     let p={x:Math.max(bounds.left,Math.min(bounds.right,x)),y:Math.max(bounds.top,Math.min(bounds.bottom,y))};
@@ -54,7 +61,7 @@
     if(snap&&along>20&&along<=length+12&&Math.hypot(p.x-q.x,p.y-q.y)<18&&q.x>=bounds.left&&q.x<=bounds.right&&q.y>=bounds.top&&q.y<=bounds.bottom)p=q;
     const out={x:core.x-p.x,y:core.y-p.y},n=Math.hypot(out.x,out.y);out.x/=n;out.y/=n;
     let tx=d.x+out.x,ty=d.y+out.y;if(Math.hypot(tx,ty)<1e-6){tx=-d.y;ty=d.x;}
-    let angle=Math.atan2(ty,tx)*180/Math.PI;while(angle>90)angle-=180;while(angle< -90)angle+=180;
+    let angle=Math.atan2(ty,tx)*180/Math.PI;while(angle>90)angle-=180;while(angle< -90)angle+=180;angle=clamp(angle+(s.tilt||0));
     if(Math.hypot(p.x-s.mirror.x,p.y-s.mirror.y)<.05&&Math.abs(angle-s.angle)<.05)return false;
     s.mirror=p;s.angle=angle;log(s,'reflector-move',{...p,angle});return true;
   }
@@ -111,6 +118,6 @@
   function takeCard(s){if(s.phase!=='defeated'||!defeated(s)||s.cardTaken)return false;s.cardTaken=true;s.phase='card';log(s,'release-card-taken');return true;}
   function release(s){if(s.phase!=='card'||!s.cardTaken||!defeated(s))return false;s.released=true;s.phase='released';log(s,'release-card-used','B-0');return true;}
   function batterySupply(storage){const read=k=>{try{return JSON.parse(storage.getItem(k));}catch{return null;}};return Number(read('project-b0-firstperson-v4')?.phase==='escaped')+Number(read('project-b0-education-v1')?.memoryTaken===true)+Number(read('project-b0-reflection-v1')?.taken===true);}
-  const api={V,bounds,point,project,screenToArena,nextAttack,moveReflector,MAX_HP,BOSS_HP,SHOT_DAMAGE,ENEMY_DAMAGE,SHOT_MS,ENEMY_MS,fresh,restore,advance,deploy,adjust,trace,strike,tick,useBattery,retry,readMemory,takeCard,release,batterySupply,defeated,phases};
+  const api={V,bounds,point,project,screenToArena,nextAttack,moveReflector,MAX_HP,BOSS_HP,SHOT_DAMAGE,ENEMY_DAMAGE,SHOT_MS,ENEMY_MS,fresh,restore,advance,deploy,adjust,resetTilt,trace,strike,tick,useBattery,retry,readMemory,takeCard,release,batterySupply,defeated,phases};
   if(typeof module!=='undefined')module.exports=api;else root.B0CardBoss=api;
 })(typeof window!=='undefined'?window:globalThis);
