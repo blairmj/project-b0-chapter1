@@ -1,0 +1,93 @@
+/* Shooter props use the existing control room and its world camera. */
+.c4-battle-space,.c4-battle-effects{position:absolute;left:0;top:0;width:0;height:0;transform-style:preserve-3d;pointer-events:none}
+.c4-battle-core{position:absolute;left:319px;top:319px;width:82px;height:82px;border:6px solid #b8a57d;border-radius:50%;background:radial-gradient(circle,#fff6d2,#f2bd65 36%,#a45d29 70%);box-shadow:0 0 28px #e5ac5899;pointer-events:none;transform:translateZ(6px)}
+.c4-battle-core[data-marked=true]{outline:3px dashed #acdfec;outline-offset:12px}
+.c4-battle-core[data-damaged=true]>i{position:absolute;left:30px;top:3px;width:10px;height:63px;background:#302b30;clip-path:polygon(0 0,100% 0,40% 35%,100% 51%,30% 100%,0 100%,35% 52%,0 38%)}
+.c4-battle-core[data-defeated=true]{background:#152432;box-shadow:none;border-color:#5f6d71;outline:0}
+.c4-card-case{position:absolute;left:302px;top:505px;width:116px;height:77px;min-height:0;padding:0;border:7px solid #8b826d!important;border-radius:5px;background:#08131c!important;box-shadow:0 0 0 3px #263b43;transform:translateZ(12px);transform-style:preserve-3d}
+.c4-case-card{position:absolute;left:23px;top:12px;width:55px;height:40px;padding-top:12px;background:linear-gradient(135deg,#fff7d3,#b0bdb5);color:#334b54;font-size:12px;border-radius:3px;border:2px solid #e8f2ce;transform:translateZ(2px)}
+.c4-case-cover{position:absolute;inset:0;background:linear-gradient(#83939955,#1b2c3baa),url('../assets/chapter2-metal-v1.webp') center/100px;border:3px solid #5c6a68;transform:translateZ(5px);transform-origin:50% 0;transition:transform .65s}
+.c4-case-cover:after{content:'▣';font-size:27px;color:#d6c99e}
+.c4-card-case[data-open=true]>.c4-case-cover{transform:translateZ(5px) rotateX(110deg)}
+.c4-card-case[data-empty=true]>.c4-case-card{visibility:hidden}
+.c4-game[data-card-battle=true] .c4-high,.c4-game[data-card-battle=true] .c4-exit-box,.c4-game[data-card-battle=true] .c4-bolt,.c4-game[data-card-battle=true] .c4-bolt-upper{display:none}
+.c4-game[data-card-battle=true] .c2-basic-help{display:none}
+.c4-game[data-card-released=true] .c4-core-art{filter:brightness(.55) saturate(.2)}
+.c4-combat-hud{position:absolute;inset:12px 15px auto;z-index:4;display:grid;grid-template-columns:1fr 1fr;gap:5px 25px;pointer-events:none}
+.c4-combat-hud b{display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:#e4f6ff;text-shadow:0 2px 3px #03101b}
+.c4-boss-health b{color:#f3d4af}.c4-hp-track{display:block;height:11px;margin-top:5px;background:#06121de8;border:1px solid #71909e;border-radius:4px;overflow:hidden}
+.c4-hp-track>i{display:block;height:100%;background:linear-gradient(90deg,#3c9a9c,#a0e3d3);transition:width .12s}
+.c4-boss-health .c4-hp-track>i{background:linear-gradient(90deg,#ae553d,#e8ad68)}
+.c4-combat-hud>p{grid-column:1/-1;justify-self:center;padding:3px 10px;border-radius:4px;background:#091827c9;color:#d7e5e7;font-size:11px}
+.c4-stage.c4-player-hit:after{box-shadow:inset 0 0 90px 16px #ab382b99}
+.c4-battle-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:4px 0}
+.c4-battle-controls>strong{color:#d0e5ed;font-size:13px}.c4-battle-controls>p{flex:1 1 250px;font-size:12px;line-height:1.65}
+.c4-battle-controls>button{font-size:12px;min-height:43px;padding:9px 12px}
+
+.c4-shooter-input{position:absolute;inset:0;z-index:3;touch-action:none;cursor:crosshair;outline:0}
+.c4-shooter-input[hidden]{display:none}.c4-shooter-help{font-size:12px;color:#d3edf3;flex:1}
+.c4-game[data-shooter=true] .c4-robot.controlled>.robot-sprite{filter:drop-shadow(0 5px 4px #08111e88);transform:none;rotate:0deg}
+.c4-game[data-shooter=true] .c4-robot.controlled .eye{transform:none;opacity:1}
+.c4-game[data-shooter=true] .c4-robot .c4-recovery-light{display:none}
+.c4-player-dome{position:absolute;left:-130px;top:-132px;width:260px;height:225px;transform-style:preserve-3d;pointer-events:none;--shield-color:#8bf1ff}
+.c4-dome-shell,.c4-dome-rib{position:absolute;inset:0 0 15px;border:3px solid var(--shield-color);border-radius:52% 52% 20% 20% /72% 72% 16% 16%;background:radial-gradient(ellipse at 38% 22%,#e8ffff55,transparent 27%),radial-gradient(ellipse at 50% 70%,#40cce516,transparent 65%);box-shadow:0 0 25px #58e3ff66,inset 0 0 28px #8cf3ff33;opacity:var(--shield-level,1)}
+.c4-dome-rib{background:none;scale:.54 1;box-shadow:none;border-width:2px;opacity:.65}.c4-dome-rib-two{scale:.83 1;opacity:.4}
+.c4-dome-base{position:absolute;left:0;right:0;bottom:0;height:43px;border:3px solid var(--shield-color);border-radius:50%;background:radial-gradient(ellipse,#69dfff22,transparent 70%);box-shadow:0 0 22px #64e4ff88;transform:translateZ(-8px)}
+.c4-player-dome>b{position:absolute;left:25px;right:25px;top:-30px;padding:5px 8px;border:1px solid #8be9ff88;border-radius:7px;background:#092a3ee8;color:#d8fbff;font-size:16px;text-align:center;text-shadow:0 0 8px #42b9da;white-space:nowrap}
+.c4-player-dome[data-low=true]{--shield-color:#ffc186}.c4-player-dome[data-hit=true] .c4-dome-shell{background:radial-gradient(ellipse,#ffe6ac55,#ff9b5044 60%,transparent);box-shadow:0 0 40px 8px #ffb56b99,inset 0 0 40px #ffdd9688;border-color:#fff3c2}
+.c4-player-dome[data-empty=true]{opacity:.35}
+.c4-player-weapon{position:absolute;left:-42px;top:-25px;width:84px;height:50px;border:5px solid #b2d0d8;border-radius:7px;background:linear-gradient(145deg,#efffff,#8bb3c1 34%,#fff 40%,#5e91a5 45%,#bddae1);box-shadow:0 0 14px #a9efff66,inset 0 0 0 2px #365b6d;pointer-events:none;transform-style:preserve-3d}
+.c4-player-weapon>i{position:absolute;left:30px;top:-13px;width:14px;height:18px;border-radius:50%;background:#efffff;box-shadow:0 0 17px 7px #60ddff99}
+.c4-battle-core:after{content:'';position:absolute;inset:-18px;border:4px solid #ffd18a;border-radius:50%;opacity:var(--charge,0);scale:calc(.6 + var(--charge,0)*.7);box-shadow:0 0 22px #ffac4f99}
+.c4-battle-core[data-defeated=true]:after{display:none}
+.c4-stage[data-journey] .c4-player-dome,.c4-stage[data-journey] .c4-player-weapon{display:none}
+.c4-battery-control>button{font-size:12px;min-height:40px;padding:8px 10px}.c4-battery-control>button:disabled{opacity:.45}
+.c4-acquired-card{position:absolute;right:18px;top:90px;width:85px;padding:12px 5px;background:linear-gradient(135deg,#f1e7c4,#a7b8b2);border:2px solid #d7e4ca;border-radius:6px;color:#253b4b;font-size:12px;font-weight:700;text-align:center;z-index:4;box-shadow:0 3px 15px #0005;pointer-events:none}.c4-acquired-card[data-used=true]{display:none}
+.c4-game[data-card-battle=true] .c4-speech .speech{max-width:100%}.c4-game[data-card-battle=true] .c4-speech .speech.axiom{padding:8px 12px;border-radius:9px}
+.c4-battle-controls>button.primary{background:#bde8ef;color:#153345;border-color:#c4eaf1;font-weight:700}
+.c4-stage[data-journey] .c4-combat-hud,.c4-stage[data-journey] .c4-acquired-card{display:none}
+/* Moving energy bolts and localized impacts stay in the room's 3D coordinates. */
+.c4-battle-effects,.c4-energy-fx{position:absolute;left:0;top:0;width:0;height:0;transform-style:preserve-3d;pointer-events:none}
+.c4-energy-orb,.c4-energy-tail{display:block;position:absolute;left:-32px;top:-32px;width:64px;height:64px;border-radius:50%;background:radial-gradient(circle,#fffde3 0 16%,#ffd06d 22%,#ff8433 43%,#e9431d77 61%,transparent 73%);box-shadow:0 0 18px 8px #ff8b3488;transform-style:preserve-3d}
+.c4-energy-orb:after{content:'';position:absolute;inset:7px;border:3px solid #fff2b2;border-radius:50%;box-shadow:0 0 12px #ffe6b9;transform:rotateY(70deg)}
+.c4-fx-return .c4-energy-orb,.c4-fx-return .c4-energy-tail{background:radial-gradient(circle,#fff 0 17%,#d9ffff 23%,#65e9ff 44%,#2ba9eb77 62%,transparent 74%);box-shadow:0 0 21px 9px #58dfff88}
+.c4-energy-tail{box-shadow:0 0 18px 7px #ffb45a55}
+.c4-impact-ring{display:block;position:absolute;left:-115px;top:-115px;width:230px;height:230px;border-radius:50%;border:6px solid #9bebff;box-shadow:0 0 22px 8px #6dd6ff66,inset 0 0 20px #96f5ff77;background:radial-gradient(circle,transparent 30%,#4eabc82b 56%,#bdf8ff66 63%,transparent 70%),repeating-linear-gradient(60deg,transparent 0 33px,#a8efff25 34px 36px),repeating-linear-gradient(-60deg,transparent 0 33px,#a8efff25 34px 36px)}
+.c4-impact-ring-two{scale:.65;transform:translateZ(18px);border-width:4px;background:none}
+.c4-energy-fx>b{position:absolute;left:-52px;top:-28px;width:104px;text-align:center;font-size:40px;line-height:1;font-weight:800;color:#fff4e0;text-shadow:0 0 12px #f07932,0 3px 2px #172d3a;transform:translateZ(25px)}
+.c4-fx-shield .c4-impact-ring{border-color:#ffc185;box-shadow:0 0 27px 10px #ff8d4655,inset 0 0 28px #ffe4bb66}
+.c4-fx-block .c4-impact-ring{border-color:#d9ffff;box-shadow:0 0 28px 12px #67edff88,inset 0 0 22px #fff9}
+.c4-fx-block>b{font-size:26px;color:#d7ffff;text-shadow:0 0 10px #40ccff,0 2px #082b42}
+.c4-fx-muzzle .c4-impact-ring{left:-70px;top:-70px;width:140px;height:140px;border:9px solid #ffe0a0;background:radial-gradient(circle,#fff8d2,#ff9c4666 40%,transparent 65%);box-shadow:0 0 24px 8px #ff9f55aa}
+.c4-fx-muzzle .c4-impact-ring-two{border-color:#ff9544;scale:.6}
+.c4-fx-reflect .c4-impact-ring{left:-65px;top:-65px;width:130px;height:130px;border-color:#c2ffff;box-shadow:0 0 22px #83eaff;background:radial-gradient(circle,#e4ffff88,transparent 65%)}
+.c4-fx-core .c4-impact-ring{border-color:#ffe8b5;background:radial-gradient(circle,#fffbdc88,#6fddff77 35%,transparent 65%);box-shadow:0 0 28px 14px #ffd47588}
+.c4-fx-core>b{color:#fff8dc;text-shadow:0 0 13px #31b4ff,0 2px #173f55}
+.c4-stage.c4-player-hit .c4-player-health .c4-hp-track{border-color:#ffd5b4;box-shadow:0 0 12px #ff865f}
+.c4-stage.c4-player-hit .c4-player-health .c4-hp-track>i{background:#ffac7d}
+.c4-combat-feedback{position:absolute;z-index:6;left:22px;top:73px;pointer-events:none;font-size:19px;font-weight:800;letter-spacing:.02em;color:#ffdbc0;text-shadow:0 2px 4px #101722,0 0 12px #e85c2c}
+.c4-combat-feedback:empty{display:none}
+.c4-combat-feedback[data-kind=block]{left:50%;top:61%;translate:-50% 0;color:#b5f7ff;text-shadow:0 2px 4px #082235,0 0 12px #21a7de}
+.c4-combat-feedback[data-kind=victory]{left:50%;top:34%;translate:-50% 0;font-size:25px;color:#fff0c6}
+.c4-feedback-pop{animation:c4-feedback-float .9s ease-out both}
+@keyframes c4-feedback-float{0%{opacity:0;transform:translateY(8px) scale(.9)}18%{opacity:1;transform:translateY(0) scale(1.08)}70%{opacity:1}100%{opacity:0;transform:translateY(-24px) scale(1)}}
+.c4-stage[data-combat-paused=true] .c4-battle-effects *{animation-play-state:paused}
+@media(max-width:520px){.c4-combat-feedback{left:14px;top:65px;font-size:16px}.c4-combat-feedback[data-kind=victory]{font-size:21px}}
+@media(prefers-reduced-motion:reduce){.c4-feedback-pop{animation:none}.c4-combat-feedback{transform:none}}
+
+.c4-battle-rules{width:min(500px,calc(100vw - 28px));max-height:90dvh;margin:auto;padding:0;border:1px solid #b69a64;border-radius:16px;background:#112635;color:#e8f4f7;box-shadow:0 20px 100px #000b;box-sizing:border-box;overflow:auto;font:inherit;word-break:keep-all}
+.c4-battle-rules::backdrop{background:#020a14c7;backdrop-filter:blur(4px)}
+.c4-battle-rules>header{padding:21px 24px 17px;background:linear-gradient(120deg,#1e3a4b,#142c3a);border-bottom:1px solid #567180}
+.c4-battle-rules small{color:#d6bd84;font-size:11px;letter-spacing:.08em}
+.c4-battle-rules h2{font-size:20px;font-weight:600;margin:9px 0 0;line-height:1.5}
+.c4-battle-rules ol{list-style:none;counter-reset:rules;margin:0;padding:16px 24px 6px;display:grid;gap:14px}
+.c4-battle-rules li{counter-increment:rules;position:relative;padding-left:43px;line-height:1.5;font-size:14px}
+.c4-battle-rules li:before{content:counter(rules);position:absolute;left:0;top:0;width:29px;height:29px;display:grid;place-items:center;border:1px solid #8bb1bf;border-radius:50%;color:#b7eff8;background:#244556;font-weight:700}
+.c4-battle-rules li b{color:#fff1c8;font-weight:600}
+.c4-battle-rules li p{font-size:13px;line-height:1.6;margin:3px 0 0;color:#cfdee4}
+.c4-rules-goal{font-size:12px;text-align:center;color:#d8bd86;margin:0 18px 16px}
+.c4-battle-rules>footer{display:flex;gap:8px;flex-wrap:wrap;margin:0;padding:15px 24px;background:#0d1f2b;border-top:1px solid #3f5b6b}
+.c4-battle-rules button{font:inherit;font-size:12px;min-height:43px;border:1px solid #658799;border-radius:8px;padding:10px 13px;background:#203e50;color:#e2f5fc;cursor:pointer}
+.c4-battle-rules button.primary{background:#c5f0f3;border-color:#d8fbff;color:#143748;font-weight:700;flex:1}
+@media(max-width:520px){.c4-combat-hud{inset:9px 10px auto;gap:5px 14px}.c4-combat-hud b{font-size:11px}.c4-battle-controls{gap:6px}.c4-battle-controls>button{padding:8px;font-size:11px}.c4-acquired-card{right:10px;width:70px}.c4-shooter-help{font-size:11px}.c4-battle-rules>header{padding:17px 18px 13px}.c4-battle-rules h2{font-size:18px}.c4-battle-rules ol{padding:14px 18px 12px;gap:12px}.c4-battle-rules>footer{padding:12px 18px}}
+@media(prefers-reduced-motion:reduce){.c4-battle-space *{animation:none!important;transition:none!important}}

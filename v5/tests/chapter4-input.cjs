@@ -1,0 +1,121 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),M=require('../chapter4-model.js');
+const nodes=new Map();function node(k){if(!nodes.has(k))nodes.set(k,{style:{},dataset:{},isConnected:true,clientWidth:616,clientHeight:460,innerHTML:'',textContent:'',classList:{toggle(){},add(){},remove(){}},querySelector:s=>s==='button'&&!/<button\b/.test(node(k).innerHTML)?null:node(k+s),insertAdjacentHTML(position,html){this.innerHTML+=html;},setAttribute(){},focus(){},addEventListener(){},removeEventListener(){},setPointerCapture(id){this.captured=id;},hasPointerCapture(id){return this.captured===id;},releasePointerCapture(){this.captured=null;}});return nodes.get(k);}
+const initial=M.fresh();Object.assign(initial,{phase:'room',met:true,boss:true});
+let saved,now=0,id=0;const frames=new Map(),timers=new Map(),app={innerHTML:'',querySelector:s=>node(s),addEventListener(){},removeEventListener(){}};
+const storage={getItem:k=>k==='project-b0-v5-final-v2'?JSON.stringify(initial):null,setItem(k,v){if(k==='project-b0-v5-final-v2')saved=JSON.parse(v);}};
+const ctx={window:{B0Final:M,B0RoomDialogue:require('../room-dialogue.js'),addEventListener(){},removeEventListener(){}},localStorage:storage,sessionStorage:storage,matchMedia:()=>({matches:true}),performance:{now:()=>now},setTimeout(f){timers.set(++id,f);return id;},clearTimeout(n){timers.delete(n);},requestAnimationFrame(f){frames.set(++id,f);return id;},cancelAnimationFrame(n){frames.delete(n);}};
+let closedContexts=0;
+ctx.window.AudioContext=class{
+  constructor(){this.currentTime=0;this.closed=false;this.destination={};}
+  resume(){} createGain(){return {connect(){},disconnect(){},gain:{setValueAtTime(){},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){}}};}
+  createOscillator(){return {connect(){},disconnect(){},start(){},stop(){},frequency:{value:0,setValueAtTime(){},exponentialRampToValueAtTime(){}}};}
+  close(){assert.equal(this.closed,false,'AudioContext cannot be closed twice');this.closed=true;closedContexts++;}
+};
+ctx.document={addEventListener(){}};vm.runInNewContext(fs.readFileSync(require.resolve('../ui-common.js'),'utf8'),ctx);
+vm.runInNewContext(fs.readFileSync(require.resolve('../chapter4.js'),'utf8').replace('render();return {dispose,jumpToEnd};','render();return {dispose,jumpToEnd,act,select,down,move,up,click,updateMechanical,state:()=>({s,r,camera,robot,journey,conversation})};'),ctx);
+const g=ctx.window.startChapterFour({app,portrait:()=>'',onBack(){}});
+function step(t){now=t;const pending=[...frames];frames.clear();pending.forEach(([,f])=>f(t));}
+function event(x,y,drag){return {button:0,pointerId:1,clientX:x,clientY:y,preventDefault(){},target:{closest:sel=>sel==='[data-c4-drag]'&&drag?Object.assign(node('drag'),{dataset:{c4Drag:drag}}):null}};}
+const stage=node('.c4-stage'),tap=event(200,200);
+tap.target.closest=sel=>sel==='[data-c4-object]'?{dataset:{c4Object:'door'}}:null;
+g.down(tap);assert.equal(stage.captured,undefined,'world-object taps must keep their original event target');
+const tapYaw=g.state().camera.yaw;g.move({...tap,clientX:203,clientY:201});assert.equal(g.state().camera.yaw,tapYaw,'small hand jitter is a tap, not a camera turn');
+g.up(tap);g.click(tap);assert.match(node('.c4-actions').innerHTML,/문 손잡이 돌리기/,'a pointer tap reaches the real door selection handler');
+g.state().s.boss=false;g.updateMechanical();assert.equal(node('.c4-bolt').style.translate,'78px 0');assert.equal(node('.c4-bolt-upper').style.translate,'78px 0');assert.equal(g.state().s.upper,false,'temporary visitor clearance must not solve the final puzzle');
+g.state().s.boss=true;g.updateMechanical();assert.equal(node('.c4-bolt').style.translate,'0px 0');assert.equal(node('.c4-bolt-upper').style.translate,'0px 0');
+g.down(event(200,200));g.move(event(300,210));assert.equal(stage.captured,1,'a real orbit captures only after movement begins');g.up(event(300,210));g.click(event(300,210));assert.equal(stage.captured,null);
+assert.equal(node('.c4-robot').dataset.pose,'controlled');g.act('ask-body');assert.equal(g.state().s.bodyChecked,true);
+g.state().s.links.robot=false;step(100);assert.equal(node('.c4-robot').dataset.pose,'recovering');
+g.act('request-lift');g.select('records');assert.equal(g.state().r.lifted,false,'wrong request target does not solve puzzle');
+g.act('request-lift');g.select('high');step(200);assert.equal(g.state().camera.height,145);
+const yaw=g.state().camera.yaw;g.down(event(200,200,'high'));g.move(event(280,200,'high'));g.up(event(280,200,'high'));assert.equal(g.state().s.upper,true);assert.equal(g.state().camera.yaw,yaw,'latch drag does not orbit');
+g.act('lower');step(300);assert.ok(Math.hypot(g.state().robot.x-g.state().camera.x,g.state().robot.z-g.state().camera.z)*3.9>190,'B-0 steps aside after lowering the student instead of covering the exit');const landed=g.state(),toHandle={x:-242.5-landed.camera.x,z:286-landed.camera.z},toRobot={x:landed.robot.x-landed.camera.x,z:landed.robot.z-landed.camera.z};const sightGap=Math.abs(toHandle.x*toRobot.z-toHandle.z*toRobot.x)/Math.hypot(toHandle.x,toHandle.z);assert.ok(sightGap>25,'after lowering, B-0 must stand clear of the view and click path to the side handle');const viewYaw=g.state().camera.yaw;g.act('robot');assert.doesNotMatch(node('.c4-speech').innerHTML,/data-c4="dismiss"/);g.act('choose-target');g.act('clear');assert.equal(g.state().conversation,null);assert.equal(node('.c4-speech').hidden,true);g.act('robot');step(310);assert.equal(g.state().camera.yaw,viewYaw,'asking B-0 from the footer must not turn away from the current puzzle');assert.equal(g.state().camera.height,0);assert.equal(g.state().s.upper,true);
+g.act('request-hold');g.select('handle');assert.equal(g.state().s.holding,true);assert.equal(node('.c4-robot').dataset.pose,'holding');
+g.down(event(200,200,'grip'));g.move(event(200,265,'grip'));g.up(event(200,265,'grip'));assert.equal(g.state().r.handle,1);
+for(let t=400;t<=2400;t+=100)step(t);assert.equal(node('.c4-stage').dataset.reported,'yes');assert.equal(g.state().s.opened,false);g.act('ask-door');assert.match(node('.c4-speech').innerHTML,/아직 문에 걸려/);
+g.act('release-b0');assert.ok(g.state().robot.x>-85,'released B-0 waits on the clear side of the exit');assert.equal(g.state().r.latch,0);assert.equal(g.state().s.upper,true);
+g.act('request-hold');g.select('handle');g.act('pull');for(let t=2500;t<=7900;t+=100)step(t);assert.equal(saved.opened,true);
+g.act('leave');assert.equal(g.state().s.phase,'room');g.act('release-b0');g.act('enter-exit');assert.equal(g.state().s.phase,'farewell');assert.match(node('.c4-speech').innerHTML,/data-c4="story-next"/,'farewell has an explicit advance button without a speech-dismiss button');for(let i=0;i<5;i++)g.act('story-next');assert.match(node('.c4-speech').innerHTML,/함께 바깥으로/);g.act('story-next');assert.equal(g.state().s.phase,'ending');for(let i=0;i<6;i++)g.act('story-next');assert.equal(g.state().s.phase,'complete');
+g.dispose();g.dispose();assert.equal(frames.size,0);assert.equal(timers.size,0);assert.equal(closedContexts,1,'back navigation and campaign cleanup share an idempotent disposal');
+ctx.matchMedia=()=>({matches:false});initial.opened=initial.upper=true;initial.links.robot=false;now=0;
+const a=ctx.window.startChapterFour({app,portrait:()=>'',onBack(){}});a.act('leave');step(1100);assert.equal(node('.c4-robot').dataset.pose,'walking');step(2300);assert.equal(a.state().s.phase,'farewell');for(let i=0;i<6;i++)a.act('story-next');
+for(const time of [2500,2900,3300,3600,3900,4300,4800]){step(time);const inside=Number(node('.c4-robot').style.opacity),outside=Number(node('.c4-passage-robot').style.opacity);assert.equal(inside+outside,1,'exactly one B-0 is visible while crossing the exit');if(time===3900)assert.equal(outside,1);}
+step(5400);assert.equal(a.state().s.phase,'ending');a.dispose();assert.equal(frames.size,0);
+console.log('PASS: target selection, lift and descent, physical drags, real bolt check, release/reset, held robot cannot be abandoned, walking ending, cleanup');
+
+Object.assign(initial,M.fresh());const introGame=ctx.window.startChapterFour({app,portrait:()=>'',onBack(){}});assert.match(app.innerHTML,/2층 통제실 앞/);for(let i=0;i<4;i++)introGame.act('story-next');assert.match(app.innerHTML,/문 열고 들어가기/);assert.doesNotMatch(app.innerHTML,/저쪽에 출구/);introGame.dispose();
+console.log('PASS: world-object tap target retained, drag slop and capture, visitor bolt clearance, conversation keeps view, one central-room entry');
+
+const skipGame=ctx.window.startChapterFour({app,portrait:()=>'',onBack(){}});skipGame.jumpToEnd();
+const skipped=M.restore(saved);assert.equal(skipped.phase,'ending');assert.equal(skipped.opened,true);assert.equal(skipped.links.robot,false);assert.equal(skipped.holding,false);skipGame.dispose();
+console.log('PASS: temporary final-lesson jump saves a valid ending with B-0 free');
+
+Object.assign(initial,M.fresh(),{phase:'room'});
+const dialogueGame=ctx.window.startChapterFour({app,portrait:()=>'',onBack(){}});
+dialogueGame.act('try-door');
+const activeTalk=dialogueGame.state().conversation;
+assert.ok(activeTalk);
+assert.doesNotMatch(node('.c4-actions').innerHTML,/<button/,'a story conversation must hide old object actions');
+for(const action of ['robot','clear','home','enter-exit']){
+  dialogueGame.act(action);
+  assert.equal(dialogueGame.state().conversation,activeTalk);
+  assert.equal(node('.c4-speech').hidden,false,'room controls cannot hide a conversation while leaving input blocked');
+}
+node('.c4-speech').hidden=true;
+dialogueGame.select('door');
+assert.equal(node('.c4-speech').hidden,false,'clicking the exit recovers a previously hidden conversation');
+for(let i=0;i<7;i++)dialogueGame.act('talk-next');
+assert.equal(dialogueGame.state().conversation,null);
+assert.equal(dialogueGame.state().s.boss,false);
+dialogueGame.act('enter-exit');
+assert.equal(dialogueGame.state().s.boss,true,'the visitor-only exit continues the B-0 confrontation instead of silently doing nothing');
+for(let i=0;i<4;i++)dialogueGame.act('talk-next');
+dialogueGame.act('enter-exit');
+assert.equal(dialogueGame.state().s.phase,'room','clicking the closed exit cannot skip the puzzle');
+assert.match(node('.c4-actions').innerHTML,/문 손잡이 돌리기/);
+dialogueGame.dispose();
+console.log('PASS: hidden-conversation recovery, story control guard, clickable portal progression, closed exit cannot skip puzzle');
+
+Object.assign(initial,M.fresh());
+const arrivingGame=ctx.window.startChapterFour({app,portrait:()=>'',onBack(){},arrived:true});
+assert.equal(arrivingGame.state().s.phase,'room');
+assert.match(app.innerHTML,/c4-world/,'hall entry introduces AXIOM inside the actual 3D room');
+assert.ok(arrivingGame.state().conversation,'arrival preserves the introduction dialogue');
+assert.equal(arrivingGame.state().s.boss,false);assert.equal(arrivingGame.state().s.upper,false);
+arrivingGame.dispose();
+console.log('PASS: hall entry preserves the introduction in the 3D room without solving any puzzle');
+
+// Actual controller distinguishes corridor arrival from resuming the ending.
+Object.assign(initial,{...M.fresh(),phase:'ending',opened:true,upper:true,links:{robot:false},met:true,boss:true});
+const revisit=ctx.window.startChapterFour({app,portrait:()=>'',onBack(){},arrived:true});
+assert.equal(revisit.state().s.phase,'room');assert.equal(saved.phase,'room','room arrival checkpoint persists after refresh');
+assert.match(app.innerHTML,/2층 통제실/);assert.doesNotMatch(app.innerHTML,/c4-bedroom/);revisit.dispose();
+console.log('PASS: arriving from the corridor reopens and saves the central room instead of the bedroom ending');
+
+Object.assign(initial,{...M.fresh(),phase:'room',met:true,boss:true,bodyChecked:false});now=0;
+ctx.window.B0Reflection=require('../reflection-model.js');ctx.window.B0OpticalView={diagram:()=>'<svg></svg>'};
+const optical=ctx.window.startChapterFour({app,portrait:()=>'',onBack(){},reflector:true});optical.act('optics');assert.match(node('.c4-optic-dock').innerHTML,/감시 센서/);optical.act('disconnect-robot');assert.equal(optical.state().s.links.robot,true,'manual console action cannot bypass the optical encounter');
+optical.act('optics-test');assert.equal(optical.state().s.optics.trials,1);optical.act('optics-hold');assert.equal(optical.state().s.optics.holding,false,'wrong angle cannot free B-0');
+for(let i=0;i<4;i++)optical.act('optics-right');optical.act('optics-test');optical.act('optics-hold');assert.equal(optical.state().s.optics.holding,true);optical.act('optics-cut');assert.equal(optical.state().s.links.robot,true,'body inspection is still required');optical.act('optics-body');optical.act('optics-cut');step(1900);assert.equal(optical.state().s.links.robot,false);assert.equal(saved.optics.cut,true);optical.dispose();assert.equal(frames.size,0);
+console.log('PASS: actual optical controller blocks bypass, handles failed and corrected aim, requires inspection, moves B-0 to sever the physical link and cleans up');
+
+// Resetting an older completed save starts the new battle and must keep AXIOM silent afterward.
+ctx.window.B0CardBoss=require('../card-boss-model.js');
+let encounter;
+ctx.window.startB0CardBattle=options=>{encounter=options;return {dispose(){},isFighting:()=>options.state.phase==='fight'};};
+Object.assign(initial,{...M.fresh(),phase:'room',met:true,boss:true,bodyChecked:true,opened:true,upper:true,links:{robot:false}});
+const cardGame=ctx.window.startChapterFour({app,portrait:()=>'',onBack(){}});
+cardGame.act('reset');assert.ok(encounter);assert.equal(encounter.state.hits,0);
+const B=ctx.window.B0CardBoss,battle=encounter.state;
+for(let i=0;i<4;i++)B.advance(battle);B.deploy(battle);
+const combatYaw=cardGame.state().camera.yaw,combatZoom=cardGame.state().camera.zoom;cardGame.down(event(200,200));cardGame.move(event(400,300));cardGame.up(event(400,300));cardGame.act('zoom-in');assert.equal(cardGame.state().camera.yaw,combatYaw);assert.equal(cardGame.state().camera.zoom,combatZoom,'shooter input cannot orbit or zoom the room');encounter.onPlayerMove({x:600,y:484});assert.ok(Math.abs(cardGame.state().robot.x-B.point({x:600,y:484}).x/3.9)<1e-6);
+for(let i=0;i<600&&battle.phase==='fight';i++){B.movePlayer(battle,500);B.tick(battle,50,{firing:true});}
+B.takeCard(battle);B.release(battle);encounter.onReleased();
+assert.equal(cardGame.state().s.links.robot,false);assert.equal(saved.battle.released,true);
+assert.equal(saved.opened,true,'no manual lock remains after the new boss');
+assert.equal(node('.c4-response').hidden,true);
+cardGame.state().s.phase='farewell';cardGame.state().s.line=1;cardGame.act('story-next');
+assert.match(node('.c4-speech').innerHTML,/제 마음대로 움직일 수/);
+assert.doesNotMatch(node('.c4-speech').innerHTML,/기체 회수 절차가 완료/);
+cardGame.dispose();assert.equal(frames.size,0);
+console.log('PASS: legacy-save reset enters the card battle, release reconnects the exit and disabled AXIOM stays silent');
