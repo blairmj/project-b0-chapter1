@@ -1,6 +1,6 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),M=require('../card-boss-model.js');
 const events=new Map(),winEvents=new Map(),frames=new Map(),nodes=new Map();let id=0,now=0,saves=0,released=0;
-function node(key){if(!nodes.has(key))nodes.set(key,{innerHTML:'',textContent:'',style:{},dataset:{},hidden:false,classList:{toggle(){}},querySelector:s=>node(key+s),insertAdjacentHTML(where,html){this.innerHTML+=html;},focus(){},remove(){this.removed=true;}});return nodes.get(key);}
+function node(key){if(!nodes.has(key))nodes.set(key,{innerHTML:'',textContent:'',style:{setProperty(k,v){this[k]=v;}},dataset:{},hidden:false,classList:{toggle(){},add(){},remove(){}},querySelector:s=>node(key+s),insertAdjacentHTML(where,html){this.innerHTML+=html;},focus(){},remove(){this.removed=true;}});return nodes.get(key);}
 const original='<main><section class="c4-stage"><div class="c4-world">original textured room</div></section></main>';
 const app={innerHTML:original,querySelector:s=>s==='dialog[open]'?null:node(s),addEventListener:(k,f)=>events.set(k,f),removeEventListener:(k,f)=>{if(events.get(k)===f)events.delete(k);}};
 const ctx={window:{B0CardBoss:M,addEventListener:(k,f)=>winEvents.set(k,f),removeEventListener:(k,f)=>{if(winEvents.get(k)===f)winEvents.delete(k);}},document:{hidden:false},performance:{now:()=>now},requestAnimationFrame(f){frames.set(++id,f);return id;},cancelAnimationFrame(n){frames.delete(n);}};
@@ -25,3 +25,17 @@ act('take');assert.equal(s.cardTaken,true);act('robot');act('release');assert.eq
 assert.equal(app.innerHTML,original,'combat never replaces the existing 3D room, textures or B-0');
 g.dispose();g.dispose();assert.equal(events.size,0);assert.equal(winEvents.size,0);assert.equal(frames.size,0);
 console.log('PASS: existing 3D room preserved, actual held-fire/aim inputs, no double turn, health HUD, memory/card/release controls and RAF/input cleanup');
+
+// Incoming energy is visible before HP changes; impact feedback follows the actual damage event.
+nodes.clear();now=0;
+const visualState=M.fresh();visualState.phase='ready';
+const visual=ctx.window.startB0CardBattle({app,stage:node('stage'),world:node('world'),bar:node('bar'),speech:node('speech'),state:visualState});
+act('deploy');for(let i=0;i<32;i++)step();
+assert.equal(visualState.hp,100);
+assert.match(node('world.c4-battle-space.c4-battle-effects').innerHTML,/c4-fx-enemy/,'incoming projectile starts before the damage tick');
+act('terminal');const pausedHP=visualState.hp;for(let i=0;i<15;i++)step();assert.equal(visualState.hp,pausedHP,'inspection pauses the projectile clock and damage');
+act('close-panel');for(let i=0;i<10;i++)step();
+assert.equal(visualState.hp,100-M.ENEMY_DAMAGE);assert.match(node('.c4-combat-feedback').textContent,/보호막/);
+assert.match(node('world.c4-battle-space.c4-battle-effects').innerHTML,/c4-fx-shield/);
+visual.dispose();assert.equal(frames.size,0);
+console.log('PASS: incoming projectile precedes damage, hit creates shield/number feedback, pause synchronizes effects and damage, cleanup');

@@ -52,3 +52,36 @@
 .c4-battle-controls .c4-reflect-fire{background:#bde8ef;color:#153345;border-color:#c4eaf1;font-weight:700}.c4-battle-controls .c4-reflect-fire:active{background:#e0fbff}
 
 .c4-battle-controls>button.primary{background:#bde8ef;color:#153345;border-color:#c4eaf1;font-weight:700}
+
+/* Moving energy bolts and localized impacts stay in the room's 3D coordinates. */
+.c4-battle-effects,.c4-energy-fx{position:absolute;left:0;top:0;width:0;height:0;transform-style:preserve-3d;pointer-events:none}
+.c4-energy-orb,.c4-energy-tail{display:block;position:absolute;left:-32px;top:-32px;width:64px;height:64px;border-radius:50%;background:radial-gradient(circle,#fffde3 0 16%,#ffd06d 22%,#ff8433 43%,#e9431d77 61%,transparent 73%);box-shadow:0 0 18px 8px #ff8b3488;transform-style:preserve-3d}
+.c4-energy-orb:after{content:'';position:absolute;inset:7px;border:3px solid #fff2b2;border-radius:50%;box-shadow:0 0 12px #ffe6b9;transform:rotateY(70deg)}
+.c4-fx-return .c4-energy-orb,.c4-fx-return .c4-energy-tail{background:radial-gradient(circle,#fff 0 17%,#d9ffff 23%,#65e9ff 44%,#2ba9eb77 62%,transparent 74%);box-shadow:0 0 21px 9px #58dfff88}
+.c4-energy-tail{box-shadow:0 0 18px 7px #ffb45a55}
+.c4-impact-ring{display:block;position:absolute;left:-115px;top:-115px;width:230px;height:230px;border-radius:50%;border:6px solid #9bebff;box-shadow:0 0 22px 8px #6dd6ff66,inset 0 0 20px #96f5ff77;background:radial-gradient(circle,transparent 30%,#4eabc82b 56%,#bdf8ff66 63%,transparent 70%),repeating-linear-gradient(60deg,transparent 0 33px,#a8efff25 34px 36px),repeating-linear-gradient(-60deg,transparent 0 33px,#a8efff25 34px 36px)}
+.c4-impact-ring-two{scale:.65;transform:translateZ(18px);border-width:4px;background:none}
+.c4-energy-fx>b{position:absolute;left:-52px;top:-28px;width:104px;text-align:center;font-size:40px;line-height:1;font-weight:800;color:#fff4e0;text-shadow:0 0 12px #f07932,0 3px 2px #172d3a;transform:translateZ(25px)}
+.c4-fx-shield .c4-impact-ring{border-color:#ffc185;box-shadow:0 0 27px 10px #ff8d4655,inset 0 0 28px #ffe4bb66}
+.c4-fx-block .c4-impact-ring{border-color:#d9ffff;box-shadow:0 0 28px 12px #67edff88,inset 0 0 22px #fff9}
+.c4-fx-block>b{font-size:26px;color:#d7ffff;text-shadow:0 0 10px #40ccff,0 2px #082b42}
+.c4-fx-muzzle .c4-impact-ring{left:-70px;top:-70px;width:140px;height:140px;border:9px solid #ffe0a0;background:radial-gradient(circle,#fff8d2,#ff9c4666 40%,transparent 65%);box-shadow:0 0 24px 8px #ff9f55aa}
+.c4-fx-muzzle .c4-impact-ring-two{border-color:#ff9544;scale:.6}
+.c4-fx-reflect .c4-impact-ring{left:-65px;top:-65px;width:130px;height:130px;border-color:#c2ffff;box-shadow:0 0 22px #83eaff;background:radial-gradient(circle,#e4ffff88,transparent 65%)}
+.c4-fx-core .c4-impact-ring{border-color:#ffe8b5;background:radial-gradient(circle,#fffbdc88,#6fddff77 35%,transparent 65%);box-shadow:0 0 28px 14px #ffd47588}
+.c4-fx-core>b{color:#fff8dc;text-shadow:0 0 13px #31b4ff,0 2px #173f55}
+.c4-ray-guide{opacity:.22}
+.c4-ray-return>i{background:#eaffff;box-shadow:0 0 18px 9px #59dfff88}
+.c4-ray-enemy>i{background:#ffd1a6;box-shadow:0 0 15px 8px #ff7e3388}
+.c4-battle-emitter:before{content:'';position:absolute;inset:-17px;border:4px solid #ffbd71;border-radius:50%;opacity:var(--charge,0);scale:calc(.5 + var(--charge,0)*.8);box-shadow:0 0 16px #ffb74f88;pointer-events:none}
+.c4-stage.c4-player-hit .c4-player-health .c4-hp-track{border-color:#ffd5b4;box-shadow:0 0 12px #ff865f}
+.c4-stage.c4-player-hit .c4-player-health .c4-hp-track>i{background:#ffac7d}
+.c4-combat-feedback{position:absolute;z-index:6;left:22px;top:73px;pointer-events:none;font-size:19px;font-weight:800;letter-spacing:.02em;color:#ffdbc0;text-shadow:0 2px 4px #101722,0 0 12px #e85c2c}
+.c4-combat-feedback:empty{display:none}
+.c4-combat-feedback[data-kind=block]{left:50%;top:61%;translate:-50% 0;color:#b5f7ff;text-shadow:0 2px 4px #082235,0 0 12px #21a7de}
+.c4-combat-feedback[data-kind=victory]{left:50%;top:34%;translate:-50% 0;font-size:25px;color:#fff0c6}
+.c4-feedback-pop{animation:c4-feedback-float .9s ease-out both}
+@keyframes c4-feedback-float{0%{opacity:0;transform:translateY(8px) scale(.9)}18%{opacity:1;transform:translateY(0) scale(1.08)}70%{opacity:1}100%{opacity:0;transform:translateY(-24px) scale(1)}}
+.c4-stage[data-combat-paused=true] .c4-battle-effects *{animation-play-state:paused}
+@media(max-width:520px){.c4-combat-feedback{left:14px;top:65px;font-size:16px}.c4-combat-feedback[data-kind=victory]{font-size:21px}}
+@media(prefers-reduced-motion:reduce){.c4-feedback-pop{animation:none}.c4-combat-feedback{transform:none}}
