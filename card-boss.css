@@ -49,5 +49,6 @@
 @media(max-width:520px){.c4-combat-hud{inset:9px 10px auto;gap:5px 14px}.c4-combat-hud b{font-size:11px}.c4-battle-controls{gap:6px}.c4-battle-controls>button{padding:8px;font-size:11px}.c4-reflect-fire{min-width:130px}.c4-acquired-card{right:10px;width:70px}.c4-game[data-card-battle=true]>footer{gap:6px}.c4-battery-control>button{font-size:11px;padding:7px}.c4-game[data-card-battle=true] .c4-actions{min-height:70px}}
 @media(prefers-reduced-motion:reduce){.c4-battle-space *,.c4-card-case *,.c4-combat-hud *{animation:none!important;transition:none!important}}
 
-.c4-battle-controls .c4-reflect-fire{background:#bde8ef;color:#153345;border-color:#c4eaf1;font-weight:700}.c4-battle-controls .c4-reflect-fire:active{background:#e0fbff}\n
+.c4-battle-controls .c4-reflect-fire{background:#bde8ef;color:#153345;border-color:#c4eaf1;font-weight:700}.c4-battle-controls .c4-reflect-fire:active{background:#e0fbff}
+
 .c4-battle-controls>button.primary{background:#bde8ef;color:#153345;border-color:#c4eaf1;font-weight:700}
