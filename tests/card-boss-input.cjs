@@ -1,22 +1,27 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),M=require('../card-boss-model.js');
-const events=new Map(),timers=new Map();let nextId=0,saves=0,released=0;
-const app={innerHTML:'',addEventListener(k,f){events.set(k,f);},removeEventListener(k,f){if(events.get(k)===f)events.delete(k);},querySelector(){return {focus(){}};}};
-const ctx={window:{B0CardBoss:M},matchMedia:()=>({matches:true}),setTimeout(f){timers.set(++nextId,f);return nextId;},clearTimeout(id){timers.delete(id);}};
+const events=new Map(),winEvents=new Map(),frames=new Map(),nodes=new Map();let id=0,now=0,saves=0,released=0;
+function node(key){if(!nodes.has(key))nodes.set(key,{innerHTML:'',textContent:'',style:{},dataset:{},hidden:false,classList:{toggle(){}},querySelector:s=>node(key+s),insertAdjacentHTML(where,html){this.innerHTML+=html;},focus(){},remove(){this.removed=true;}});return nodes.get(key);}
+const original='<main><section class="c4-stage"><div class="c4-world">original textured room</div></section></main>';
+const app={innerHTML:original,querySelector:s=>s==='dialog[open]'?null:node(s),addEventListener:(k,f)=>events.set(k,f),removeEventListener:(k,f)=>{if(events.get(k)===f)events.delete(k);}};
+const ctx={window:{B0CardBoss:M,addEventListener:(k,f)=>winEvents.set(k,f),removeEventListener:(k,f)=>{if(winEvents.get(k)===f)winEvents.delete(k);}},document:{hidden:false},performance:{now:()=>now},requestAnimationFrame(f){frames.set(++id,f);return id;},cancelAnimationFrame(n){frames.delete(n);}};
 vm.runInNewContext(fs.readFileSync(require.resolve('../card-boss.js'),'utf8'),ctx);
-const s=M.fresh(),g=ctx.window.startB0CardBattle({app,state:s,memory:true,save(){saves++;},onReleased(){released++;}});
-function act(action){events.get('click')({target:{closest:()=>({dataset:{bb:action}})},preventDefault(){}});}
-function finish(){const pending=[...timers];timers.clear();pending.forEach(([,f])=>f());}
-act('menu');assert.match(app.innerHTML,/현재 공간 다시 시작/);act('close-panel');
-for(let i=0;i<4;i++)act('next');
-act('terminal');act('memory');assert.equal(s.memoryRead,true);assert.match(app.innerHTML,/공격 장치 전원/);act('close-panel');
-act('deploy');const before=app.innerHTML;act('left');assert.notEqual(app.innerHTML,before,'aiming immediately changes the rendered ray');
-act('left');act('strike');assert.equal(s.hits,1);
-act('take');act('strike');assert.equal(s.hits,1,'attack animation blocks duplicate hits and premature retrieval');finish();
-assert.match(app.innerHTML,/오른손 충전/);
-act('case');assert.doesNotMatch(app.innerHTML,/data-bb="take"/);act('close-panel');
-for(let i=0;i<4;i++)act('right');act('strike');finish();
-act('case');assert.match(app.innerHTML,/카드 꺼내기/);
-act('take');assert.equal(s.cardTaken,true);assert.match(app.innerHTML,/획득한 해제 카드/);
-act('robot');act('release');assert.equal(released,1);assert.equal(s.released,true);assert.ok(saves>10);
-g.dispose();g.dispose();assert.equal(events.size,0);assert.equal(timers.size,0);
-console.log('PASS: actual combat buttons, menu, memory, live aim, animation input guard, manual card pickup, card slot and cleanup');
+const s=M.fresh(3),g=ctx.window.startB0CardBattle({app,stage:node('stage'),world:node('world'),bar:node('bar'),speech:node('speech'),state:s,memory:true,save(){saves++;},onReleased(){released++;}});
+function event(a){return {pointerId:1,key:'',preventDefault(){},target:{closest:sel=>sel==='[data-bb]'?{dataset:{bb:a}}:null}};}
+const act=a=>events.get('click')(event(a));
+function step(){now+=50;const pending=[...frames];frames.clear();pending.forEach(([,f])=>f(now));}
+for(let i=0;i<4;i++)act('next');act('terminal');act('memory');assert.equal(s.memoryRead,true);act('close-panel');act('deploy');
+act('left');assert.equal(s.angle,-15);
+events.get('pointerdown')(event('left'));winEvents.get('pointerup')(event('left'));act('left');assert.equal(s.angle,-30,'one physical click turns the reflector once');
+events.get('pointerdown')(event('strike'));for(let i=0;i<45;i++)step();
+assert.ok(s.bossHP<220,'holding the button repeats reflected attacks');assert.equal(s.hp,100);
+winEvents.get('pointerup')(event('strike'));act('strike');
+for(let i=0;i<600&&s.phase==='fight';i++){
+ const wanted=s.side==='left'?-30:30;while(s.angle!==wanted)act(s.angle<wanted?'right':'left');
+ if(i===0)events.get('pointerdown')(event('strike'));
+ step();
+}
+winEvents.get('pointerup')(event('strike'));assert.equal(s.phase,'defeated');act('case');assert.match(node('bar').innerHTML,/카드 꺼내기/);
+act('take');assert.equal(s.cardTaken,true);act('robot');act('release');assert.equal(released,1);assert.equal(s.released,true);assert.ok(saves>15);
+assert.equal(app.innerHTML,original,'combat never replaces the existing 3D room, textures or B-0');
+g.dispose();g.dispose();assert.equal(events.size,0);assert.equal(winEvents.size,0);assert.equal(frames.size,0);
+console.log('PASS: existing 3D room preserved, actual held-fire/aim inputs, no double turn, health HUD, memory/card/release controls and RAF/input cleanup');

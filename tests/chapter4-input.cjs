@@ -108,10 +108,10 @@ const cardGame=ctx.window.startChapterFour({app,portrait:()=>'',onBack(){}});
 cardGame.act('reset');assert.ok(encounter);assert.equal(encounter.state.hits,0);
 const B=ctx.window.B0CardBoss,battle=encounter.state;
 for(let i=0;i<4;i++)B.advance(battle);B.deploy(battle);
-B.adjust(battle,-15);B.adjust(battle,-15);B.strike(battle);
-for(let i=0;i<4;i++)B.adjust(battle,15);B.strike(battle);B.takeCard(battle);B.release(battle);
-encounter.onReleased();assert.equal(cardGame.state().s.links.robot,false);assert.equal(saved.battle.released,true);
-assert.match(node('.c4-speech').innerHTML,/다시 움직일 수/);
+for(let i=0;i<600&&battle.phase==='fight';i++){const target=battle.side==='left'?-30:30;while(battle.angle!==target)B.adjust(battle,battle.angle<target?15:-15);B.tick(battle,50,{firing:true});}
+B.takeCard(battle);B.release(battle);encounter.onReleased();
+assert.equal(cardGame.state().s.links.robot,false);assert.equal(saved.battle.released,true);
+assert.equal(saved.opened,true,'no manual lock remains after the new boss');
 assert.equal(node('.c4-response').hidden,true);
 cardGame.state().s.phase='farewell';cardGame.state().s.line=1;cardGame.act('story-next');
 assert.match(node('.c4-speech').innerHTML,/제 마음대로 움직일 수/);

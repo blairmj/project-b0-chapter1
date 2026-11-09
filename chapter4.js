@@ -4,7 +4,8 @@
     const SPACE=3.9;
     const M=window.B0Final,storage=store||(preview?sessionStorage:localStorage),key='project-b0-final-v2';
     let s;try{s=(arrived?M.arrive:M.restore)(JSON.parse(storage.getItem(key)));}catch{s=M.fresh();}
-    if(window.B0CardBoss&&!s.opened&&s.links.robot){s.battle=window.B0CardBoss.restore(s.battle);delete s.optics;}else if(reflector&&!s.battle)M.enableOptics(s);
+    const batterySupply=window.B0CardBoss?.batterySupply(storage)||0;
+    if(window.B0CardBoss&&!s.opened&&s.links.robot){s.battle=window.B0CardBoss.restore(s.battle,batterySupply);delete s.optics;}else if(reflector&&!s.battle)M.enableOptics(s);
     if(arrived){try{storage.setItem(key,JSON.stringify(s));}catch{}}
     let dead=false,stage,world,bar,speech,conversation=null,selection=null,modalEl=null,pointer=null,suppress=false,frame=0,camFrame=0,previous=0,mute=false;
     let camera={x:0,z:60,yaw:-15,pitch:14,zoom:.7,height:0},r={handle:0,latch:s.opened?1:0,lifted:false,high:0},opticalMotion=null;
@@ -22,10 +23,10 @@
     function sound(low=false){if(mute)return;try{audio||=new(window.AudioContext||window.webkitAudioContext)();void audio.resume();const o=audio.createOscillator(),g=audio.createGain();o.type='sine';o.frequency.value=low?145:540;g.gain.setValueAtTime(.025,audio.currentTime);g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+.3);o.connect(g).connect(audio.destination);o.start();o.stop(audio.currentTime+.3);}catch{}}
     function bossCue(kind){if(mute)return;const patterns={evidence:[[360,0,.16],[250,.22,.35]],sever:[[190,0,.2],[125,.28,.45]],critical:[[150,0,.18],[150,.34,.18],[95,.72,.55]],override:[[110,0,.45],[160,.55,.4]],released:[[320,0,.3],[480,.24,.65]]};
       try{audio||=new(window.AudioContext||window.webkitAudioContext)();void audio.resume();for(const [hz,delay,length]of patterns[kind]||patterns.sever){const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime+delay;o.type='sine';o.frequency.value=hz;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.025,t+.025);g.gain.exponentialRampToValueAtTime(.0001,t+length);o.connect(g).connect(audio.destination);o.start(t);o.stop(t+length+.02);o.onended=()=>{o.disconnect();g.disconnect();};}}catch{}}
-    function pressure(){if(s.battle?.released)return 'released';if(s.opened)return 'released';if(!s.boss)return 'calm';if(s.links.robot)return M.opticalWindow(s)?'optical':'locked';if(s.upper)return r.handle>=.85&&s.holding?'override':'critical';return 'severed';}
+    function pressure(){if(s.battle)return window.B0CardBoss.defeated(s.battle)?'released':'locked';if(s.opened)return 'released';if(!s.boss)return 'calm';if(s.links.robot)return M.opticalWindow(s)?'optical':'locked';if(s.upper)return r.handle>=.85&&s.holding?'override':'critical';return 'severed';}
     const pressureLines={calm:'',optical:'회수 신호 경로를 복구하십시오.',locked:'방문자의 퇴실을 우선합니다.',severed:'기체 제어 연결이 끊겼습니다. 복구하십시오.',critical:'수동 개방을 중단하십시오. 해당 기체는 회수 대상입니다.',override:'B-0. 손을 놓고 회수 명령에 응답하십시오.',released:'B-0. 제어 연결을 복구하십시오.'};
     const pressureStatus={optical:'광학 신호 차단 · 실제 제어 연결 유지',calm:'시설 폐쇄 절차 · 방문자 퇴실',locked:'B-0 회수 모드 · 동작 제한',severed:'기체 연결 해제 · 출구 잠김',critical:'상부 잠금 해제 · 하부 잠김',override:'수동 개방 처리 중',released:'수동 개방 고정 · 회수 미완료'};
-    function updateTension(){if(!inRoom())return;if(s.battle?.released){stage.dataset.axiom='released';app.querySelector('.c4-game').dataset.cardReleased='true';app.querySelector('.c4-main-status').textContent='AXIOM 정지 · B-0 잠금 해제';app.querySelector('.c4-response').hidden=true;return;}const level=pressure(),line=response?.phase===level?response.text:pressureLines[level];stage.dataset.axiom=level;app.querySelector('.c4-game').dataset.axiom=level;app.querySelector('.c4-main-screen').dataset.robotControl=String(s.links.robot);app.querySelector('.c4-main-screen').dataset.exitControl=String(!s.upper);
+    function updateTension(){if(!inRoom())return;if(s.battle){const inactive=window.B0CardBoss.defeated(s.battle),game=app.querySelector('.c4-game');stage.dataset.axiom=inactive?'released':'locked';game.dataset.axiom=stage.dataset.axiom;game.dataset.cardReleased=String(s.battle.released);app.querySelector('.c4-main-status').textContent=inactive?'AXIOM 정지 · 출구 열림':'AXIOM 가동 · B-0 동작 잠김';app.querySelector('.c4-response').hidden=true;return;}const level=pressure(),line=response?.phase===level?response.text:pressureLines[level];stage.dataset.axiom=level;app.querySelector('.c4-game').dataset.axiom=level;app.querySelector('.c4-main-screen').dataset.robotControl=String(s.links.robot);app.querySelector('.c4-main-screen').dataset.exitControl=String(!s.upper);
       app.querySelector('.c4-main-status').textContent=level==='override'&&stage.dataset.reported?'개방 처리 완료':pressureStatus[level];
       const banner=app.querySelector('.c4-response');banner.hidden=!line;banner.innerHTML=`<b>AXIOM</b><span>${esc(line)}</span>`;
       if(modalEl){modalEl.dataset.axiom=level;const relay=modalEl.querySelector('.c4-modal-response');if(relay){relay.hidden=!line;relay.innerHTML=`<b>AXIOM</b><span>${esc(line)}</span>`;}}}
@@ -41,21 +42,15 @@
     function talk(lines,done){actions('');conversation={lines,i:0,done};say(...lines[0]);}
     function next(){if(!conversation)return;const c=conversation;if(++c.i<c.lines.length)say(...c.lines[c.i]);else{conversation=null;speech.hidden=true;c.done?.();}}
     function render(){battleView?.dispose();battleView=null;closeModal(false);conversation=null;pointer=null;cancelAnimationFrame(frame);cancelAnimationFrame(camFrame);cancelAnimationFrame(journeyFrame);journey=null;previous=0;
-      if(s.battle&&!s.battle.released){
-        s.phase='room';s.met=s.boss=true;save();stage=world=bar=speech=null;
-        let memory=false;try{memory=JSON.parse(storage.getItem('project-b0-education-v1'))?.memoryTaken===true;}catch{}
-        battleView=window.startB0CardBattle({app,state:s.battle,memory,save,onBack,onHome,
-          onReset:()=>{s=M.fresh();s.battle=window.B0CardBoss.fresh();r={handle:0,latch:0,lifted:false,high:0};save();render();},
-          onReleased:()=>{s.links.robot=false;s.bodyChecked=true;save();render();select('door');say('robot','다시 움직일 수 있어요. 이제 함께 출구를 열어요.');}
-        });return;
-      }
+      if(s.battle&&s.phase==='intro'){s.phase='room';s.line=0;}
+      if(s.battle&&s.phase==='room'){s.met=s.boss=true;save();}
       const entranceTalk=arrived&&s.phase==='intro';
       if(entranceTalk){s.phase='room';s.line=0;save();}
       if(s.phase==='intro'){renderScene(intro,'2층 중앙관리실 앞','intro');return;}
       if(s.phase==='farewell'){camera={x:-125,z:235-240/SPACE,yaw:-180,pitch:-8,zoom:1};robot={x:-85,z:235};}
       if(s.phase==='ending'){renderScene(ending,'내 방','ending');return;}
       if(s.phase==='complete'){renderComplete();return;}
-      app.innerHTML=`<main class="game c2-game c4-game" data-farewell="${s.phase==='farewell'}">${window.B0UI?.header({place:`2층 중앙관리실`,namespace:"c4",reset:"home",zoomClass:"c4-zoom",active:true})||""}
+      app.innerHTML=`<main class="game c2-game c4-game" data-card-battle="${!!s.battle}" data-farewell="${s.phase==='farewell'}">${window.B0UI?.header({place:`2층 중앙관리실`,namespace:"c4",reset:"home",zoomClass:"c4-zoom",active:true})||""}
       <section class="c2-stage c4-stage" tabindex="0" aria-label="중앙관리실. 빈 공간을 끌어 둘러보고 물건을 눌러 조사하세요."><div class="c2-world c4-world">
       ${['front','left','right','back'].map(f=>`<div class="c2-wall c2-wall-${f}"><div class="c4-wall-ribs"></div><div class="c2-light"></div></div>`).join('')}<div class="c2-floor"></div><div class="c2-ceiling"></div>
       <div class="c4-main-screen" data-c4-object="screen" role="button" tabindex="0" aria-label="AXIOM 관리 화면"><img class="c4-core-art" src="./assets/sf-axiom-core-v1.webp" alt=""><small>FACILITY CLOSURE SYSTEM</small><div class="c4-emblem"><i></i><i></i><i></i></div><strong>AXIOM</strong><p class="c4-main-status"></p><span class="c4-math">잔여 이용자 퇴실 / 교육 기체 회수</span><div class="c4-screen-grid"></div></div>
@@ -71,7 +66,17 @@
       stage=app.querySelector('.c4-stage');world=app.querySelector('.c4-world');bar=app.querySelector('.c4-actions');speech=app.querySelector('.c4-speech');
       stage.addEventListener('pointerdown',down);stage.addEventListener('pointermove',move);stage.addEventListener('pointerup',up);stage.addEventListener('pointercancel',cancel);
       stage.addEventListener('wheel',e=>{if(journey||carryingTransition||app.querySelector('dialog[open]')?.open)return;e.preventDefault();cancelAnimationFrame(camFrame);camera.zoom=Math.max(.65,Math.min(1.6,camera.zoom*Math.exp(-Math.max(-150,Math.min(150,e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?stage.clientHeight:1)))*.0015)));updateCamera();},{passive:false});
-      update();if(entranceTalk)talk(intro.map(([who,text])=>[who,text.replace('들어가 보자.','여기서 출구를 찾아보자.')]));if(s.phase==='farewell')farewellLine();frame=requestAnimationFrame(loop);
+      update();
+      if(s.battle&&s.phase==='room'){
+        let memory=false;try{memory=JSON.parse(storage.getItem('project-b0-education-v1'))?.memoryTaken===true;}catch{}
+        battleView=window.startB0CardBattle({app,stage,world,bar,speech,state:s.battle,memory,
+          save:()=>{save();update();},
+          onFocus:id=>{if(id==='combat')cameraTo({x:0,z:-20,yaw:0,pitch:3,zoom:1.1,height:0});else if(id==='case')cameraTo({x:0,z:-95,yaw:0,pitch:13,zoom:1.1,height:0});else approach(id);},
+          onReleased:()=>{s.links.robot=false;s.bodyChecked=true;s.opened=s.upper=true;s.holding=false;r.latch=1;save();update();},
+          onLeave:()=>startJourney('approach')
+        });
+      }
+      if(entranceTalk)talk(intro.map(([who,text])=>[who,text.replace('들어가 보자.','여기서 출구를 찾아보자.')]));if(s.phase==='farewell')farewellLine();frame=requestAnimationFrame(loop);
     }
     function updateCamera(){if(!inRoom()||!world?.isConnected)return;camera.pitch=Math.max(-60,Math.min(40,camera.pitch));camera.yaw=((camera.yaw+540)%360)-180;
       const f=Math.min(stage.clientWidth*.62,stage.clientHeight*.5)*camera.zoom;stage.style.perspective=f+'px';world.style.transform=`translateZ(${f}px) rotateX(${camera.pitch}deg) rotateY(${camera.yaw}deg) translate3d(${-camera.x*SPACE}px,${camera.height||0}px,${-camera.z*SPACE}px)`;
@@ -79,8 +84,8 @@
       window.B0RoomTransit?.bind(world,{read:()=>({...camera,x:camera.x*SPACE,z:camera.z*SPACE,height:camera.height||0}),write:v=>{Object.assign(camera,v,{x:v.x/SPACE,z:v.z/SPACE});updateCamera();},stop:()=>{cancelAnimationFrame(camFrame);pointer=null;},door:{x:-85*SPACE,z:1150,yaw:180,wide:true}});app.querySelector('.c4-zoom').textContent=Math.round(camera.zoom*100)+'%';stage.dataset.yaw=Math.round(camera.yaw);}
     function update(){if(!inRoom())return;const stopped=s.met&&s.links.robot&&!M.opticalWindow(s);
       stage.classList.toggle('c4-confrontation',s.boss&&!s.opened);app.querySelector('.c4-robot').classList.toggle('controlled',stopped);
-      app.querySelector('.c4-door').classList.toggle('open',s.opened||s.met&&!s.boss);app.querySelector('.c4-exit-crossing').disabled=!(s.opened||s.met&&!s.boss);app.querySelector('.c4-exit-box').classList.toggle('available',M.ready(s));
-      app.querySelector('.c4-door-status').textContent=s.opened?'통로 열림 · 개방 고정':s.met&&!s.boss?'방문자 통과 허용':s.battle?.released?'수동 잠금장치 확인':s.boss?'반출 제한 · 기체 회수':'방문자 출구';
+      app.querySelector('.c4-door').classList.toggle('open',s.opened||s.met&&!s.boss||s.battle&&window.B0CardBoss.defeated(s.battle));app.querySelector('.c4-exit-crossing').disabled=!(s.opened||s.met&&!s.boss||s.battle&&window.B0CardBoss.defeated(s.battle));app.querySelector('.c4-exit-box').classList.toggle('available',M.ready(s));
+      app.querySelector('.c4-door-status').textContent=s.opened?'통로 열림 · 개방 고정':s.met&&!s.boss?'방문자 통과 허용':s.battle?(window.B0CardBoss.defeated(s.battle)?'출구 열림 · B-0와 함께 탈출':'AXIOM 출구 통제'):s.boss?'반출 제한 · 기체 회수':'방문자 출구';
       const tool=app.querySelector('.c4-use-reflector');if(tool)tool.hidden=!(s.boss&&s.links.robot);const emitter=app.querySelector('.c4-optical-emitter');if(emitter)emitter.dataset.active=String(s.boss&&s.links.robot&&!M.opticalWindow(s));updateMechanical();updateTension();updateRobot();updateCamera();}
     function updateRobot(){if(!inRoom())return;const actor=app.querySelector('.c4-robot'),controlled=s.met&&s.links.robot&&!M.opticalWindow(s),now=performance.now();
       if(controlled){wakeUntil=0;recoveryPending=false;}else if(lastControlled){recoveryPending=!!modalEl;wakeUntil=now+(modalEl?500:1700);}lastControlled=controlled;
@@ -117,7 +122,7 @@
       function step(t){if(dead||s.phase!=='room')return;const v=reduced()?1:Math.min(1,(t-start)/850),q=v*v*(3-2*v);for(const k of ['x','z','pitch','zoom','height'])camera[k]=from[k]+((to[k]??from[k])-from[k])*q;camera.yaw=from.yaw+turn*q;updateCamera();if(v<1)camFrame=requestAnimationFrame(step);else done?.();}camFrame=requestAnimationFrame(step);
     }
     function approach(id){const targets={screen:{x:0,z:-90,yaw:0,pitch:26,zoom:.75},console:{x:-291+235/SPACE,z:0,yaw:-90,pitch:-7,zoom:1},records:{x:291-235/SPACE,z:0,yaw:90,pitch:0,zoom:1},door:{x:-85,z:290-250/SPACE,yaw:180,pitch:-5,zoom:1},handle:{x:-242.5,z:286-235/SPACE,yaw:180,pitch:-12,zoom:1},high:{x:-85,z:286-235/SPACE,yaw:180,pitch:28,zoom:1},robot:{x:robot.x,z:robot.z+260/SPACE,yaw:0,pitch:-18,zoom:1}};if(targets[id]&&!r.lifted)cameraTo({...targets[id],height:0});}
-    function select(id){if(conversation){say(...conversation.lines[conversation.i]);return;}if(carryingTransition)return;
+    function select(id){if(battleView){battleView.select?.(id);return;}if(conversation){say(...conversation.lines[conversation.i]);return;}if(carryingTransition)return;
       if(id==='optics'){opticsControls();return;}const opticDock=app.querySelector('.c4-optic-dock');if(opticDock)opticDock.hidden=true;
       if(selection==='ask'){selection=null;ask(id);return;}
       if(selection==='lift-target'){selection=null;if(id!=='high'){say('robot','그곳에는 들어 올려 드릴 자리가 없습니다.');robotMenu();return;}lift();return;}
@@ -180,11 +185,17 @@
       if(a==='mute'){mute=!mute;try{const v=JSON.parse(storage.getItem('project-b0-firstperson-v4'))||{};v.muted=mute;storage.setItem('project-b0-firstperson-v4',JSON.stringify(v));}catch{}closeModal();return;}
       if(a==='controls'){modal('사용법','<p>빈 공간을 끌거나 방향키로 둘러보고, 물건을 눌러 가까이 살펴봅니다.</p><p>연결 단자는 옆으로 끌어 분리합니다. 닿을 수 있는 잠금쇠와 문 손잡이를 직접 끌어 조작할 수 있습니다. 각 물건의 조작 버튼도 사용할 수 있습니다.</p><p>B-0에게 부탁한 뒤 대상 물건을 직접 누릅니다. 처음 위치로는 시점과 배율만 초기화합니다. 진행은 자동 저장됩니다.</p>');return;}
       if(a==='reset-confirm'){modal('4차시를 다시 시작할까요?',`<p>다른 차시의 기록은 유지됩니다.</p>${b('4차시 초기화','reset')}`);return;}
-      if(a==='reset'){s=M.fresh();if(window.B0CardBoss)s.battle=window.B0CardBoss.fresh();else if(reflector)M.enableOptics(s);opticalMotion=null;r={handle:0,latch:0,lifted:false,high:0};robot={x:93,z:-140};wakeUntil=0;recoveryPending=false;carryingTransition=false;lastControlled=false;camera={x:0,z:60,yaw:-15,pitch:14,zoom:.7};save();render();return;}
+      if(a==='reset'){s=M.fresh();if(window.B0CardBoss)s.battle=window.B0CardBoss.fresh(batterySupply);else if(reflector)M.enableOptics(s);opticalMotion=null;r={handle:0,latch:0,lifted:false,high:0};robot={x:93,z:-140};wakeUntil=0;recoveryPending=false;carryingTransition=false;lastControlled=false;camera={x:0,z:60,yaw:-15,pitch:14,zoom:.7};save();render();return;}
       if(a==='back'){app.querySelector('dialog')?.close?.();onBack();return;}
       if(a==='story-next'){if(s.phase==='farewell'){if(s.line<farewell.length-1){s.line++;save();farewellLine();}else startJourney('exit');return;}const lines=s.phase==='intro'?intro:ending;if(s.line<lines.length-1)s.line++;else{s.phase=s.phase==='intro'?'room':'complete';s.line=0;}save();render();return;}
       if(a==='revisit'){s.phase='room';s.line=0;robot={x:93,z:-140};camera={x:0,z:60,yaw:-15,pitch:14,zoom:.7};save();render();return;}
       if(a==='reflection'){modal('이번 모험 돌아보기',`<p>B-0에게 전에 가르친 행동이 이번에는 어디에 쓰였나요?</p><p>혼자 할 수 없었던 일을 어떻게 나누어 했나요?</p><p>완료라는 표시와 실제 문 상태는 같았나요?</p><small>정해진 답을 고르는 시험이 아닙니다. 함께 이야기해 보세요.</small>`);return;}
+      if(battleView&&s.phase==='room'){
+        if(a==='robot'){battleView.act?.('hint');return;}
+        if(a==='enter-exit'||a==='leave'){battleView.act?.('leave');return;}
+        if(a==='home'){battleView.act?.('focus');return;}
+        if(a==='clear'){battleView.act?.('close-panel');return;}
+      }
       if(s.phase!=='room')return;
       if(conversation&&!['talk-next','dismiss'].includes(a)){say(...conversation.lines[conversation.i]);return;}
       if(a==='optics'){opticsControls();return;}
@@ -232,13 +243,13 @@
       if(p.drag==='grip'){if(!s.boss){pull();return;}if(r.handle>=.85){r.handle=1;select('door');}else M.release(s,r);updateMechanical();return;}
       if(p.drag?.startsWith('plug-')){p.el.style.translate='';if(Math.hypot(e.clientX-p.x,e.clientY-p.y)>55)link(p.drag.slice(5),false);return;}}
     function cancel(){if(pointer?.drag){pointer.el.style.translate='';if(pointer.drag==='grip')M.release(s,r);}pointer=null;updateMechanical();}
-    function click(e){if(suppress){suppress=false;return;}const action=e.target.closest('[data-c4]');if(action){e.preventDefault();act(action.dataset.c4);return;}const id=e.target.closest('[data-c4-object]')?.dataset.c4Object;if(id&&s.phase==='room'&&!journey){select(id);}}
+    function click(e){if(e.target.closest('[data-bb]'))return;if(suppress){suppress=false;return;}const action=e.target.closest('[data-c4]');if(action){e.preventDefault();act(action.dataset.c4);return;}const id=e.target.closest('[data-c4-object]')?.dataset.c4Object;if(id&&s.phase==='room'&&!journey){select(id);}}
     function input(){}
-    function keydown(e){if(s.phase!=='room'||modalEl||conversation||journey||carryingTransition)return;if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-c4-object]')){e.preventDefault();select(e.target.dataset.c4Object);return;}if(e.target.matches('[data-c4-drag="grip"]')&&['Enter',' ','ArrowDown','ArrowUp'].includes(e.key)){e.preventDefault();act(e.key==='ArrowUp'||r.handle>=.85?'release':'pull');return;}if(e.target.matches('[data-c4-drag="high"]')&&['Enter',' ','ArrowRight'].includes(e.key)){e.preventDefault();highPull();return;}if(e.target.closest('button,input'))return;if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)){e.preventDefault();cancelAnimationFrame(camFrame);if(e.key==='ArrowLeft')camera.yaw-=15;if(e.key==='ArrowRight')camera.yaw+=15;if(e.key==='ArrowUp')camera.pitch+=8;if(e.key==='ArrowDown')camera.pitch-=8;updateCamera();}}
+    function keydown(e){if(battleView&&([' ','Space','Spacebar','ArrowLeft','ArrowRight'].includes(e.key)||e.code==='Space')&&!e.target.closest('dialog,input,select'))return;if(s.phase!=='room'||modalEl||conversation||journey||carryingTransition)return;if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-c4-object]')){e.preventDefault();select(e.target.dataset.c4Object);return;}if(e.target.matches('[data-c4-drag="grip"]')&&['Enter',' ','ArrowDown','ArrowUp'].includes(e.key)){e.preventDefault();act(e.key==='ArrowUp'||r.handle>=.85?'release':'pull');return;}if(e.target.matches('[data-c4-drag="high"]')&&['Enter',' ','ArrowRight'].includes(e.key)){e.preventDefault();highPull();return;}if(e.target.closest('button,input'))return;if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)){e.preventDefault();cancelAnimationFrame(camFrame);if(e.key==='ArrowLeft')camera.yaw-=15;if(e.key==='ArrowRight')camera.yaw+=15;if(e.key==='ArrowUp')camera.pitch+=8;if(e.key==='ArrowDown')camera.pitch-=8;updateCamera();}}
     function dispose(){if(dead)return;dead=true;battleView?.dispose();battleView=null;cancelAnimationFrame(frame);cancelAnimationFrame(camFrame);cancelAnimationFrame(journeyFrame);journey=null;clearTimeout(pulseTimer);timers.forEach(clearTimeout);closeModal(false);audio?.close();app.removeEventListener('click',click);app.removeEventListener('input',input);app.removeEventListener('keydown',keydown);app.removeEventListener('pointerdown',modalDown);app.removeEventListener('pointermove',move);app.removeEventListener('pointerup',up);app.removeEventListener('pointercancel',cancel);window.removeEventListener('resize',updateCamera);}
     function modalDown(e){if(e.target.closest('.c4-modal')&&e.target.closest('[data-c4-drag]'))down(e);}
     function jumpToEnd(){
-      if(s.battle)Object.assign(s.battle,{hits:2,phase:'released',cardTaken:true,released:true,deployed:false});
+      if(s.battle)Object.assign(s.battle,{hits:20,hp:100,bossHP:0,phase:'released',cardTaken:true,released:true,deployed:false});
       s.met=true;s.boss=true;s.bodyChecked=true;s.links.robot=false;s.upper=true;
       s.holding=false;s.opened=true;s.phase='ending';s.line=0;s.logs.push({action:'temporary-skip'});save();
     }

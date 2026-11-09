@@ -7,7 +7,7 @@
     s.line=Math.max(0,Math.floor(Number(raw.line)||0));s.links.robot=raw.links?.robot!==false;
     s.opened=s.opened&&s.upper&&!s.links.robot;
     if(['farewell','ending','complete'].includes(s.phase)&&!s.opened){s.phase='room';s.line=0;}
-    if(raw.battle){const B=root.B0CardBoss||(typeof require==='function'?require('./card-boss-model.js'):null);if(B){s.battle=B.restore(raw.battle);s.links.robot=!s.battle.released;if(!s.battle.released){s.opened=false;s.upper=false;s.phase='room';}}}
+    if(raw.battle){const B=root.B0CardBoss||(typeof require==='function'?require('./card-boss-model.js'):null);if(B){s.battle=B.restore(raw.battle);s.links.robot=!s.battle.released;if(s.battle.released){s.opened=s.upper=true;}else{s.opened=false;s.upper=false;s.phase='room';}}}
     // A saved request is not a maintained physical grip after a reload.
     s.holding=false;s.seen=raw.seen&&typeof raw.seen==='object'?{...raw.seen}:{};
     s.logs=Array.isArray(raw.logs)?raw.logs.slice(-80):[];if(raw.observations&&typeof raw.observations==='object')s.observations={seen:{...raw.observations.seen},last:raw.observations.last};
