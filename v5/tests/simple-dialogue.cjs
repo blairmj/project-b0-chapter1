@@ -1,0 +1,9 @@
+const assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');let panel,done=0;const listeners=new Map(),actor={classList:{toggle(){},remove(){}}},game={classList:{add(){},remove(){}}},stage={isConnected:true,focus(){},querySelectorAll:()=>[],append(){}};
+const app={querySelector:s=>s==='.robot-sprite'?actor:s==='.game'?game:stage,querySelectorAll:()=>[],addEventListener:(k,f)=>listeners.set(k,f),removeEventListener:k=>listeners.delete(k)};
+const document={querySelector:()=>app,createElement(){const handlers={};return panel={innerHTML:'',setAttribute(){},querySelector:()=>({focus(){}}),contains:()=>false,addEventListener:(k,f)=>handlers[k]=f,remove(){this.removed=true;},click(){handlers.click({stopPropagation(){},target:{closest:()=>({dataset:{objectTalk:'next'}})}});}};}};
+const context={window:{document}};vm.runInNewContext(fs.readFileSync(require.resolve('../object-dialogue.js'),'utf8'),context);const D=context.window.B0ObjectDialogue;
+D.present([['student','질문'],['robot','함께 확인해요']],{actions:[['보관함 열기',()=>done++]],questions:[['다른 질문',()=>{}]],onRequests(){}});
+assert.equal((panel.innerHTML.match(/<button/g)||[]).length,1);assert.match(panel.innerHTML,/>다음</);assert.doesNotMatch(panel.innerHTML,/다른 질문|닫기/);panel.click();assert.equal(done,0);assert.equal((panel.innerHTML.match(/<button/g)||[]).length,1);panel.click();assert.equal(done,1);assert.equal(panel.removed,true);panel.click();assert.equal(done,1);assert.equal(listeners.size,0);
+D.present([['robot','읽고 끝내요']]);panel.click();assert.equal(panel.removed,true);
+D.present([['robot','아직 작동하지 않아요']],{actions:[['실행',()=>done++]]});listeners.get('keydown')({key:'Escape',preventDefault(){},stopPropagation(){}});assert.equal(done,1);assert.equal(listeners.size,0);
+console.log('PASS: next-only conversations, one final continuation, no question menus, exactly-once effects and safe cancellation');

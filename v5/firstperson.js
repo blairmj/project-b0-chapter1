@@ -2,7 +2,7 @@
 
 // Static, first-person chapter. B-0 owns the note but has not checked his compartment.
 const SAVE_KEY = "project-b0-v5-firstperson-v4";
-const progressStore = localStorage;
+let progressStore = new URLSearchParams(location.search).get('test')==='1'?window.B0V5Test.store:localStorage;
 const app = document.querySelector("#app");
 const intro = [
   ["student", "여긴 어디야? 넌 누구고?"],
@@ -11,12 +11,13 @@ const intro = [
   ["robot", "확인한 것은 알려 드릴게요. 모르는 것은 함께 찾아봐요."]
 ];
 const fresh = () => ({ phase:"intro", line:0, guide:false, noteFound:false, noteTaken:false,
-  unlocked:false, attempts:0, muted:true, observations:{seen:{},last:""}, logs:[] });
+  unlocked:false, attempts:0, muted:true, accessQuizVersion:1, observations:{seen:{},last:""}, logs:[] });
 function load() {
   try {
     const d = JSON.parse(progressStore.getItem(SAVE_KEY));
     if (!d || !["intro","room","escaped"].includes(d.phase)) return null;
-    return {...fresh(),...d,line:Math.max(0,Math.min(intro.length-1,Number(d.line)||0)),logs:Array.isArray(d.logs)?d.logs:[]};
+    const s={...fresh(),...d,line:Math.max(0,Math.min(intro.length-1,Number(d.line)||0)),logs:Array.isArray(d.logs)?d.logs:[]};
+    if(d.accessQuizVersion!==1&&s.phase!=='escaped'){s.unlocked=false;s.attempts=0;}s.accessQuizVersion=1;return s;
   } catch { return null; }
 }
 let state = load() || fresh(), target = "", moving = false, token = 0, timer, speechTimer, audio, lastFocus;
@@ -163,7 +164,7 @@ function jumpLessonEnd(){
   save('임시 이동','1차시 마무리로 이동');ending(3);
 }
 function openingHeader(){return window.B0UI?.header({place:'알 수 없는 곳',namespace:'action',reset:'view-home'})|| `<header class="opening-header"><span>알 수 없는 곳</span><nav>${btn("처음 위치로","view-home","quiet")}${window.B0LessonJumpButton()}</nav></header>`;}
-const campaignKeys=[NAV_KEY,'project-b0-v5-education-v1','project-b0-v5-room2-v1','project-b0-v5-room3-v1','project-b0-v5-final-v1','project-b0-v5-final-v2','project-b0-v5-reflection-v1','project-b0-v5-play-id-v1'];
+const campaignKeys=[NAV_KEY,'project-b0-v5-control-route-v2','project-b0-v5-education-v1','project-b0-v5-room2-v1','project-b0-v5-room3-v1','project-b0-v5-final-v1','project-b0-v5-final-v2','project-b0-v5-reflection-v1','project-b0-v5-play-id-v1'];
 function hasAdventure(){
   if((state.chapter||1)>1||state.phase!=='intro'||state.line>0)return true;
   try{return campaignKeys.some(key=>progressStore.getItem(key)!==null);}catch{return false;}
@@ -193,7 +194,7 @@ function startAdventure(){
   window.B0RoomTransit?.cancel();
   const muted=state.muted;stopAdventure();
   for(const key of campaignKeys)progressStore.removeItem(key);
-  state=fresh();state.chapter=1;state.muted=muted;navigation=window.B0LabNavigation.fresh();navigation.mode='room';saveNavigation();save();chapterUrl(1);opening();
+  state=fresh();logicTrial=null;codeDraft='';state.chapter=1;state.muted=muted;navigation=window.B0LabNavigation.fresh();navigation.mode='room';saveNavigation();save();chapterUrl(1);opening();
 }
 function boot() {
   const requested=typeof location!=="undefined"?new URLSearchParams(location.search).get('chapter'):null;
@@ -214,7 +215,7 @@ function renderIntro() {
   performSpeech(...line,["attentive","friendly","attentive","thinking","attentive","thinking","concerned","concerned","thinking","friendly"][state.line]);
   save();
 }
-const places={door:{name:"출입문",wall:0},lock:{name:"도어락",wall:0},map:{name:"벽면 지도",wall:0},robot:{name:"B-0",wall:0},terminal:{name:"단말기",wall:0},cabinet:{name:"보관장",wall:-90},bench:{name:"실습대",wall:90},window:{name:"관찰창",wall:90},filebox:{name:"낡은 서류함",wall:-90},envelope:{name:"접힌 봉투",wall:90}};
+const places={door:{name:"출입문",wall:0},lock:{name:"도어락",wall:0},map:{name:"출입 기록판",wall:0},robot:{name:"B-0",wall:0},terminal:{name:"단말기",wall:0},cabinet:{name:"보관장",wall:-90},bench:{name:"실습대",wall:90},window:{name:"관찰창",wall:90},filebox:{name:"낡은 서류함",wall:-90},envelope:{name:"접힌 봉투",wall:90}};
 const wallTarget=id=>btn("",`approach-${id}`,`target target-${id}`,`aria-label="${places[id].name} 살펴보기"`);
 function artifact(id){
   const drawing=id==="filebox"?'<path d="M12 35 43 14h91l14 25v57H12Z" fill="#5b686b" stroke="#263943" stroke-width="5"/><path d="M27 29h96v40H27Z" fill="#b6b6a4"/><path d="M12 44h136v52H12Z" fill="#6a787c" stroke="#34444b" stroke-width="4"/><rect x="55" y="59" width="51" height="21" rx="3" fill="#bcbdb2"/><path d="M68 68h24" stroke="#717d7c" stroke-width="4"/>':'<path d="M15 28 142 16l7 65L22 94Z" fill="#c9c0a5" stroke="#6c756c" stroke-width="4"/><path d="m16 29 68 31 59-43M23 92l42-39m38-2 44 28" fill="none" stroke="#898d7c" stroke-width="3"/>';
@@ -228,7 +229,7 @@ function enterRoom(reveal=false,restoreView=false) {
   camera={x:0,y:-5};zoom=1;drag=null;pinch=null;touchPoints.clear();suppressClick=false;
   app.innerHTML=`<main class="game${reveal?" revealing":""}">${window.B0UI?.header({place:`출입 관리실`,namespace:"action",reset:"view-home",zoomClass:"zoom-value",active:true})||""}<section class="scene" tabindex="0" aria-label="출입 관리실. 드래그하거나 방향키로 시선을 돌려 네 벽과 구석을 살펴보세요."><canvas class="panorama-canvas" role="img" aria-label="벽과 바닥이 하나로 이어진 출입 관리실"></canvas><p class="render-error" hidden role="alert"></p><div class="room-rig"><div class="room-wall world${state.unlocked?" unlocked":""}" data-yaw="0">
     <div class="door-art" aria-hidden="true"><div class="device door-left"></div><div class="device door-right"></div></div><span class="lock-led" aria-hidden="true"></span>
-    <div class="device terminal-art" aria-hidden="true"></div><div class="map-board" aria-hidden="true"><small>지도</small><strong>연구소 전체 지도</strong>${window.B0LabNavigation.mapMarkup?.({current:"출입 관리실"})||""}<small>비상 출입 안내</small></div><div class="device light-art" aria-hidden="true"></div>
+    <div class="device terminal-art" aria-hidden="true"></div><div class="map-board" aria-hidden="true"><small>출입 기록</small><strong>세 자리 비밀번호</strong><p>첫째 = 셋째 × 2<br>둘째 + 셋째 = 7<br>첫째 + 둘째 = 9</p></div><div class="device light-art" aria-hidden="true"></div>
     <div class="targets">${Object.keys(places).filter(id=>places[id].wall===0&&id!=="robot").map(wallTarget).join("")}</div></div>${otherWalls()}<div class="robot-anchor"><div class="robot-sprite live-body" role="img" aria-label="함께 있는 AI 로봇 B-0">${portrait()}</div>${wallTarget("robot")}</div></div>
     <p class="look-hint">끌어서 둘러보기 · 휠/두 손가락으로 확대·축소</p><div class="room-speech" aria-live="polite" hidden></div><div class="arrival sr-only" role="status"></div>
     </section><footer>${btn("B-0에게 말하기","talk-","secondary")}${btn("소지품 <span class=\"item-count\">"+(state.noteTaken?"1":"0")+"</span>","inventory","secondary")}</footer></main>`;
@@ -347,48 +348,40 @@ function door(tried=false) {
   if(tried){window.B0ObjectDialogue.present([['student','손잡이를 돌려도 문이 안 열려.'],['robot','문 옆에 도어락이 있습니다.']],{actions:[['도어락 살펴보기',lock]]});return;}
   modal("출입문",`<div class="door-detail" aria-hidden="true"><div class="device"></div></div><p>닫힌 출입문이다. 옆에 숫자 도어락이 달려 있다.</p><div class="action-row">${btn("손잡이 돌려보기","handle","secondary")}${btn("도어락 살펴보기","lock","primary")}</div>`);
 }
+function accessClues(){return '<section class="v5-access-clues"><h3>벽에 남은 출입 기록</h3><ol>'+window.B0AccessLogic.clues.map(text=>'<li>'+esc(text)+'</li>').join('')+'</ol></section>';}
 function guide() {
-  window.B0RoomDialogue?.remember(state,"map",2);
-  state.guide=true;save("발견","벽면 지도의 비상 출입 지침");
-  modal("벽면 지도",`<section class="map-preview"><h3>연구소 전체 지도</h3>${window.B0LabNavigation.mapMarkup?.({current:"출입 관리실"})||""}</section><div class="notice-paper"><h3>비상 출입 안내</h3><p>출입 시스템 정지 시<br>관리용 쪽지의 비밀번호를 사용하십시오.</p></div>`);
+  window.B0RoomDialogue?.remember(state,'map',2);state.guide=true;save('발견','벽면 출입 기록의 숫자 조건 확인');
+  modal('출입 기록판',accessClues()+btn('도어락에서 숫자 눌러 보기','lock','primary')+btn('B-0와 함께 생각하기','logic-help','secondary'));
 }
-const robotQuestions={identity:"넌 어떤 로봇이야?",owner:"내가 왜 네 주인이야?",where:"여기는 어떤 곳이야?",exit:"여기서 어떻게 나가?",password:"비밀번호 쪽지를 알아?",limits:"AI인데 왜 모르는 게 있어?",belongings:"네가 갖고 있는 건 뭐야?"};
-function robotAnswer(topic){
-  switch(topic){
-    case "owner":return "기본 설정입니다. 메뉴의 B-0 설정에서 바꿀 수 있습니다.";
-    case "identity":return "저는 교육용 AI 로봇 B-0입니다. 함께 살펴보고 알아낸 정보를 정리할 수 있어요.";
-    case "where":return "폐쇄된 AI 교육 연구소의 출입 관리실입니다. 지금은 대부분의 장비가 꺼져 있어요.";
-    case "exit":return state.unlocked?"출입문의 잠금이 풀렸습니다. 이제 문을 열 수 있어요.":state.noteTaken?(window.B0RoomDialogue?.level("practice",state,"lock")?"가진 쪽지와 직접 확인한 도어락의 표시를 비교해 볼 수 있습니다.":"쪽지는 확인했습니다. 어디에 쓰는지는 주변 물건을 직접 살펴봐야 합니다."):"아직 출입 방법을 확인하지 못했습니다. 직접 본 물건부터 함께 살펴볼 수 있습니다.";
-    case "password":return state.noteTaken?"제 보관함에서 찾은 쪽지를 건네드렸어요. 적힌 번호는 소지품에서 다시 확인할 수 있습니다.":state.noteFound?"제 보관함 안에서 관리용 쪽지를 찾았습니다. 아직 가져가지 않으셨네요.":"아직 비밀번호가 적힌 쪽지는 보지 못했습니다. 확인하지 않은 번호를 답할 수는 없어요.";
-    case "limits":return state.noteFound?"쪽지가 제 보관함에 있어도, 안을 확인하기 전에는 무엇인지 몰랐어요. AI도 확인한 정보가 있어야 답할 수 있습니다.":"저도 확인하지 않은 정보는 모릅니다. 함께 찾아보고 확인하면 더 정확하게 답할 수 있어요.";
-    case "belongings":return state.noteTaken?"보관함에서 찾은 쪽지는 건네드렸습니다. 지금은 보관함이 비어 있어요.":state.noteFound?"이런 게 들어 있네요. 제 보관함에 관리용 쪽지가 있었습니다, 주인님.":"가슴 아래에 작은 보관함이 있어요. 안에 무엇이 있는지는 아직 확인하지 않았습니다.";
-    default:if(window.B0ObjectDialogue)return window.B0ObjectDialogue.resolve("practice",state,{target}).find(line=>line[0]==="robot")[1];if(window.B0RoomDialogue)return window.B0RoomDialogue.reply("practice",state);return state.noteTaken?"쪽지는 건네드렸습니다. 소지품에서 다시 볼 수 있어요.":state.noteFound?"이런 게 들어 있네요.":"궁금한 것이 있나요? 함께 알아볼게요.";
-  }
+let logicTrial=null,codeDraft='';
+function logicCoach(){
+  const M=window.B0AccessLogic;logicTrial||=M.fresh();const q=M.question(logicTrial);
+  const numbers=[logicTrial.a,logicTrial.b,logicTrial.c].map(n=>'<span>'+(n??'?')+'</span>').join('');
+  const choices=q.values.map(n=>btn(n,'logic-pick-'+q.field+'-'+n,'key')).join('');
+  modal('B-0와 가설 확인',`<div class="v5-logic-trial"><small>내가 생각한 숫자</small><div class="v5-logic-slots">${numbers}</div><div class="speech robot"><b>B-0</b><p>${esc(logicTrial.message)}</p></div><div class="v5-logic-options">${choices}</div>${q.field==='retry'?btn('다른 첫째 숫자로 다시 생각하기','logic-retry','primary'):''}${q.field==='lock'?btn('찾은 숫자를 도어락에 눌러 보기','logic-lock','primary'):btn('도어락으로 돌아가기','logic-lock','secondary')}${!['first','retry','lock'].includes(q.field)?btn('첫째 숫자부터 다시 고르기','logic-retry','secondary'):''}<details><summary>단서 다시 보기</summary>${accessClues()}</details></div>`,'v5-logic-modal');
 }
-function robot(topic="") {
-  if(!topic&&target&&target!=='robot'&&window.B0ObjectDialogue?.open('practice',state,{target},()=>robot('identity')))return;
-  if(topic&&!Object.hasOwn(robotQuestions,topic))return;
-  const topics=["identity","owner","where","exit",...(state.guide||state.noteFound?["password","limits"]:[]),"belongings"];
-  const actions=state.noteTaken?[['비밀번호 쪽지 보기',showNote]]:state.noteFound?[['확인하기',()=>handle('take-note')]]:topic==='belongings'?[['네 보관함을 살펴봐도 돼?',askStorage]]:[];
-  window.B0ObjectDialogue.present([...(topic?[['student',robotQuestions[topic]]]:[]),['robot',robotAnswer(topic)]],{actions,questions:topics.filter(t=>t!==topic).map(t=>[robotQuestions[t],()=>robot(t)])});
+function robot(topic='') {
+  if(topic==='belongings'&&state.noteFound&&!state.noteTaken){window.B0ObjectDialogue.present([['robot','보관함에 출입 기록의 사본이 있네요. 정답 대신 숫자 사이의 조건이 적혀 있어요.']],{actions:[['출입 기록 챙기기',()=>handle('take-note')]]});return;}
+  if(target&& !['robot','map','lock','door'].includes(target)&&window.B0ObjectDialogue?.open('practice',state,{target}))return;
+  if(state.unlocked){window.B0ObjectDialogue.present([['student','내가 찾은 숫자로 문이 열렸어.'],['robot','모든 단서와 비교해서 확인했군요. 이제 함께 나가요.']]);return;}
+  window.B0ObjectDialogue.present(state.guide?[['student','번호를 바로 알려줄 수 있어?'],['robot','직접 생각한 숫자를 골라 보세요. 다른 단서와 맞는지 함께 확인할게요.']]:[['robot','출입문의 잠금이 걸렸어요. 서로 다른 숫자 세 개가 필요해요.'],['student','방 안에 단서가 있을까?'],['robot','벽에 출입 기록이 남아 있어요. 먼저 읽어 봐요.']],{actions:[[state.guide?'함께 생각하기':'출입 기록 보기',state.guide?logicCoach:guide]]});
 }
-function askStorage() { window.B0ObjectDialogue.present([['student',state.guide?'네 보관함도 확인해 볼까?':'몸에 보관함이 있네. 안에 뭐가 있어?'],['robot','안쪽은 아직 확인하지 않았습니다. 열어 보겠습니다.']],{actions:[['보관함 열어 보기',openStorage]]}); }
-function openStorage() { window.B0RoomDialogue?.remember(state,"storage",3);state.noteFound=true;save("발견","B-0가 확인하지 않았던 보관함에서 관리용 쪽지 발견");tone();robot("belongings"); }
-function noteMarkup() {return '<div class="password-note"><small>관리용 쪽지</small><h3>비상 출입번호</h3><strong>4732</strong><p>사용 후 보관함에 넣어 두십시오.</p></div>';}
-function showNote() { if(!state.noteTaken)return;modal("비밀번호 쪽지",`${noteMarkup()}${btn("쪽지 보관하고 돌아가기","close","primary wide")}`); }
-function inventory() {modal("소지품",state.noteTaken?`${noteMarkup()}<p class="muted">B-0의 보관함에서 받은 쪽지.</p>`:'<p>아직 가지고 있는 물건이 없다.</p>');}
-function lock() {
-  window.B0RoomDialogue?.remember(state,"lock",2);save();
-  if(state.unlocked){door();return;}
-  modal("출입문 도어락",`<div class="keypad"><label for="code">비밀번호 네 자리</label><input id="code" name="code" type="text" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" autocomplete="off" aria-describedby="lock-status" placeholder="— — — —"><div class="keys">${[1,2,3,4,5,6,7,8,9].map(n=>btn(n,"digit-"+n,"key")).join("")}${btn("지우기","erase","key small")}${btn("0","digit-0","key")}${btn("확인","submit-code","key primary")}</div><p id="lock-status" role="status">비밀번호를 입력하십시오.</p></div>${state.noteTaken?`<details class="note-peek"><summary>가진 쪽지 보기</summary>${noteMarkup()}</details>`:""}`,"lock-modal");
+function askStorage(){window.B0ObjectDialogue.present([['student','네 보관함에도 단서가 있어?'],['robot','안쪽을 열어 확인해 볼게요.']],{actions:[['보관함 열기',openStorage]]});}
+function openStorage(){window.B0RoomDialogue?.remember(state,'storage',3);state.noteFound=true;save('발견','B-0 보관함에서 출입 기록 사본 발견');tone();robot('belongings');}
+function noteMarkup(){return accessClues();}
+function showNote(){if(state.noteTaken)modal('출입 기록 사본',noteMarkup()+btn('도어락 살펴보기','lock','primary'));}
+function inventory(){modal('소지품',state.noteTaken?noteMarkup():'<p>아직 가지고 있는 물건이 없다.</p>');}
+function lock(){
+  window.B0RoomDialogue?.remember(state,'lock',2);state.guide=true;save();if(state.unlocked){door();return;}
+  modal('세 자리 출입문 비밀번호',`<div class="v5-access-puzzle">${accessClues()}<div class="keypad"><label for="code">숫자 버튼으로 세 자리를 눌러요</label><input id="code" name="code" type="text" readonly inputmode="none" maxlength="3" value="${esc(codeDraft)}" aria-describedby="lock-status" placeholder="— — —"><div class="keys">${window.B0AccessLogic.digits.map(n=>btn(n,'digit-'+n,'key')).join('')}${btn('지우기','erase','key small')}${btn('확인','submit-code','key primary')}</div><p id="lock-status" role="status">궁금하면 B-0와 숫자를 하나씩 비교해 보세요.</p>${btn('B-0와 함께 생각하기','logic-help','primary wide')}</div></div>`,'lock-modal v5-access-modal');
 }
-function submitCode(value) {
-  const code=value===undefined?app.querySelector("#code").value:String(value),status=app.querySelector("#lock-status");
-  if(!/^\d{4}$/.test(code)){status.textContent="숫자 네 자리를 입력하십시오.";return;}
-  state.attempts++;save("입력",code);
-  if(code!=="4732"){tone(false);status.textContent="번호가 일치하지 않습니다.";app.querySelector("#code").select();return;}
-  state.unlocked=true;window.B0RoomDialogue?.remember(state,"door",3);save("잠금 해제","4732 입력");tone();app.querySelector(".world").classList.add("unlocked");
-  modal("잠금 해제",`<p>딸깍. 문 안쪽에서 걸쇠가 풀리는 소리가 난다.</p>${btn("문 열고 나가기","escape","primary wide")}`);
+function submitCode(value){
+  const code=value===undefined?app.querySelector('#code').value:String(value),result=window.B0AccessLogic.check(code),status=app.querySelector('#lock-status');codeDraft=code;
+  if(!/^[1-9]{3}$/.test(code)){status.textContent=result.reason;return;}
+  state.attempts++;save('입력',code);
+  if(!result.ok){tone(false);status.textContent=result.reason;return;}
+  state.unlocked=true;window.B0RoomDialogue?.remember(state,'door',3);save('잠금 해제','직접 고른 세 자리 숫자를 모든 조건과 대조');tone();app.querySelector('.world').classList.add('unlocked');
+  modal('잠금 해제','<p>모든 단서가 맞았다. 딸깍, 출입문의 잠금이 풀렸다.</p>'+btn('문 열고 나가기','escape','primary wide'));
 }
 function walkIntoCorridor(){
   const ticket=token,game=app.querySelector(".game");if(!game)return;
@@ -430,7 +423,7 @@ function handle(a) {
     panTo(0,-5);setZoom(1);return;
   }
   if(a.startsWith("zoom-")){setZoom(a==="zoom-reset"?1:zoom+(a==="zoom-in"?.15:-.15));return;}
-  if(a==="new"){state=fresh();save();opening();return;}
+  if(a==="new"){state=fresh();logicTrial=null;codeDraft='';save();opening();return;}
   if(a.startsWith("approach-")){approach(a.slice(9));return;}
   if(a.startsWith("talk-")){robot(a.slice(5));return;}
   if(a==="inspect"){inspect();return;}
@@ -438,19 +431,23 @@ function handle(a) {
   if(a==="lock"){lock();return;}
   if(a==="ask-note"||a==="ask-storage"){askStorage();return;}
   if(a==="open-storage"){openStorage();return;}
-  if(a==="take-note"){window.B0RoomDialogue?.remember(state,"note",3);state.noteTaken=true;save("획득","B-0에게 비상 출입번호 쪽지 받음");app.querySelector(".item-count").textContent="1";showNote();return;}
+  if(a==="take-note"){window.B0RoomDialogue?.remember(state,"note",3);state.noteTaken=true;save("획득","B-0에게 출입 기록 사본 받음");app.querySelector(".item-count").textContent="1";showNote();return;}
   if(a==="note"){showNote();return;}
   if(a==="inventory"){inventory();return;}
-  if(a.startsWith("digit-")){const input=app.querySelector("#code");if(input.value.length<4)input.value+=a.slice(6);return;}
-  if(a==="erase"){const input=app.querySelector("#code");input.value=input.value.slice(0,-1);return;}
+  if(a.startsWith("digit-")){const input=app.querySelector("#code"),digit=Number(a.slice(6));if(input&&input.value.length<3&&window.B0AccessLogic.digits.includes(digit)){input.value+=digit;codeDraft=input.value;}return;}
+  if(a==="erase"){const input=app.querySelector("#code");input.value=input.value.slice(0,-1);codeDraft=input.value;return;}
+  if(a==='logic-help'){logicCoach();return;}
+  if(a==='logic-lock'){lock();return;}
+  if(a==='logic-retry'){logicTrial=window.B0AccessLogic.fresh();logicCoach();return;}
+  if(a.startsWith('logic-pick-')){const [, ,field,value]=a.split('-');if(window.B0AccessLogic.choose(logicTrial,field,value)){save('가설 확인',field+':'+value);logicCoach();}return;}
   if(a==="submit-code"){submitCode();return;}
   if(a==="escape"&&state.unlocked){state.phase="escaped";save("탈출","B-0와 함께 출입문을 열고 나감");app.querySelector("dialog")?.close();panTo(-13,3);setZoom(1);moving=true;const ticket=token;
     if(reduced()){roomView?.setDoorOpen(1);moving=false;ending();return;}
     roomView?.openDoor();timer=setTimeout(()=>{if(ticket!==token)return;walkIntoCorridor();},1550);return;}
   if(a==="menu"){menu();return;}
   if(a==="sound"){state.muted=!state.muted;save();menu();return;}
-  if(a==="hint"){modal("생각거리",`<p>${state.noteTaken?"쪽지에 적힌 번호를 문 옆 도어락에 입력할 수 있어요.":state.guide?"방 안의 물건뿐 아니라 함께 있는 B-0도 살펴봤나요?":"벽에 붙은 지도에 출입 방법이 적혀 있을 수 있어요."}</p>`);return;}
-  if(a==="teacher"){modal("1차시 · 첫 만남",'<p>초등 고학년용 탐색 도입. AI도 확인하지 않은 정보는 모를 수 있으며, 사람과 함께 정보를 찾아 문제를 해결한다는 경험.</p><p>플레이: 출입문·지도 탐색 → B-0의 보관함 확인 → 쪽지 획득 → 도어락 입력 → 탈출. 순서 강제 없음.</p><p>수업 대화: B-0는 쪽지를 갖고 있었는데 왜 몰랐을까요? 모른다고 했을 때 함께 무엇을 확인했나요?</p><small>정해진 게임 규칙으로 동작하며 실제 AI나 얼굴 인식은 사용하지 않습니다. 기록은 이 기기에만 저장됩니다.</small>');}
+  if(a==='hint'){logicCoach();return;}
+  if(a==='teacher'){modal('출입 기록 · 추론 퍼즐','<p>숫자 사이의 네 조건을 비교해 비밀번호를 찾습니다. B-0는 학생이 고른 가설의 다음 확인 지점을 질문하며 정답을 대신 제시하지 않습니다.</p><small>선택에 따라 미리 작성한 질문이 이어지는 방식입니다. 실제 생성형 AI 연결은 사용하지 않습니다.</small>');}
 }
 app.addEventListener("click",e=>{
   const review=e.target.closest('button[data-action]')?.dataset.action;

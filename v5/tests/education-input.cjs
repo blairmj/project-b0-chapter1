@@ -20,15 +20,15 @@ game.select('terminal');finish();assert.ok(Math.abs(game.view().yaw-35)<1e-8,'in
 console.log('PASS: stationary empty desks, cancelled stale approach, inspection after popup close, intentional drag and terminal approach');
 
 let lastTalk;context.window.B0ObjectDialogue={present(lines,options){lastTalk={lines,options};return true;}};
-game.act('solve');assert.ok(dialog);const originalChoices=lastTalk;game.act('help');assert.equal(dialog,null,'asking B-0 closes the worksheet popup');assert.notEqual(lastTalk,originalChoices);assert.equal(lastTalk.options.actions.length,4);
-lastTalk.options.actions[0][1]();assert.equal(dialog,null,'a spoken explanation stays below the scene');assert.equal(lastTalk.lines[0][0],'student');assert.match(lastTalk.lines[1][1],/왼쪽부터/);lastTalk.options.actions[0][1]();assert.ok(dialog,'the saved worksheet remains available after help');
+game.act('solve');assert.ok(dialog);const originalChoices=lastTalk;game.act('help');assert.equal(dialog,null,'asking B-0 closes the worksheet popup');assert.notEqual(lastTalk,originalChoices);assert.equal(lastTalk.options.actions.length,1);
+assert.equal(dialog,null,'a spoken explanation stays below the scene');assert.equal(lastTalk.lines[0][0],'student');assert.match(lastTalk.lines[1][1],/왼쪽부터/);lastTalk.options.actions[0][1]();assert.ok(dialog,'the saved worksheet remains available after help');
 game.act('help-check');assert.equal(dialog,null);assert.match(lastTalk.lines[1][1],/아직 첫 계산/);
 game.act('help-draw');assert.equal(dialog,null);assert.match(lastTalk.lines[1][1],/3묶음/);lastTalk.options.actions[0][1]();assert.ok(dialog,'the requested picture uses the reference-material popup');assert.match(dialog.innerHTML,/ed-groups/);
 console.log('PASS: spoken lesson help uses in-room dialogue, returns to the worksheet, and keeps diagrams as reference popups');
 
 // V5's actual solve controls use choices and do not let an unfinished exit skip the room.
-game.select('exit');assert.doesNotMatch(node('.ed-actions').innerHTML,/문 열고 거울관찰실로/);assert.match(node('.ed-actions').innerHTML,/잠금 표시/);
-game.act('solve');assert.doesNotMatch(dialog.innerHTML,/<input/);assert.match(dialog.innerHTML,/value-middle-8/);game.act('choose-divide');game.act('value-middle-8');game.act('value-answer-16');game.act('verify');assert.equal(game.state().verified,true);game.act('take');assert.equal(game.state().memoryTaken,true);game.select('exit');assert.match(node('.ed-actions').innerHTML,/문 열고 거울관찰실로/);game.dispose();
+game.select('exit');assert.doesNotMatch(node('.ed-actions').innerHTML,/문 열고 관제 기록실로/);assert.match(node('.ed-actions').innerHTML,/잠금 표시/);
+game.act('solve');assert.doesNotMatch(dialog.innerHTML,/<input/);assert.match(dialog.innerHTML,/value-middle-8/);game.act('choose-divide');game.act('value-middle-8');game.act('value-answer-16');game.act('verify');assert.equal(game.state().verified,true);game.act('take');assert.equal(game.state().memoryTaken,true);game.select('exit');assert.match(node('.ed-actions').innerHTML,/문 열고 관제 기록실로/);game.dispose();
 console.log('PASS: V5 button-only arithmetic, earned memory, and locked forward door until collection');
 
 // The replacement recording has one pause/replay control and freezes a pending camera approach.

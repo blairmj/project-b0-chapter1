@@ -1,63 +1,52 @@
 (function(root){
   'use strict';
-  const objects=['map','oldDoor','wall','record','shelf','floor','gap','exit','desk','computer'];
-  const fresh=()=>({version:1,phase:'intro',line:0,shelfZ:0,helper:false,oldDoorOpen:false,drawerOpen:false,realDoorOpen:false,approval:'none',mirror:null,computerOn:false,memoryConnected:false,fileIndex:false,diaryRead:false,axiomHeard:false,seen:{},observations:{seen:{},last:''},logs:[]});
-  const clear=s=>Math.abs(s.shelfZ)>=150;
-  function note(s,action,id){s.logs.push({action,id});s.logs=s.logs.slice(-100);}
-  function inspect(s,id){if(!objects.includes(id))return false;s.seen[id]=true;note(s,'inspect',id);return true;}
-  function toggleOldDoor(s){s.oldDoorOpen=!s.oldDoorOpen;inspect(s,'oldDoor');if(s.oldDoorOpen)inspect(s,'wall');return s.oldDoorOpen;}
-  function moveShelf(s,z,start=s.shelfZ){
-    if(!Number.isFinite(z))return false;
-    const limit=s.helper?340:40;
-    s.shelfZ=Math.max(-175,Math.min(175,start+Math.max(-limit,Math.min(limit,z-start))));
-    if(!clear(s))s.realDoorOpen=false;
-    return true;
+  const key='project-b0-v5-control-route-v2';
+  const names={start:'출발',west:'서쪽 복도',maintenance:'정비 통로',gate:'인증 게이트',observation:'관측실',goal:'목적지'};
+  const edges=[['start','west',4],['start','maintenance',3],['west','gate',2],['west','observation',6],['maintenance','gate',5],['maintenance','observation',4],['gate','goal',5],['observation','goal',3]];
+  function paths(){const found=[];function visit(at,nodes,minutes){if(at==='goal'){found.push({id:nodes.join('-'),nodes,minutes});return;}for(const [from,to,time] of edges)if(from===at&&!nodes.includes(to))visit(to,[...nodes,to],minutes+time);}visit('start',['start'],0);return found;}
+  const routes=paths(),label=p=>p.nodes.map(n=>names[n]).join(' → '),optimal=()=>Math.min(...routes.filter(p=>p.nodes.includes('gate')&&p.minutes<=12).map(p=>p.minutes));
+  const fresh=()=>({version:2,policy:{requireGate:false,maxMinutes:12,fastest:true},recommendation:null,checked:{gate:false,time:false,optimal:false},feedbackCount:0,revision:0,complete:false,phase:'room',lastIssue:'',lessons:[],logs:[],chat:[]});
+  function log(s,type,data){s.logs.push({type,data,at:new Date().toISOString()});s.logs=s.logs.slice(-120);}
+  function say(s,who,text){s.chat.push({who,text});s.chat=s.chat.slice(-60);return text;}
+  function current(s){return routes.find(p=>p.id===s.recommendation)||null;}
+  function assess(p){return {gate:!!p?.nodes.includes('gate'),time:!!p&&p.minutes<=12,optimal:!!p&&p.nodes.includes('gate')&&p.minutes<=12&&p.minutes===optimal()};}
+  function recommend(s){
+    const available=routes.filter(p=>(!s.policy.requireGate||p.nodes.includes('gate'))&&p.minutes<=s.policy.maxMinutes);
+    available.sort((a,b)=>a.minutes-b.minutes||a.id.localeCompare(b.id));s.recommendation=available[0]?.id||null;s.checked={gate:false,time:false,optimal:false};s.complete=false;
+    log(s,'recommend',{policy:{...s.policy},route:s.recommendation});const p=current(s);
+    return p?`${label(p)}, 총 ${p.minutes}분을 추천해요. ${s.policy.requireGate?'인증 게이트 통과를 필수로 넣고':'구간별로 걸리는 시간을 더해'} 이동 시간을 비교했어요.`:'지금 알려 준 조건으로는 가능한 경로가 없어요. 이동 제한이나 필수 통과 조건을 다시 살펴봐요.';
   }
-  function openExit(s){if(!clear(s))return false;s.realDoorOpen=true;inspect(s,'exit');return true;}
-  function leave(s){if(!clear(s)||!s.realDoorOpen)return false;s.phase='gate';s.line=0;note(s,'found-exit','exit');return true;}
-  function request(s){if(s.phase!=='gate')return false;s.approval='rejected';note(s,'request-approval','gate');return true;}
-  function beginMirror(s){if(!(s.phase==='gate'&&s.approval==='rejected')&&s.phase!=='complete')return false;s.phase='mirror';note(s,'enter-mirror','gate');return true;}
-  function finish(s){if(s.phase!=='mirror'||s.mirror?.phase!=='complete')return false;s.phase='complete';note(s,'go-central','mirror');return true;}
-  function reply(s,kind,id){
-    if(kind==='route')return s.seen.exit?(s.realDoorOpen?'주인님이 발견한 문 너머로 통로가 보입니다. 제 지도에는 이 문이 없었습니다.':'새로운 문을 발견했습니다. 아직 문 너머는 확인하지 못했습니다.'):s.seen.wall?(s.seen.map?'제 지도와 실제 방이 다릅니다. 현재 출구 위치는 아직 확인하지 못했습니다.':'출구 표지와 직접 확인한 벽의 모습이 달랐습니다. 현재 출구 위치는 아직 확인하지 못했습니다.'):s.seen.map?'읽어 본 배치도에는 앞쪽 문이 외부 통로로 이어져 있습니다. 현재 상태는 아직 확인하지 못했습니다.':'현재 출구 위치는 아직 확인하지 못했습니다. 먼저 실제로 보이는 물건부터 살펴볼 수 있습니다.';
-    if(kind==='basis')return s.seen.map?'제가 가진 시설 배치 기록 01을 보고 말씀드렸습니다. 실제 방을 새로 확인한 결과는 아닙니다.':'아직 현장에서 확인한 출구 정보가 없습니다. 직접 본 것과 기록에 적힌 것은 구분해서 말씀드리겠습니다.';
-    if(id==='computer')return s.axiomHeard?'방송 뒤에 일지 열람이 차단되었습니다. 방금 읽은 내용과 들은 방송은 서로 구분해 두겠습니다.':s.diaryRead?'일지에는 정답률을 높이기 위해 학생의 실패 기록을 제외하고 판단을 AI가 대신하도록 바꾸었다고 적혀 있었습니다.':s.memoryConnected?'메모리는 연결되었습니다. 파일 내용은 직접 열어 보기 전까지 모릅니다.':s.computerOn?'컴퓨터가 켜져 있습니다. 아직 외부 기록은 연결하지 않았습니다.':'컴퓨터 전원이 꺼져 있습니다. 안의 기록은 아직 확인하지 못했습니다.';
-    if(id==='map')return '시설 배치 기록 01입니다. 앞쪽 문이 외부 통로로 표시되어 있습니다. 현재 배치와 같은지는 확인이 필요합니다.';
-    if(id==='oldDoor'||id==='wall')return s.oldDoorOpen?'문 바로 뒤가 벽입니다. 이 문으로는 지나갈 수 없습니다.':'문이 닫혀 있어 안쪽은 보이지 않습니다. 표지판에는 ‘출구’라고 적혀 있습니다.';
-    if(id==='record')return s.drawerOpen||s.observations?.seen?.record>=2?'개조 기록 07입니다. 기존 외부 통로를 폐쇄했고, 안내 표지 철거는 완료되지 않았다고 적혀 있습니다. 새 출구 위치는 적혀 있지 않습니다.':'서랍 안의 기록은 아직 확인하지 못했습니다.';
-    if(id==='floor')return '보관장 바퀴와 나란한 자국이 바닥에 남아 있습니다. 언제 생겼는지는 알 수 없습니다.';
-    if(id==='gap')return '보관장 아래쪽 틈으로 빛이 들어옵니다. 뒤쪽 전체는 아직 보이지 않습니다.';
-    if(id==='shelf')return '바퀴가 달린 보관장입니다. 안에 물건이 많이 실려 있습니다. 뒤쪽은 가려져 있습니다.';
-    if(id==='exit')return clear(s)?'보관장에 가려져 있던 문입니다. 제 지도에는 표시되어 있지 않습니다.':'여기서는 보관장 뒤를 확인할 수 없습니다.';
-    return '보이는 것부터 확인하겠습니다. 구체적으로 어느 물건을 살펴볼까요?';
+  function teach(s,patch,source){const before=JSON.stringify(s.policy);Object.assign(s.policy,patch);if(before===JSON.stringify(s.policy))return false;s.feedbackCount++;s.revision++;s.lessons.push({revision:s.revision,source,criteria:{...s.policy}});s.lessons=s.lessons.slice(-40);log(s,'criteria-taught',s.lessons.at(-1));return true;}
+  function verify(s,field){
+    const p=current(s);if(!p)return '먼저 어떤 경로를 검토할지 저에게 찾아 달라고 말해 주세요.';
+    const result=assess(p);if(!Object.hasOwn(result,field))return '인증 통과, 12분 제한, 최적 여부 중 무엇을 확인할지 알려 주세요.';
+    s.checked[field]=result[field];s.lastIssue=result[field]?'':field;log(s,'verify',{field,passed:result[field],route:p.id});
+    if(field==='gate')return result.gate?'이 경로에는 인증 게이트가 있어요. 필수 통과 조건을 만족해요.':'이 경로는 인증 게이트를 지나지 않아요. 짧아도 실제 이동 조건을 만족하지 못해요. 제 판단 기준에 어떤 조건을 넣어야 할까요?';
+    if(field==='time')return result.time?`각 구간을 더하면 ${p.minutes}분이에요. 12분 이내예요.`:`각 구간을 더하면 ${p.minutes}분이에요. 제한 시간 12분을 넘어요.`;
+    return result.optimal?`인증을 통과하는 경로는 11분과 13분이에요. 13분은 제한을 넘고, 이 ${p.minutes}분 경로가 조건을 만족하는 최단 경로예요.`:'시간만 가장 짧은 것과 필수 조건을 만족하며 가장 빠른 것은 달라요. 인증 게이트를 거치는 경로끼리 다시 비교해야 해요.';
   }
-  function powerComputer(s){s.computerOn=true;inspect(s,'computer');return true;}
-  function connectMemory(s,hasMemory){if(!s.computerOn||!hasMemory)return false;s.memoryConnected=true;note(s,'connect-memory','computer');return true;}
-  function openFiles(s){if(!s.computerOn)return false;s.fileIndex=true;return true;}
-  function readDiary(s){if(!s.computerOn||!s.memoryConnected||!s.fileIndex)return false;s.diaryRead=true;note(s,'read-secret-diary','computer');return true;}
-  function hearAxiom(s){if(!s.diaryRead)return false;s.axiomHeard=true;note(s,'axiom-broadcast','computer');return true;}
-  function restore(raw){
-    const s=fresh();if(!raw||raw.version!==1)return s;
-    s.phase=['intro','room','gate','mirror','complete'].includes(raw.phase)?raw.phase:'intro';
-    s.line=Math.max(0,Math.min(20,Number(raw.line)||0));s.shelfZ=Number.isFinite(raw.shelfZ)?Math.max(-175,Math.min(175,raw.shelfZ)):0;
-    for(const k of ['helper','oldDoorOpen','drawerOpen','computerOn','memoryConnected','fileIndex','diaryRead','axiomHeard'])s[k]=raw[k]===true;
-    s.realDoorOpen=raw.realDoorOpen===true&&clear(s);s.approval=raw.approval==='rejected'?'rejected':'none';
-    s.mirror=raw.mirror&&typeof raw.mirror==='object'?raw.mirror:null;
-    for(const id of objects)if(raw.seen?.[id]===true)s.seen[id]=true;
-    s.logs=Array.isArray(raw.logs)?raw.logs.filter(x=>x&&typeof x.action==='string').slice(-100):[];if(raw.observations&&typeof raw.observations==='object')s.observations={seen:{...raw.observations.seen},last:raw.observations.last};return s;
+  function select(s,id){if(!routes.some(p=>p.id===id))return false;s.recommendation=id;s.checked={gate:false,time:false,optimal:false};s.complete=false;log(s,'candidate-selected',id);return true;}
+  function begin(s){const r=assess(current(s)),bad=['gate','time','optimal'].find(k=>!r[k]);if(bad){s.lastIssue=bad;return {ok:false,text:verify(s,bad)};}if(current(s).minutes>s.policy.maxMinutes)return {ok:false,text:'제가 배운 시간 제한과도 맞는지 확인해 주세요. 더 짧은 제한을 알려 주었다면 그 기준을 다시 수정해야 해요.'};if(!s.feedbackCount||!s.policy.requireGate)return {ok:false,text:'제 판단 기준을 아직 고치지 않았어요. 인증 게이트를 반드시 거치도록 저에게 알려 주세요.'};if(!Object.values(s.checked).every(Boolean))return {ok:false,text:'새 경로를 다시 검증해 주세요. 인증 통과, 12분 제한, 최적 여부를 어떤 순서로든 확인할 수 있어요.'};s.phase='moving';log(s,'execute-route',{route:current(s).id,minutes:current(s).minutes,criteria:{...s.policy}});return {ok:true,text:`검증한 ${current(s).minutes}분 경로로 제가 이동을 실행할게요.`};}
+  function finish(s){if(s.phase!=='moving'||!assess(current(s)).optimal||!Object.values(s.checked).every(Boolean))return false;s.complete=true;s.phase='complete';log(s,'arrival',s.recommendation);return true;}
+  function parse(text,s){
+    const t=String(text).normalize('NFKC').toLowerCase().replace(/[\s,.!?~·]/g,''),patch={};
+    const gate=/(인증|인증문|게이트|권한확인|신원확인|검문)/.test(t),audit=/(통과했|지났|거쳤|거치는지|지나는지|통과하는지|포함했|포함돼|들어있|확인해|검증해|검토해|봐줘|맞는지)/.test(t)&&!/(반드시|필수|해야|빠졌|누락|빼먹)/.test(t);
+    if((gate&&!audit)||s.lastIssue==='gate'&&/(그조건|그것|그부분|그것도|그것까지|빠진조건|말한조건)/.test(t)){const doubleNegative=/(안거치면안|안지나면안|없이는안|빼지마|빼면안|빠졌|누락|빼먹)/.test(t);if(doubleNegative||/(반드시|필수|꼭|거치|거쳐|통과|지나|들러|경유|넣어|포함|고려|반영|조건|빠뜨|놓쳤|없잖|없는데)/.test(t))patch.requireGate=true;if(!doubleNegative&&/(무시|안거쳐도|안지나도|안가도|통과하지마|지나지마|거치지않아도|지나지않아도|통과하지않아도|선택사항|안넣어도|빼도|필요없)/.test(t))patch.requireGate=false;}
+    if(/모든조건|전체조건/.test(t)&&!/확인|검증|맞는지/.test(t))patch.requireGate=true;
+    const time=t.match(/(\d{1,2}|열두|십이)분/);if(time&&/(이내|이하|넘지|안넘|넘기.*안|초과.*안|제한|안에|최대|까지|지켜)/.test(t)){const n=/열두|십이/.test(time[1])?12:Number(time[1]);if(n>0&&n<=60)patch.maxMinutes=n;}
+    return {patch,execute:/(이동해|이동시작|실행해|출발해|그길로가|이경로로가|이대로가|가자)/.test(t),compare:/(모든경로|다른경로|비교|경로들|경우의수)/.test(t),basis:/(왜|근거|이유|기준|판단했|선택했|고른|어떻게계산|몇분|얼마나|총시간)/.test(t),verify:audit||/(검증|다시확인|조건.*맞|모두만족)/.test(t),gate,time:/(시간|12분|열두분|십이분)/.test(t),optimal:/(최적|가장빠른지|최단인지)/.test(t),search:/(찾|탐색|추천|가장빠|제일빠|최단|빨리|빠르게|목적지)/.test(t)};
   }
-  // Same perspective and expanded world coordinates as the room camera.
-  // Only a ray that actually reaches the floor inside the room can walk.
-  function floorTarget(c,sx,sy,width,height,focal,scale=1.95){
-    if(![sx,sy,width,height,focal,scale].every(Number.isFinite)||width<=0||height<=0||focal<=0||scale<=0)return null;
-    const yaw=c.yaw*Math.PI/180,pitch=c.pitch*Math.PI/180,u=(sx-width/2)/focal,v=(sy-height/2)/focal;
-    const ry=v*Math.cos(pitch)-Math.sin(pitch),rz=-v*Math.sin(pitch)-Math.cos(pitch);
-    if(ry<=.02)return null;
-    const t=180/scale/ry,dx=u*Math.cos(yaw)-rz*Math.sin(yaw),dz=u*Math.sin(yaw)+rz*Math.cos(yaw);
-    const x=c.x+dx*t,z=c.z+dz*t;
-    if(Math.abs(x)>298||Math.abs(z)>298)return null;
-    return {x:Math.max(-180,Math.min(180,x)),z:Math.max(-200,Math.min(180,z))};
+  function ask(s,text){
+    text=String(text).trim().slice(0,600);if(!text)return {text:'궁금한 점이나 바꿀 조건을 알려 주세요.'};say(s,'student',text);log(s,'student-message',text);const intent=parse(text,s);let reply,execute=false;
+    if(Object.keys(intent.patch).length){teach(s,intent.patch,text);reply='판단 기준을 반영해서 다시 탐색할게요. '+recommend(s);}
+    else if(intent.execute){const r=begin(s);reply=r.text;execute=r.ok;}
+    else if(intent.verify){const fields=intent.gate?['gate']:intent.time?['time']:intent.optimal?['optimal']:['gate','time','optimal'];reply=fields.map(f=>verify(s,f)).join(' ');}
+    else if(intent.compare)reply=routes.map(p=>`${label(p)}: ${p.minutes}분${p.nodes.includes('gate')?' · 인증 통과':' · 인증 없음'}`).join('\n');
+    else if(intent.basis&&current(s)){const p=current(s);reply=`${p.nodes.slice(0,-1).map((n,i)=>edges.find(e=>e[0]===n&&e[1]===p.nodes[i+1])[2]).join(' + ')} = ${p.minutes}분이에요. 제 기준은 ‘${s.policy.requireGate?'인증 필수':'인증 필수 조건 없음'}, ${s.policy.maxMinutes}분 이내, 가장 짧은 시간’이에요.`;}
+    else if(intent.search||!current(s)&&intent.basis)reply=recommend(s);
+    else reply='경로를 찾거나, 판단 근거를 묻거나, 필수 통과 지점과 제한 시간을 바꿔 말할 수 있어요. 어떤 조건을 반영할까요?';
+    say(s,'robot',reply);return {text:reply,execute};
   }
-  const api={fresh,clear,note,inspect,toggleOldDoor,moveShelf,openExit,leave,request,beginMirror,finish,reply,powerComputer,connectMemory,openFiles,readDiary,hearAxiom,restore,floorTarget};
-  if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.B0RoomThree=api;
+  function restore(raw){const s=fresh();if(raw?.version!==2)return s;s.policy={requireGate:raw.policy?.requireGate===true,maxMinutes:Number.isFinite(raw.policy?.maxMinutes)?Math.max(1,Math.min(60,raw.policy.maxMinutes)):12,fastest:true};if(routes.some(p=>p.id===raw.recommendation))s.recommendation=raw.recommendation;for(const k of ['gate','time','optimal'])s.checked[k]=raw.checked?.[k]===true&&assess(current(s))[k];s.feedbackCount=Math.max(0,Number(raw.feedbackCount)||0);s.revision=Math.max(0,Number(raw.revision)||0);s.lastIssue=['gate','time','optimal'].includes(raw.lastIssue)?raw.lastIssue:'';s.lessons=Array.isArray(raw.lessons)?raw.lessons.filter(l=>l&&typeof l.source==='string'&&l.criteria&&Number.isFinite(l.criteria.maxMinutes)).slice(-40).map(l=>({revision:Number(l.revision)||0,source:l.source.slice(0,600),criteria:{requireGate:l.criteria.requireGate===true,maxMinutes:l.criteria.maxMinutes,fastest:true}})):[];s.logs=Array.isArray(raw.logs)?raw.logs.slice(-120):[];s.chat=Array.isArray(raw.chat)?raw.chat.filter(m=>['student','robot'].includes(m?.who)&&typeof m.text==='string').map(m=>({who:m.who,text:m.text.slice(0,1500)})).slice(-60):[];s.complete=raw.complete===true&&assess(current(s)).optimal&&Object.values(s.checked).every(Boolean)&&s.feedbackCount>0&&s.policy.requireGate;s.phase=s.complete?'complete':'room';return s;}
+  const api={key,names,edges,routes,label,fresh,current,assess,recommend,teach,verify,select,begin,finish,parse,ask,restore,optimal};if(typeof module!=='undefined')module.exports=api;else root.B0RoomThree=api;
 })(typeof window!=='undefined'?window:globalThis);

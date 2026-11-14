@@ -12,7 +12,7 @@
       if(known)switch(id){
         case 'door':return s.unlocked?pair('열렸네. 진짜 나갈 수 있겠다.','출입문의 잠금이 풀린 것을 확인했습니다.') : pair('시작부터 갇힌 거야?','닫힌 출입문과 도어락이 있습니다. 무거워서 안 열리는지, 잠겨서 안 열리는지 살펴보겠습니다.');
         case 'lock':return s.unlocked?pair('번호가 맞았어.','입력한 번호로 잠금이 풀렸습니다.'):s.attempts?pair('또 틀렸네.','입력한 번호와 확인한 정보를 다시 비교해 보겠습니다. 틀린 시도를 그대로 반복할 필요는 없습니다.'):pair('아무 번호나 넣어 볼까?','넣을 수는 있습니다. 다만 단서가 있는 번호부터 넣으면 덜 헤맬 수 있습니다.');
-        case 'map':return n>=2?pair('생각보다 큰 곳이네.','지금 있는 방도 그중 하나입니다. 어디로 갔는지 기억해 두면 같은 곳을 계속 돌지는 않겠습니다.'):pair('벽에 지도가 있어.','먼저 현재 위치와 길이 어떻게 연결되어 있는지 읽어 보겠습니다.');
+        case 'map':return pair('숫자 사이의 관계가 적혀 있네.','한 조건에 맞아도 다른 조건과 다를 수 있어요. 고른 숫자를 네 단서와 모두 비교해 봐요.');
         case 'terminal':return pair('너랑 연결하면 켜지는 거 아냐?','저도 전원이 꺼진 컴퓨터를 말로 켤 수는 없습니다.','그건 또 단호하네.');
         case 'cabinet':return n>=2?pair('여기도 꽝이네.','대신 이 칸은 확인했습니다. 다시 뒤질 필요는 없겠습니다.'):pair('여기에는 쓸 만한 게 있을까?','보관장은 닫혀 있습니다. 열어서 확인한 곳과 아직 안 본 곳을 구분해 두겠습니다.');
         case 'bench':return pair('이런 장비로 뭘 배웠을까?','사람들이 기계를 다루는 연습을 했을 겁니다. 오늘은 기계인 제가 주인님과 나가는 연습을 하고 있습니다.');
@@ -20,7 +20,7 @@
         case 'filebox':return n>=2?pair('비밀번호인 줄 알았는데 준비물이잖아.','연필, 지우개, 활동지입니다. 이 연구소에도 지우개는 필요했군요.'):pair('이 서류가 단서일까?','낡은 종이라고 틀린 정보는 아닙니다. 어떤 내용인지 펼쳐 보고 판단하겠습니다.');
         case 'envelope':return n>=2?pair('또 안내문이네.','화면을 부드러운 천으로 닦으라고 되어 있습니다.','너도?','가능하면 부탁드립니다, 주인님.'):pair('봉투가 접혀 있어.','겉모양보다 안에 적힌 내용을 확인하겠습니다.');
         case 'storage':return s.noteTaken?pair('쪽지는 내가 챙겼지?','네. 제 보관함에서 꺼낸 쪽지는 주인님 소지품에 있습니다.'):s.noteFound?pair('처음부터 네가 갖고 있었잖아!','네. 찾으러 멀리 갈 필요는 없었습니다.','그걸 지금 말하면 어떡해.'):pair('네 몸에 있는 건데 뭐가 들었는지도 몰라?','갖고 있는 것만으로는 안에 무엇이 있는지 알 수 없습니다. 열어서 확인하겠습니다.');
-        case 'note':return pair('이제 네가 번호를 기억하면 되겠다.','기억하겠습니다. 쪽지도 버리지 말아 주세요. 제가 맞게 기억했는지 확인할 수 있습니다.');
+        case 'note':return pair('정답이 적힌 쪽지는 아니네.','네. 출입 기록의 사본이에요. 네 조건과 고른 숫자를 비교해 볼 수 있어요.');
       }
       return pair('AI면 좀 척척 알아서 해 주면 안 돼?','어떤 일을 원하는지 알려 주시면 제가 할 수 있는 부분부터 하겠습니다, 주인님.');
     }
@@ -48,18 +48,7 @@
       }
       return pair('우리 둘 다 여기서 나가야 해.','네. 한 명만 위에 올라가서는 같이 나갈 수 없습니다.');
     }
-    if(room==='access'&&known)switch(id){
-      case 'server':return [pair('이게 전부 기록이야?','기록을 담는 장치가 여러 개 꽂혀 있습니다. 수업 영상이나 아이들의 풀이를 많이 넣어 둘 수 있습니다.'),pair('이렇게 많으면 답도 다 있겠네.','기록이 많아도 우리가 찾는 답이 꼭 들어 있는 것은 아닙니다.'),pair('이걸 하나씩 다 봐야 해?','무슨 기록을 찾는지 먼저 정해 보겠습니다. 그러면 어디부터 볼지 고르기 쉬워집니다.')][(e.variant||0)%3];
-      case 'computer':return s.axiomHeard?pair('지금 우리 얘기를 듣고 있었던 거야?','방송이 나온 뒤 파일도 볼 수 없게 됐습니다.','말로만 그러는 게 아니네.'):s.diaryRead?pair('틀리지 않는 사람이 어디 있어?','영상 속 아이도 고칠 기회가 필요했습니다. 하지만 기록에는 실수를 없애는 쪽으로 바꾸었다고 적혀 있습니다.'):s.memoryConnected?pair('이 작은 게 여기까지 가져올 물건이었네.','교육 실습실에서 고친 기록과 이곳의 기록을 연결해서 볼 수 있게 되었습니다.'):s.computerOn?pair('파일이 여러 개네.','어떤 기록을 찾을지 정하면 파일 이름과 비교해서 범위를 줄일 수 있겠습니다.'):pair('이번에는 좀 쓸 만한 컴퓨터였으면.','전원부터 확인하겠습니다. 화면이 어둡다는 이유만으로 고장이라고 판단할 수는 없습니다.');
-      case 'oldDoor':case 'wall':return s.seen?.wall||s.oldDoorOpen?pair(K.level(room,s,'map')>=2?'네 지도도 여기가 출구라며.':'출구인 줄 알았는데 벽이잖아.','기록에 나온 출구가 지금 방과 달랐습니다. 여기가 출구라는 제 생각을 고치겠습니다.'):pair('출구라고 쓰여 있잖아.','표지는 확인했습니다. 실제로 이어지는지는 문을 열어 보면 알 수 있습니다.');
-      case 'map':return n>=2?pair('그럼 이 지도도 틀린 거야?','오래된 지도입니다. 지금 방과 하나씩 비교해 보겠습니다. 한 곳이 다르다고 전부 틀렸다고 할 수는 없습니다.'):pair('지도부터 볼까?','네. 지도가 그려진 때와 지금 방의 모습이 같은지도 확인하겠습니다.');
-      case 'desk':return pair('비밀 기록은 꼭 서랍에 있더라.','열어 보기 전에는 평범한 서랍입니다.','분위기 좀 맞춰 줘.');
-      case 'record':return n>=2?pair('길을 막았는데 표지는 그대로 뒀다고?','기록에는 옛 통로를 막았지만 안내 표지는 그대로 두었다고 적혀 있습니다. 오래된 표지를 그대로 믿으면 길을 잘못 찾을 수 있겠습니다.'):pair('서랍에 종이가 있네.','겉에 개조 기록이라고 적혀 있습니다. 어떤 부분을 바꿨는지 읽어 보겠습니다.');
-      case 'shelf':return s.helper?pair('이번에는 같이 미는 거야.','옆에서 함께 밀겠습니다. 방향은 주인님이 정해 주세요.'):n>=3?pair('혼자 밀어 보니까 너무 무거워.','같이 밀 수 있습니다. 어느 쪽으로 움직일지는 정해 주세요.'):pair('이 보관장은 바퀴가 있네.','물건이 많이 실려 있습니다. 움직일 수 있는지와 혼자 움직일 수 있는지는 다르겠습니다.');
-      case 'floor':return n>=2?pair('이 자국, 보관장 바퀴랑 이어지네.','네. 이 보관장은 전에도 움직였을 수 있습니다.'):pair('바닥도 봐야 하나?','물건만 보느라 놓치는 흔적이 있을 수 있습니다. 발밑도 가까이 살펴보겠습니다.');
-      case 'gap':return n>=2?pair('뒤에서 빛이 새어 나와.','이쪽 방의 빛인지, 뒤쪽 공간의 빛인지 조금 더 살펴볼 만합니다.'):pair('아래쪽에 틈이 있어.','전체를 볼 수 없어도 가려진 부분을 살펴볼 자리는 있겠습니다.');
-      case 'exit':return s.realDoorOpen?pair('여기는 진짜 통로네.','직접 연 문 너머로 통로가 보입니다. 옛 지도에는 없던 문입니다.'):pair('지도에는 없던 문이네.','제 기록에도 없었습니다. 이번에는 기록보다 실제 문을 먼저 찾았습니다.');
-    }
+    if(room==='access')return pair('B-0가 고른 길을 확인해 볼까?','인증 통과, 12분 제한, 최적 여부를 검증해 주세요. 빠진 조건은 제 판단 기준에 반영하겠습니다.');
     if(room==='mirror'){
       if(['reunited','complete'].includes(s.phase)&&!known)return pair('말 몇 마디 하는 게 이렇게 어렵냐.','그래도 이번에는 같은 뜻으로 이해했습니다.');
       if(known)switch(id){
@@ -95,9 +84,9 @@
   }
   let active=null;
   function open(room,s,e={},onRequests){
-    return present(resolve(room,s,e),{subject:e.label,onRequests});
+    return present(resolve(room,s,e),{subject:e.label});
   }
-  function present(lines,{subject='',onRequests,actions=[],questions=[]}={}){
+  function present(lines,{subject='',actions=[],onDone}={}){
     if(!lines?.length)return false;
     const app=root.document?.querySelector('#app'),stage=app?.querySelector('.c2-stage, .scene, .lab-stage'),game=app?.querySelector('.game');if(!stage||!game)return false;
     active?.close(false);
@@ -110,8 +99,8 @@
     function close(focus=true){if(closed)return;closed=true;observer?.disconnect();app.removeEventListener('pointerdown',outside,true);app.removeEventListener('click',outside,true);app.removeEventListener('keydown',escape,true);actor?.classList.remove('speaking');panel.remove();game.classList.remove('b0-talking');if(active===session)active=null;if(focus&&stage.isConnected)stage.focus({preventScroll:true});}
     function outside(ev){if(!panel.contains(ev.target))close(false);}
     function escape(ev){if(ev.key==='Escape'){ev.preventDefault();ev.stopPropagation();close();}}
-    function render(){const [who,raw]=lines[index],text=who==='robot'?(root.B0Preferences?.robotText(raw)||raw):raw,last=index===lines.length-1,choices=last?actions.map(([label],i)=>button(label,'action-'+i)).join('')+(onRequests?button('다른 질문·부탁','requests'):''):button('다음','next');actor?.classList.toggle('speaking',who==='robot');panel.innerHTML=`${subject?`<small class="b0-conversation-subject">${esc(subject)}</small>`:''}<div class="speech ${who}" aria-live="polite"><b>${who==='robot'?'B-0':'나'}</b><p>${esc(text)}</p></div><div class="b0-conversation-buttons">${choices||button('닫기','close')}</div>${last&&questions.length?`<details class="b0-conversation-questions"><summary>다른 질문</summary><div>${questions.map(([label],i)=>button(label,'question-'+i)).join('')}</div></details>`:''}`;}
-    panel.addEventListener('click',ev=>{ev.stopPropagation();const a=ev.target.closest('[data-object-talk]')?.dataset.objectTalk;if(a==='next'&&index<lines.length-1){index++;render();panel.querySelector('[data-object-talk]')?.focus({preventScroll:true});}if(a==='close')close();if(a==='requests'){close(false);onRequests?.();}if(a?.startsWith('action-')||a?.startsWith('question-')){const options=a.startsWith('action-')?actions:questions,option=options[Number(a.split('-')[1])];if(option){close(false);option[1]();}}});
+    function render(){const [who,raw]=lines[index],text=who==='robot'?(root.B0Preferences?.robotText(raw)||raw):raw;actor?.classList.toggle('speaking',who==='robot');panel.innerHTML=`${subject?`<small class="b0-conversation-subject">${esc(subject)}</small>`:''}<div class="speech ${who}" aria-live="polite"><b>${who==='robot'?'B-0':'나'}</b><p>${esc(text)}</p></div><div class="b0-conversation-buttons">${button('다음','next')}</div>`;}
+    panel.addEventListener('click',ev=>{ev.stopPropagation();if(closed||ev.target.closest('[data-object-talk]')?.dataset.objectTalk!=='next')return;if(index<lines.length-1){index++;render();panel.querySelector('[data-object-talk]')?.focus({preventScroll:true});return;}const finish=onDone||(actions.length===1?actions[0][1]:null);close(!finish);finish?.();});
     for(const type of ['pointerdown','pointerup','wheel','keydown'])panel.addEventListener(type,ev=>ev.stopPropagation());
     render();stage.append(panel);game.classList.add('b0-talking');app.addEventListener('pointerdown',outside,true);app.addEventListener('click',outside,true);app.addEventListener('keydown',escape,true);
     if(root.MutationObserver){observer=new root.MutationObserver(()=>{if(!panel.isConnected)close(false);});observer.observe(app,{childList:true,subtree:true});}
