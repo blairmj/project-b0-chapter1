@@ -1,0 +1,10 @@
+{
+  "purpose": "V5 교육관찰실 · 두 아이의 풀이 토론",
+  "method": "Built-in image_gen illustration; fixed-camera FFmpeg composition with timed math and Korean dialogue captions. No camera movement, character animation, synthesized voices or music.",
+  "prompt": "Use case: illustration-story. Asset type: a 16:9 fixed-camera background frame for a Korean children's science-fiction escape-game classroom discussion video. Use the attached original classroom image ONLY as a style and character reference. Generate a NEW composition, preserving its detailed cinematic anime painted style, worn metal AI laboratory materials, cool cyan lighting, and the same Korean boy with tousled dark hair in a pale gray hoodie and girl with dark ponytail in pale school blouse/navy vest, both age 11-12. They are now STANDING, full upper bodies visible, at the far left and far right of ONE VERY LARGE wall-mounted rectangular teaching screen in the center, facing one another and the screen, debating a math solution with interested questioning expressions rather than silently writing. Boy at left gestures with one hand toward the screen; girl at right raises a hand thoughtfully. Screen is directly front-facing, NO perspective skew, with a plain completely blank dark navy interior for adding accurate mathematics later. IMPORTANT composition: blank screen interior is an axis-aligned rectangle roughly x=28%-72% of the image and y=17%-66%, with nothing covering that interior. Kids occupy the outer left and right margins below shoulder level, do not overlap the screen interior. No desks or foreground obstructions. Fixed stable eye-level wide composition; age-appropriate warm curiosity. No written words, letters, numerals, logos, subtitles, equations or UI anywhere. Landscape 16:9.",
+  "poster": "education-discussion-v1.webp",
+  "video": "education-discussion-v1.mp4",
+  "captions": "education-discussion-v1.vtt",
+  "format": "H.264, 1280×720, 24 fps, 32.5 seconds, silent",
+  "build": "python v5/media/build-discussion.py --image <generated classroom illustration>"
+}

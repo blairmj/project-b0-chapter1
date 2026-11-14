@@ -11,7 +11,7 @@
     const save=()=>{try{M.session(store);store.setItem(M.key,JSON.stringify(s));}catch{notice('이 기기에 진행을 저장할 수 없습니다. 현재 창에서는 계속 플레이할 수 있습니다.');}};
     function notice(text){const n=app.querySelector('.rf-status');if(n)n.textContent=text;}
     function talk(lines,actions=[]){stopWalk();window.B0ObjectDialogue.present(lines,{actions});}
-    function controls(title,items=[]){adjusting='';app.querySelector('.rf-actions').innerHTML=`<strong>${esc(title)}</strong><div>${items.map(([t,a])=>b(t,a)).join('')}</div>`;coach();}
+    function controls(title,items=[]){adjusting='';app.querySelector('.rf-actions').innerHTML=`<strong>${esc(title)}</strong><div>${(window.B0UI.actionChoices?.(items)||items).map(([t,a])=>b(t,a)).join('')}</div>`;coach();}
     function nextHint(){
       if(s.taken)return {step:5,text:'작은 거울을 챙겼어. 이제 열린 문으로 나가자.',label:'출입문 보기',action:'select-door'};
       if(s.solved)return {step:4,text:'이전 메뉴얼과 달라도 빛이 도착했네! 거울 A에서 작은 거울을 챙기자.',label:'작은 거울 챙기기',action:'take'};

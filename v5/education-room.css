@@ -42,4 +42,6 @@
 .ed-video-frame .ed-video-caption{position:absolute;left:50%;right:auto;bottom:42px;transform:translateX(-50%);width:max-content;max-width:calc(100% - 16px);box-sizing:border-box;margin:0;padding:4px 7px;min-height:0;background:#02070db8;color:#fff;text-align:center;font:clamp(11px,1.35vw,15px)/1.35 'B0 Digital',monospace;text-shadow:0 1px 3px #000;pointer-events:none}
 .ed-video-modal .ed-video-controls{margin:10px 0;gap:8px}
 .ed-video-modal .b0-dialog-footer{margin-top:8px}
+.ed-video-frame .ed-video-toggle{position:absolute;right:10px;top:10px;min-height:40px;padding:7px 12px;background:#102434dc;color:#f0fbff;border:1px solid #9abac5;border-radius:5px;font-size:12px}.ed-video-return{display:flex;justify-content:flex-end;margin-top:10px}.ed-video-return button{min-height:44px}.ed-video-modal .ed-video{animation:none;transform:none}
+#app dialog.ed-video-modal .ed-video{max-height:max(150px,calc(100dvh - 260px))}
 @media(max-width:420px){.ed-video-frame .ed-video-caption{bottom:34px;padding:3px 6px;font-size:11px}}

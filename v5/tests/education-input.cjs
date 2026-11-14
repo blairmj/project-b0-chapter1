@@ -1,7 +1,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-const M=require('../education-model.js'),nodes=new Map(),frames=new Map();let serial=0,time=0,dialog;
+const M=require('../education-model.js'),nodes=new Map(),frames=new Map();let serial=0,time=0,dialog,media;
 function node(key){if(!nodes.has(key))nodes.set(key,{dataset:{},style:{},hidden:false,isConnected:true,clientWidth:676,clientHeight:870,innerHTML:'',classList:{add(){},remove(){},toggle(){}},focus(){},pause(){},querySelector:s=>node(key+s),querySelectorAll:()=>[],addEventListener(){},setPointerCapture(){},hasPointerCapture(){return false;}});return nodes.get(key);}
-const app={querySelectorAll:()=>[],querySelector:s=>s==='.ed-modal'?dialog:node(s),addEventListener(){},removeEventListener(){},append(){}};
+const app={querySelectorAll:()=>[],querySelector:s=>s==='video'?media:s==='.ed-modal'?dialog:node(s),addEventListener(){},removeEventListener(){},append(){}};
 const storage={getItem(){return null;},setItem(){}};
 const context={window:{B0Education:M,B0UI:{header:()=>'',inventoryButton:()=>'',dialogBody:b=>b},addEventListener(){},removeEventListener(){}},sessionStorage:storage,localStorage:storage,document:{createElement(){const handlers={};return dialog={dataset:{},querySelector(){return null;},addEventListener(k,f){handlers[k]=f;},showModal(){},close(){handlers.close?.();},remove(){dialog=null;}};}},performance:{now:()=>time},requestAnimationFrame:f=>{frames.set(++serial,f);return serial;},cancelAnimationFrame:id=>frames.delete(id),setTimeout:()=>0,clearTimeout(){}};
 const source=fs.readFileSync(require.resolve('../education-room.js'),'utf8').replace('return {dispose,jumpToEnd(){','return {select,act,down,move,up,state:()=>s,view:()=>({...camera}),dispose,jumpToEnd(){');
@@ -30,3 +30,12 @@ console.log('PASS: spoken lesson help uses in-room dialogue, returns to the work
 game.select('exit');assert.doesNotMatch(node('.ed-actions').innerHTML,/문 열고 거울관찰실로/);assert.match(node('.ed-actions').innerHTML,/잠금 표시/);
 game.act('solve');assert.doesNotMatch(dialog.innerHTML,/<input/);assert.match(dialog.innerHTML,/value-middle-8/);game.act('choose-divide');game.act('value-middle-8');game.act('value-answer-16');game.act('verify');assert.equal(game.state().verified,true);game.act('take');assert.equal(game.state().memoryTaken,true);game.select('exit');assert.match(node('.ed-actions').innerHTML,/문 열고 거울관찰실로/);game.dispose();
 console.log('PASS: V5 button-only arithmetic, earned memory, and locked forward door until collection');
+
+// The replacement recording has one pause/replay control and freezes a pending camera approach.
+const videoEvents={},toggle={textContent:'',setAttribute(){}};let pauses=0,plays=0;
+media={paused:true,ended:false,currentTime:0,addEventListener:(name,fn)=>videoEvents[name]=fn,play(){plays++;this.paused=false;videoEvents.play?.();return Promise.resolve();},pause(){pauses++;this.paused=true;videoEvents.pause?.();}};
+const create=context.document.createElement;context.document.createElement=()=>{const d=create();d.classList={add(){}};d.querySelector=selector=>selector==='video'?media:selector==='[data-ed="video-toggle"]'?toggle:null;return d;};
+const replay=context.window.startEducationRoom({app,portrait:()=>'',preview:true,onBack(){},onHome(){}});
+replay.select('screen');assert.ok(frames.size);replay.act('video');assert.equal(frames.size,0);assert.match(dialog.innerHTML,/education-discussion-v1.mp4/);assert.doesNotMatch(dialog.innerHTML,/playsinline controls|video-rewind|풀이 화면 보기/);assert.equal((dialog.innerHTML.match(/data-ed="video-toggle"/g)||[]).length,1);assert.equal(plays,1);
+replay.act('video-toggle');assert.equal(media.paused,true);assert.equal(toggle.textContent,'계속 보기');media.ended=true;media.currentTime=32.5;videoEvents.ended();assert.equal(toggle.textContent,'다시 보기');replay.act('video-toggle');assert.equal(media.currentTime,0);assert.equal(plays,2);replay.act('close-modal');assert.ok(pauses>=2);assert.equal(dialog,null);replay.dispose();
+console.log('PASS: fixed-camera discussion video, one pause/resume/replay control and media cleanup');

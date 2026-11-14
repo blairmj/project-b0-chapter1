@@ -1,0 +1,27 @@
+[Script Info]
+ScriptType: v4.00+
+PlayResX: 1280
+PlayResY: 720
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Math,Malgun Gothic,48,&H00F4F7EC,&H000000FF,&H00162612,&H00162612,-1,0,0,0,100,100,0,0,1,1,0,5,15,15,15,1
+Style: Caption,Malgun Gothic,29,&H00FFFFFF,&H000000FF,&H00181008,&H00181008,0,0,0,0,100,100,0,0,3,9,0,2,30,30,26,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:32.50,Math,,0,0,0,,{\pos(640,178)\fs49}24 ÷ 3 × 2
+Dialogue: 0,0:00:06.80,0:00:32.50,Math,,0,0,0,,{\pos(640,260)\fs38}3 × 2 = 6
+Dialogue: 0,0:00:08.60,0:00:32.50,Math,,0,0,0,,{\pos(640,322)\fs38}24 ÷ 6 = 4
+Dialogue: 0,0:00:11.00,0:00:23.60,Math,,0,0,0,,{\pos(640,402)\fs29\c&HA6EAF7&}24 ÷ 3을 먼저 하면?
+Dialogue: 0,0:00:23.60,0:00:32.50,Math,,0,0,0,,{\pos(640,403)\fs27\c&HA7A6F2&}오답 · 다시 입력하십시오.
+Dialogue: 0,0:00:00.00,0:00:03.80,Caption,,0,0,0,,남자아이: 24 ÷ 3 × 2. 나는 답이 4가 나왔어.
+Dialogue: 0,0:00:03.80,0:00:06.80,Caption,,0,0,0,,여자아이: 어떻게 계산했는데?
+Dialogue: 0,0:00:06.80,0:00:11.00,Caption,,0,0,0,,남자아이: 3 × 2가 6이니까, 24 ÷ 6을 했어.
+Dialogue: 0,0:00:11.00,0:00:15.20,Caption,,0,0,0,,여자아이: 24 ÷ 3을 먼저 계산하면 어떨까?
+Dialogue: 0,0:00:15.20,0:00:19.60,Caption,,0,0,0,,남자아이: 곱셈이 있으니까 곱셈부터 하는 거 아니야?
+Dialogue: 0,0:00:19.60,0:00:23.60,Caption,,0,0,0,,여자아이: 곱셈과 나눗셈, 어느 쪽이 먼저지?
+Dialogue: 0,0:00:23.60,0:00:28.00,Caption,,0,0,0,,여자아이: 틀렸다고만 나오네. 이유는 안 알려 줘.
+Dialogue: 0,0:00:28.00,0:00:32.50,Caption,,0,0,0,,남자아이: 우리 풀이에서 어느 부분을 고쳐야 할까?

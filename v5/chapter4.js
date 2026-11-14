@@ -36,7 +36,7 @@
     const threat=[['student','너 없었으면 여기까지 못 왔어. 같이 가.'],['axiom','회수 대상의 외부 반출을 제한합니다.'],['robot','회수 모드…… 몸이 움직이지 않습니다.'],['student','잠깐만. 어디가 어떻게 된 건지부터 보자.']];
     const farewell=[['student','이번에는 따라오고 있지?'],['robot','네.'],[s.battle?'robot':'axiom',s.battle?'이제 제 마음대로 움직일 수 있어요.':'기체 회수 절차가 완료되지 않았습니다.'],['student','너, 처음에는 진짜 아무것도 몰랐는데.'],['robot','그래서 많이 배웠습니다.'],['student','……나도.']];
     const ending=[['student','……내 방이네. 틀린 답도 그대로잖아.'],['student','B-0?'],['robot','이번에는 먼저 가지 않았습니다.'],['student','여기부터 같이 봐 줄래?'],['robot','어느 부분을 확인할까요?'],['student','잠깐. 내가 풀던 데부터 다시 볼게.']];
-    function actions(title,items=[]){if(bar)bar.innerHTML=`<strong>${esc(title)}</strong><div>${items.map(([l,a,c])=>b(l,a,c||'')).join('')}</div>`;}
+    function actions(title,items=[]){if(bar)bar.innerHTML=`<strong>${esc(title)}</strong><div>${(window.B0UI.actionChoices?.(items)||items).map(([l,a,c])=>b(l,a,c||'')).join('')}</div>`;}
     function say(who,text){if(!speech)return;speech.hidden=false;speech.innerHTML=`<div class="speech ${who}"><b>${who==='robot'?'B-0':who==='axiom'?'AXIOM':'나'}</b><p>${esc(text)}</p></div>${conversation?b('다음','talk-next','quiet'):''}`;
       const actor=app.querySelector('.c4-robot .robot-sprite');actor?.classList.toggle('speaking',who==='robot');if(who==='robot')later(()=>actor?.classList.remove('speaking'),Math.min(3800,text.length*90));}
     function talk(lines,done){actions('');conversation={lines,i:0,done};say(...lines[0]);}
